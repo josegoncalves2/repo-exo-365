@@ -15,7 +15,15 @@ cd "$ROOT"
 
 PY="${ROOT}/tests/.venv/bin/python"
 export RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
-export EXO_BASE="${EXO_BASE:-http://192.168.1.59}"
+# Credenciais e URL vêm do .env (não versionado), e não de valores fixos.
+# Sem isto a suíte usaria o padrão histórico 'gtn' de tests/exolib.py e
+# TODOS os testes autenticados falhariam — sem indicar o motivo real.
+if [[ -f "${ROOT}/.env" ]]; then
+  set -a; source "${ROOT}/.env"; set +a
+fi
+export EXO_BASE="${EXO_BASE:-http://${EXO_PROXY_VHOST:-192.168.1.59}}"
+export EXO_ADMIN_USER="${EXO_ADMIN_USER:-root}"
+export EXO_ADMIN_PASS="${EXO_ADMIN_PASS:?defina EXO_ADMIN_PASS no .env}"
 export MAILPIT_BASE="${MAILPIT_BASE:-http://192.168.1.59:8025}"
 
 if [[ ! -x "$PY" ]]; then

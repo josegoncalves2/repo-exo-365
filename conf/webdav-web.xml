@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+ Copyright (C) 2003 - 2025 eXo Platform SAS.
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<web-app
+  version="3.0"
+  metadata-complete="true"
+  xmlns="http://java.sun.com/xml/ns/javaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+
+  <display-name>webdav</display-name>
+  <absolute-ordering />
+
+  <listener>
+    <listener-class>org.exoplatform.container.web.PortalContainerConfigOwner</listener-class>
+  </listener>
+
+  <listener>
+    <listener-class>org.exoplatform.services.security.web.ConversationStateListener</listener-class>
+  </listener>
+
+  <filter>
+    <filter-name>SetCurrentIdentityFilter</filter-name>
+    <filter-class>org.exoplatform.services.security.web.SetCurrentIdentityFilter</filter-class>
+    <init-param>
+      <param-name>restoreIdentity</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </filter>
+
+  <filter>
+    <filter-name>ResourceRequestFilter</filter-name>
+    <filter-class>org.exoplatform.portal.application.ResourceRequestFilter</filter-class>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>ResourceRequestFilter</filter-name>
+    <url-pattern>/css/*</url-pattern>
+    <url-pattern>/js/*</url-pattern>
+    <url-pattern>/html/*</url-pattern>
+    <url-pattern>/i18n/*</url-pattern>
+    <url-pattern>/images/*</url-pattern>
+  </filter-mapping>
+
+  <filter-mapping>
+    <filter-name>SetCurrentIdentityFilter</filter-name>
+    <url-pattern>/drives/*</url-pattern>
+  </filter-mapping>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>rest</web-resource-name>
+      <url-pattern>/*</url-pattern>
+      <http-method-omission>OPTIONS</http-method-omission>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>users</role-name>
+    </auth-constraint>
+    <user-data-constraint>
+      <transport-guarantee>NONE</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+
+  <!-- ===============================================================
+       ACRESCENTADO pelo projeto (nao existe na imagem oficial).
+
+       A restricao acima usa <http-method-omission>OPTIONS</...>, o que
+       deixa OPTIONS DE FORA de qualquer security-constraint. O Tomcat 10
+       detecta isso e registra, a cada implantacao, em nivel ERROR:
+
+         For security constraints with URL pattern [/*] the HTTP methods
+         [OPTIONS] are uncovered.
+
+       A omissao e' intencional (o preflight CORS precisa passar sem
+       autenticacao), mas "omitido" e' diferente de "coberto". Este bloco
+       COBRE OPTIONS explicitamente e, por NAO declarar <auth-constraint>,
+       continua permitindo o metodo sem autenticacao — mesmo comportamento
+       de antes, sem o ERROR.
+       =============================================================== -->
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>options-preflight</web-resource-name>
+      <url-pattern>/*</url-pattern>
+      <http-method>OPTIONS</http-method>
+    </web-resource-collection>
+    <user-data-constraint>
+      <transport-guarantee>NONE</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+
+  <login-config>
+    <auth-method>DIGEST</auth-method>
+    <realm-name>webdav-domain</realm-name>
+  </login-config>
+
+  <security-role>
+    <description>the user role</description>
+    <role-name>users</role-name>
+  </security-role>
+
+</web-app>

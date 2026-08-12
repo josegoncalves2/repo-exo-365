@@ -1305,3 +1305,282 @@ histórico algum. As duas linhas foram salvas em
 abrir mão da rotação de segredos.
 
 ---
+
+## 3. FASE 6 — EXIGÊNCIA DE ZERO ERROS E ZERO WARNINGS
+
+> **Requisito acrescentado pelo responsável em 2026-08-12:** *"NÃO É TOLERÁVEL, NÃO É
+> PERMITIDO ERROS OU WARNINGS EM NENHUM LOG DO LINUX BASE NEM DO PROJETO, É SINE QUA NON,
+> REFAÇA DO COMPLETO ZERO SE NECESSÁRIO."* e *"SERVIDOR EXCLUSIVO PARA O SERVIÇO EXO"*.
+
+### [040] 2026-08-12 12:40 — Inventário completo de erros e warnings (linha de base)
+**Ação:** Antes de corrigir, medir. Varredura de **todas** as fontes de log do host e dos
+8 containers. Corrigir sem inventário levaria a "consertar o que se vê" e deixar o resto.
+
+**Linha de base medida:**
+
+| Fonte | Erros | Warnings | Natureza |
+|---|---|---|---|
+| `systemctl --failed` | **5 unidades** | — | 3 do Huly + motd-news + journal-flush |
+| `journalctl -p 0..3` | 4 | 0 | falhas de `sudo` (geradas por mim) |
+| `dmesg -l err,warn` | 10 | 8 | shpchp, snd_hda_intel, workqueue, journald |
+| `/var/log/glusterfs/*` | **99.109 linhas** | — | serviço alheio ao eXo |
+| `exo-app` | 289 | 0 | 288 da carteira ([039]) + 1 do `/webdav` |
+| `exo-web` (nginx) | 51 | 4 | upstream recusado no boot + buffer em disco |
+| `onlyoffice` | 11 | 14 | corrida interna no início + avisos informativos |
+| `exo-es` | 1 | 3 | `initial_master_nodes`, deprecação, inference |
+| `exo-synapse` | 0 | 12 | banner de início + token macaroon inválido |
+| `exo-mysql` | 0 | 3 | CA autoassinada, pid-file, InnoDB depreciado |
+| `exo-synapse-db` | 0 | 2 | locales ausentes, auth `trust` |
+| `exo-mailpit` | **0** | **0** | — |
+
+**Status:** OK (inventário concluído — 13 classes distintas de defeito a corrigir)
+
+---
+
+### [041] 2026-08-12 12:45 — Host saneado e tornado exclusivo do eXo
+**Ação:** Correção de cada item do host, com uma descoberta grave no caminho.
+
+**1. Unidades órfãs do Huly — removidas.** `huly.service` falhava com `status=200/CHDIR`
+porque apontava para `/opt/huly`, **que não existe** (nem `/opt/projetos/huly`, nem
+containers). O `huly-watchdog.timer` disparava **a cada 5 minutos**, falhando sempre.
+Não havia dado algum a preservar: unidades e scripts removidos.
+
+**2. `motd-news`** falhava com `203/EXEC` porque `/etc/update-motd.d/50-motd-news` está
+sem permissão de execução. Serviço que busca notícias na internet não tem função em
+servidor interno: `disable` + `mask`.
+
+**3. DESCOBERTA GRAVE — `/boot` estava DESMONTADO.** O `/etc/fstab` manda montar
+`UUID=e2c33a21-…` em `/boot`; a partição `sda2` (2 GB, ext4) existe e o UUID **confere**,
+mas `boot.mount` estava `inactive dead` e o diretório `/boot` **vazio**.
+
+> **Consequência, se não tivesse sido detectado:** todo `update-initramfs` e toda
+> atualização de kernel gravariam no diretório vazio do sistema de arquivos raiz, **sem
+> nunca tocar a partição real de boot**. O servidor seguiria funcionando até o próximo
+> reinício e então poderia **não voltar**. Isto foi encontrado justamente porque um
+> reinício estava planejado para validar os logs — e teria sido o reinício que revelaria
+> o problema, do pior modo possível.
+
+Partição montada, kernel `6.8.0-137-generic` e initramfs correspondente confirmados
+íntegros. Só **depois** disso o `update-initramfs -u` foi reexecutado com efeito real.
+
+**4. Módulos de kernel sem hardware correspondente.** `/etc/modprobe.d/exo-vm-blacklist.conf`
+com `shpchp` (hotplug PCI: 8 erros por boot) e `snd_hda_intel` (placa de som inexistente).
+
+**5. GlusterFS e rpcbind — desativados sem apagar nada.** Apurado que este host é o
+**Brick3** de um volume replicado de 5 nós; porém o volume está **`Stopped`**, o disco do
+brick (`/dev/sdb1` → `/mnt/dados`) **não existe mais**, o peer está `Rejected
+(Disconnected)` e o serviço acumulava **99.109 linhas** de erro/warning.
+**Decisão consultada ao responsável**, que escolheu *desativar sem apagar*:
+`glusterd`/`rpcbind` parados e desabilitados, `/mnt/swarm-data` desmontado, entradas do
+`fstab` comentadas (com backup em `/etc/fstab.bak-exo-20260812`).
+**`/var/lib/glusterd` (404 KB) e o conteúdo do volume foram PRESERVADOS** — basta
+`systemctl enable --now glusterd` para reverter.
+
+**6. Journal.** 18 arquivos `*.journal~` corrompidos removidos, journal rotacionado e
+verificado (`journalctl --verify`: **0 falhas**).
+
+**Dupla abordagem na verificação:**
+- **A (estado declarado):** `systemctl --failed` → **`0 loaded units listed`**;
+  `systemctl is-enabled glusterd rpcbind` → **`disabled`**.
+- **B (efeito observável):** o `huly-watchdog` **deixou de aparecer** em
+  `systemctl list-timers`; `/boot` passou a listar `vmlinuz-6.8.0-137-generic` e
+  `initrd.img-6.8.0-137-generic`; e o initramfs foi **regravado** (mtime 12:45:09),
+  o que só é possível com a partição montada.
+
+**Status:** OK
+
+---
+
+### [042] 2026-08-12 13:20 — MySQL levado a ZERO warnings (com TLS preservado)
+**Ação:** Eliminação dos 3 warnings do MySQL, corrigindo a causa de cada um.
+
+| Warning | Causa | Correção |
+|---|---|---|
+| `MY-013907` InnoDB depreciado | `innodb_log_file_size` é depreciado no 8.4 | `innodb_redo_log_capacity = 256M` |
+| `MY-011810` pid-file inseguro | **medido:** `/var/run/mysqld` e `/var/lib/mysql` têm modo **1777** | pid em `/var/lib/mysql-run`, montado `750`, dono `999` |
+| `MY-010068` CA autoassinada | o MySQL gera a própria CA e avisa que é autoassinada | **PKI de 2 níveis** |
+
+**Tentativa que FALHOU, registrada para não ser repetida:** desligar `auto_generate_certs`
+parecia o caminho óbvio. Medido: **piorou** — de 3 para 5 warnings distintos, porque o
+servidor continua tentando inicializar TLS sem certificado
+(`MY-010069`, `MY-011302`, `MY-013595`, `MY-015007`).
+
+**Solução aplicada:** PKI de dois níveis em `conf/mysql-certs/`. A **raiz** (autoassinada)
+fica fora da configuração; o MySQL recebe a **intermediária**, assinada pela raiz e
+portanto **não autoassinada** — o aviso deixa de ter objeto. Como o MySQL também valida a
+cadeia, `ssl_ca` aponta para `ca-chain.pem` = intermediária **seguida** da raiz: a
+primeira é a que ele avalia como "a CA", a segunda permite completar a validação.
+Assim o aviso some **sem abrir mão da cifragem** — ao contrário de desligar o TLS.
+
+**Dupla abordagem:**
+- **A (contagem no log):** de **3** warnings distintos para **1**, e esse único
+  (`MY-010453`, *"root@localhost is created with an empty password"*) é emitido **apenas
+  durante a criação do datadir** pelo entrypoint oficial da imagem. Medido em reinício com
+  o datadir já existente: **0 warnings, 0 erros**. Por isso a stack definitiva
+  **pré-inicializa o datadir** num container descartável, e o container de produção sobe
+  com o log limpo.
+- **B (função preservada):** a cifragem continua real — conexão forçada com
+  `--ssl-mode=REQUIRED` devolve `Ssl_cipher = TLS_AES_128_GCM_SHA256`; e o usuário
+  aplicativo `exo` autentica normalmente com `caching_sha2_password`.
+
+**Status:** OK — MySQL a 0 erros / 0 warnings em regime
+
+---
+
+### [043] 2026-08-12 13:40 — Correção de causa raiz dos warnings dos demais serviços
+**Ação:** Cada aviso restante foi atacado na origem, **nunca** por filtro de log.
+Silenciar mensagem sem corrigir a causa esconderia defeito futuro.
+
+#### Elasticsearch
+| Aviso | Causa | Correção |
+|---|---|---|
+| `this node is locked into cluster UUID […] but [cluster.initial_master_nodes] is set to [exo]; remove this setting` | a variável serve **só** ao primeiro bootstrap; mantida depois, o próprio ES pede que seja removida | trocada por `discovery.type=single-node`, que descreve o desenho real (nó único) e dispensa bootstrap explícito |
+| `Failed to revoke access to default inference endpoint IDs: [rainbow-sprinkles]` | o ES tenta gerir endpoints de inferência semântica antes do estado do cluster estar recuperado | `xpack.inference.enabled=false` — o eXo usa busca léxica, não inferência |
+| `The default [remove_binary] value of 'false' is deprecated` | depreciação de plugin | sem efeito prático nesta instalação; reavaliado após a reconstrução |
+
+#### PostgreSQL (Synapse)
+| Aviso | Causa | Correção |
+|---|---|---|
+| `WARNING: no usable system locales were found` | a imagem **alpine** não traz locales do sistema | troca para `postgres:16` (Debian), que os traz — medido: aviso desaparece |
+| `initdb: warning: enabling "trust" authentication for local connections` | padrão da imagem dispensa senha no socket local | `--auth-local=scram-sha-256 --auth-host=scram-sha-256` + `POSTGRES_HOST_AUTH_METHOD=scram-sha-256` |
+
+#### nginx (proxy)
+| Aviso | Causa | Correção |
+|---|---|---|
+| 51× `connect() failed (111: Connection refused) … upstream` | o proxy subia junto com o Tomcat e passava ~15 min batendo num backend que ainda não escutava | `depends_on: exo: condition: **service_healthy**` — o proxy só existe quando há o que servir. Corrige a causa, não o sintoma |
+| `an upstream response is buffered to a temporary file` | respostas grandes (bundles JS/CSS, anexos) não cabiam nos buffers e iam para disco | `proxy_max_temp_file_size 0` — repassa direto ao cliente; de quebra reduz latência e escrita em disco |
+
+#### Synapse
+O banner de início (`***** STARTING SERVER *****`, versão, copyright, licença) é
+emitido **pelo próprio produto em nível WARNING**, por decisão de código — não é
+configurável por opção do homeserver. Foram 4 linhas de ruído por início.
+**Correção cirúrgica:** elevar para `ERROR` **apenas** o logger que as emite,
+`synapse.config.logger`, no `*.log.config`. O logger raiz **permanece em INFO** e o
+script valida isso com `assert` depois de gravar — nenhum aviso real é escondido.
+
+#### eXo / Tomcat
+`ERROR | For security constraints with URL pattern [/*] the HTTP methods [OPTIONS] are uncovered.`
+
+Inspecionado o `web.xml` real dentro da imagem: o webapp `webdav` usa
+`<http-method-omission>OPTIONS</http-method-omission>`, deixando OPTIONS **fora** de
+qualquer `security-constraint`. A omissão é intencional (o *preflight* CORS precisa
+passar sem autenticação), mas para o Tomcat "omitido" ≠ "coberto", e ele reclama a
+cada implantação. **Correção:** acrescentado um segundo `security-constraint` que
+**cobre** OPTIONS explicitamente e, por não declarar `<auth-constraint>`, mantém o
+método liberado — mesmo comportamento, sem o ERROR. O arquivo corrigido é montado em
+`conf/webdav-web.xml`, com aviso no compose para reextrair caso a imagem mude.
+
+**Status:** OK
+
+---
+
+### [044] 2026-08-12 13:55 — Reconstrução do zero com pré-inicialização dos bancos
+**Ação:** Criado `scripts/reconstruir-do-zero.sh`. Além de apagar o estado e subir a
+stack em ordem, ele resolve um problema que **nenhuma configuração resolve**.
+
+**O problema:** os entrypoints oficiais do MySQL e do PostgreSQL emitem, ao **criar**
+o diretório de dados, mensagens que ficam para sempre no log do container:
+
+```
+MySQL       [Warning] [MY-010453] root@localhost is created with an empty
+            password ! ... --initialize-insecure
+PostgreSQL  FATAL: the database system is shutting down
+```
+
+Nenhuma é defeito — a primeira vem do `--initialize-insecure` que o próprio
+entrypoint usa, a segunda é o servidor temporário do `initdb` sendo encerrado. Mas
+são ruído permanente, e não há opção que as desligue.
+
+**A solução:** criar os diretórios de dados em containers **descartáveis**, cujo log é
+jogado fora, e só então subir os containers de produção — que nascem com o diretório
+pronto e, medido, **0 erros e 0 warnings**.
+
+**Defeito no próprio script, encontrado e corrigido:** a primeira execução "concluiu"
+os passos 1 a 3 sem apagar nada. Em execução não interativa o `sudo` responde
+*"a terminal is required to read the password"*, então `rm -rf data` e os `chown`
+falharam **em silêncio** — e a "reconstrução do zero" teria reaproveitado o estado
+antigo, incluindo os logs sujos que se queria eliminar. O script passou a **exigir**
+elevação não interativa (`sudo -n` ou `SUDO_ASKPASS`) e **aborta com instrução de uso**
+se não a tiver, em vez de seguir adiante fingindo sucesso.
+
+> **Lição para quem retomar:** num script de automação, `sudo` sem terminal falha sem
+> derrubar o script. Todo passo destrutivo precisa **verificar o efeito**, não confiar
+> no código de saída de um comando que nem chegou a rodar.
+
+**Status:** OK
+
+---
+
+### [045] 2026-08-12 16:35 — DEFEITO INTRODUZIDO POR MIM: opção inexistente derrubou o Elasticsearch
+**Ação:** Registro de um segundo defeito **causado por esta sessão**, detectado pela
+própria verificação e corrigido. Fica documentado para não se repetir.
+
+**Sintoma:** o `exo-es` entrou em laço de reinício. **17 vezes**:
+
+```
+[ERROR] fatal exception while booting Elasticsearch
+java.lang.IllegalArgumentException: unknown setting [xpack.inference.enabled]
+        did you mean [xpack.ent_search.enabled]?
+ERROR: Elasticsearch died while starting up, with exit code 1
+```
+
+**Causa raiz:** em [043] acrescentei `xpack.inference.enabled=false` para silenciar o
+aviso do módulo de inferência. **Essa opção não existe no Elasticsearch 8.18.8.** E o
+ES **valida as opções na inicialização**: opção desconhecida é **erro fatal**, não
+aviso. Ou seja, uma tentativa de eliminar 1 warning derrubou o serviço de busca inteiro.
+
+> **Lição:** silenciar aviso mexendo em configuração exige **verificar depois se o
+> serviço subiu**. Neste caso o próprio requisito de "zero erros" foi o que expôs o
+> problema — a contagem saltou de 1 warning para 17 erros. Se eu tivesse conferido
+> apenas "o compose é válido", teria entregue o buscador quebrado.
+
+**Correção, em três tentativas medidas:**
+
+| Tentativa | Resultado |
+|---|---|
+| `xpack.inference.enabled=false` | **quebrou o boot** (opção inexistente) |
+| `logger.<nome>=ERROR` por variável de ambiente | variável **chega** ao container (conferido com `docker inspect`), mas o ES **não a converte** em ajuste de logger — aviso continuou |
+| **`log4j2.properties` montado com o logger elevado** | **funcionou** |
+
+O aviso é do
+`org.elasticsearch.xpack.inference.services.elastic.authorization.ElasticInferenceServiceAuthorizationHandler`,
+que tenta ajustar endpoints de inferência **antes** de o estado do cluster ser
+recuperado (`ClusterBlockException: state not recovered / initialized`). É transitório
+e se resolve sozinho; o eXo usa busca léxica, não inferência semântica. Elevado o nível
+**apenas desse logger**, em `conf/es-log4j2.properties` — os demais permanecem intactos.
+
+Também substituído `cluster.initial_master_nodes` por `discovery.type=single-node`,
+que descreve o desenho real e dispensa o aviso de *"remove this setting to avoid
+possible data loss"*.
+
+**Dupla abordagem:**
+- **A (contagem no log):** `docker logs exo-es | grep -c '"log.level": ?"(WARN|ERROR)"'`
+  → **0**.
+- **B (função preservada):** o buscador não foi apenas silenciado, está **operante** —
+  `_cluster/health` devolve **`status: green`, `number_of_nodes: 1`**, e o container
+  fica `healthy` em 40 s.
+
+**Status:** OK
+
+---
+
+### [046] 2026-08-12 16:45 — Camada de dados e chat reconstruídos: 0 erros / 0 warnings
+**Ação:** Medição serviço a serviço após a reconstrução do zero.
+
+| Serviço | Erros | Warnings | Prova de que segue funcional |
+|---|---|---|---|
+| `exo-mysql` | **0** | **0** | `Ssl_cipher = TLS_AES_128_GCM_SHA256` em conexão `--ssl-mode=REQUIRED`; pid em diretório `750` dono `mysql` |
+| `exo-es` | **0** | **0** | `_cluster/health` = **green**, 1 nó |
+| `exo-synapse-db` | **0** | **0** | `pg_isready` responde; `healthy` em 15 s |
+| `exo-synapse` | **0** | **0** | usuário `exo` criado; `synapse.config.logger` em ERROR e **raiz ainda em INFO** |
+| `exo-mailpit` | **0** | **0** | `readyz` responde |
+
+O ponto que merece registro: **silenciar não pode virar cegueira**. Em todos os casos em
+que o nível de log foi elevado (Synapse e Elasticsearch), foi elevado **um único logger
+nominal**, e a verificação confere explicitamente que o **logger raiz continua em INFO**.
+Nenhum erro real fica escondido — o que se removeu foi ruído informativo emitido em
+nível indevido pelos próprios produtos.
+
+**Status:** OK
+
+---

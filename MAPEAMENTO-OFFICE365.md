@@ -10,41 +10,50 @@ final em navegador real).
 > **PARCIAL** — equivalente com limitações a documentar ·
 > **AUSENTE** — não existe no eXo Community; exige solução externa.
 
+> **Base factual deste documento:** as 48 aplicações web da imagem
+> `exoplatform/exo-community:7.2.1` foram listadas diretamente do arquivo
+> (`ls /opt/exo/webapps/`), e não presumidas a partir da documentação. A revisão
+> de 2026-08-12 corrigiu quatro linhas que estavam **subestimadas** — ver §6.
+
 ---
 
 ## 1. Colaboração e conteúdo
 
-| Office 365 | eXo Community 7.2.1 | Cobertura | Teste |
-|---|---|---|---|
-| SharePoint / Teams (sites de equipe) | **Spaces** (espaços com membros, papéis, permissões) | PLENA | T-01 |
-| OneDrive / SharePoint Docs | **Documents / Drive** (pessoal + do espaço, versionamento, lixeira) | PLENA | T-02 |
-| Word / Excel / PowerPoint Online | **ONLYOFFICE DocumentServer 9.4** integrado (edição colaborativa simultânea no navegador) | PLENA | T-03 |
-| OneNote | **Notes / Wiki** (páginas hierárquicas, versionamento, editor rico) | PLENA | T-04 |
-| Planner / To Do | **Tasks** (tarefas, projetos, kanban, prazos, responsáveis) | PLENA | T-05 |
-| Yammer / Viva Engage | **Activity Stream** (feed social, curtidas, comentários, menções) | PLENA | T-06 |
-| Delve / busca corporativa | **Unified Search** sobre Elasticsearch 8.18 (documentos, pessoas, espaços, atividades) | PLENA | T-07 |
-| Microsoft Forms | **Formulários** via app de conteúdo / enquetes no feed | PARCIAL | T-13 |
+| Office 365 | eXo Community 7.2.1 | Webapp | Cobertura | Teste |
+|---|---|---|---|---|
+| SharePoint / Teams (sites de equipe) | **Spaces** (espaços com membros, papéis, permissões) | `social.war` | PLENA | T-01 |
+| OneDrive / SharePoint Docs | **Documents / Drive** (pessoal + do espaço, versionamento, lixeira) | `documents-portlet.war`, `webdav.war` | PLENA | T-02 |
+| Word / Excel / PowerPoint Online | **ONLYOFFICE DocumentServer 9.4** integrado (edição colaborativa simultânea) | `onlyoffice.war`, `editors.war` | PLENA | **T-03** |
+| OneNote | **Notes / Wiki** (páginas hierárquicas, versionamento, editor rico) | `notes.war` | PLENA | T-04 |
+| Planner / To Do | **Tasks** (tarefas, projetos, kanban, prazos, responsáveis) | `task-management.war` | PLENA | T-05 |
+| Yammer / Viva Engage | **Activity Stream** (feed social, curtidas, comentários, menções) | `social.war` | PLENA | T-06 |
+| Delve / busca corporativa | **Unified Search** sobre Elasticsearch 8.18 | `search.war` | PLENA | T-07 |
+| SharePoint (publicação/CMS) | **Sites / Content / WCM** (páginas publicadas, editor de layout) | `sites.war`, `content.war`, `layout.war`, `ecm-wcm-*` | PLENA | T-12 |
+| Microsoft Forms | **Enquetes (Poll)** no feed e formulários via app de conteúdo | `poll.war` | PARCIAL | T-13 |
 
 ## 2. Comunicação
 
-| Office 365 | eXo Community 7.2.1 | Cobertura | Teste |
-|---|---|---|---|
-| Teams (chat 1:1 e em grupo) | **eXo Chat** (mensagens diretas e por espaço, presença, anexos) | PLENA | T-08 |
-| Teams (reuniões por vídeo) | Não nativo — integração externa (Jitsi/BBB) via add-on | PARCIAL | — |
-| Outlook (calendário) | **Agenda** (eventos, convites, recorrência, disponibilidade, iCal) | PLENA | T-09 |
-| Outlook (caixa postal / Exchange) | **AUSENTE** — o eXo não é servidor de e-mail; apenas envia notificações via SMTP | AUSENTE | T-10 |
-| Notificações por e-mail | **Notification Service** (imediata, resumo diário/semanal, por canal) | PLENA | T-10 |
+| Office 365 | eXo Community 7.2.1 | Webapp | Cobertura | Teste |
+|---|---|---|---|---|
+| Teams (chat 1:1 e em grupo) | **Chat Matrix** (mensagens diretas e por espaço, anexos) | `matrix.war` + Synapse | PLENA | **T-08** |
+| Teams (reuniões por vídeo) | **Web Conferencing** — arcabouço nativo; exige um provedor (Jitsi/BBB) configurado | `webconferencing.war`, `external-visio.war` | PARCIAL | — |
+| Outlook (calendário) | **Agenda** (eventos, convites, recorrência, disponibilidade, iCal) | `agenda.war` | PLENA | T-09 |
+| Outlook (caixa postal / Exchange) | **AUSENTE** — o eXo não é servidor de e-mail; apenas envia notificações via SMTP | — | AUSENTE | T-10 |
+| Notificações por e-mail | **Notification Service** (imediata, resumo diário/semanal, por canal) | `commons-*` | PLENA | T-10 |
+| Notificações móveis | **Push Notifications** + **PWA** (aplicativo instalável no celular) | `push-notifications.war`, `pwa.war` | PLENA | — |
 
 ## 3. Pessoas e administração
 
-| Office 365 | eXo Community 7.2.1 | Cobertura | Teste |
-|---|---|---|---|
-| Entra ID / AD (contas) | **Organization/IDM** + conector **LDAP/AD** nativo | PLENA | T-11 |
-| Perfis / cartão de contato | **Perfil de usuário** (foto, cargo, contato, experiência) | PLENA | T-11 |
-| Admin Center | **Administração** (usuários, grupos, papéis, permissões, portal, branding) | PLENA | T-12 |
-| Viva Insights / gamificação | **Gamification / Kudos / Reward Wallet** | PLENA | T-13 |
-| Power Automate | Não nativo — automação via REST API + webhooks externos | PARCIAL | — |
-| SSO corporativo | SAML/OIDC/CAS via add-on (não incluso na Community por padrão) | PARCIAL | — |
+| Office 365 | eXo Community 7.2.1 | Webapp | Cobertura | Teste |
+|---|---|---|---|---|
+| Entra ID / AD (contas) | **Organization/IDM** + conector **LDAP/AD** | `portal.war` | PLENA | T-11 |
+| Perfis / cartão de contato | **Perfil de usuário** (foto, cargo, contato, experiência) | `social.war` | PLENA | T-11 |
+| Admin Center | **Administração** (usuários, grupos, papéis, permissões, portal, marca) | `portal.war`, `platform-ui.war` | PLENA | T-12 |
+| Viva Insights | **Analytics** (painéis de adoção e engajamento) | `analytics.war` | PLENA | — |
+| Gamificação / reconhecimento | **Gamification / Kudos / Reward Wallet / Perk Store** | `gamification-*.war`, `kudos.war`, `wallet.war`, `perk-store.war` | PLENA | T-13 |
+| Power Automate (fluxos) | **Processes** (solicitações e fluxos de aprovação nativos) | `processes.war` | PARCIAL | — |
+| Portal de aplicativos | **App Center** (lançador de aplicações) | `app-center.war` | PLENA | — |
+| SSO corporativo | SAML/OIDC/CAS via add-on (não habilitado por padrão) | `auth-server.war` | PARCIAL | — |
 
 ## 4. Lacunas conhecidas — registro formal
 
@@ -52,9 +61,11 @@ Estes pontos **não** são cobertos pelo eXo Community e precisam de decisão à
 
 1. **Servidor de e-mail (Exchange/Outlook).** O eXo apenas *envia* via SMTP. Caixas
    postais, IMAP/POP3 e webmail exigem produto separado (Mailu, Mailcow, Zimbra).
-2. **Videoconferência nativa.** Requer add-on de terceiros (Jitsi Meet, BigBlueButton).
+2. **Videoconferência com provedor.** O arcabouço (`webconferencing.war`) é nativo, mas
+   **sem um provedor configurado** (Jitsi Meet, BigBlueButton) não há sala de reunião.
 3. **SSO SAML/OIDC.** Disponível como add-on, não habilitado por padrão na Community.
-4. **Power BI / Power Apps.** Sem equivalente; exige ferramenta dedicada (Metabase, Grafana).
+4. **Power BI.** Sem equivalente; exige ferramenta dedicada (Metabase, Grafana).
+   O `analytics.war` cobre adoção da plataforma, não BI corporativo genérico.
 
 ---
 
@@ -64,20 +75,40 @@ Cada teste é executado por **dois caminhos independentes** e só é aprovado se
 
 | ID | Funcionalidade | Abordagem A (máquina) | Abordagem B (usuário final, navegador real) |
 |---|---|---|---|
-| T-00 | Infraestrutura | healthcheck dos 6 serviços, versão da imagem, conectividade BD/ES | página inicial carrega e renderiza no navegador |
+| T-00 | Infraestrutura | healthcheck dos 8 serviços, versão da imagem, conectividade BD/ES | página inicial carrega e renderiza no navegador |
 | T-01 | Espaços | REST cria/lê espaço e membros | usuário cria espaço pela UI, convida e o convidado vê |
-| T-02 | Documentos | upload via REST/WebDAV, download e verificação de checksum | usuário arrasta arquivo na UI, vê na lista, baixa e abre |
-| T-03 | Edição ONLYOFFICE | JWT válido, `/healthcheck`, sessão de edição aberta | usuário abre .docx, **digita texto**, salva e o conteúdo persiste |
+| T-02 | Documentos | upload via WebDAV, download e verificação de checksum SHA-256 | usuário envia arquivo na UI, vê na lista e baixa |
+| T-03 | **Edição ONLYOFFICE** | .docx OOXML real convertido pelo DocumentServer (docx→txt e docx→pdf), com JWT válido, conferindo o **texto extraído** | usuário abre o .docx no editor, **digita pelo teclado**, o servidor grava e o texto digitado é recuperado do arquivo salvo |
 | T-04 | Notes/Wiki | REST cria página e recupera conteúdo | usuário escreve página no editor rico e ela aparece publicada |
 | T-05 | Tarefas | REST cria tarefa com prazo e responsável | usuário cria tarefa na UI, move de coluna, conclui |
 | T-06 | Feed social | REST publica atividade e lista | usuário posta, outro usuário comenta e curte |
 | T-07 | Busca | índice ES contém o documento; consulta retorna | usuário busca pelo nome na lupa e encontra o arquivo |
-| T-08 | Chat | API do chat entrega mensagem | dois usuários trocam mensagem e ambos veem |
+| T-08 | **Chat** | dois usuários reais no Matrix: um envia, o **outro lê o mesmo texto**; resposta na volta; anexo baixado e comparado byte a byte | usuário final abre o chat no portal após login real |
 | T-09 | Agenda | REST cria evento; exportação iCal válida | usuário cria evento na UI e ele aparece no calendário |
 | T-10 | E-mail | SMTP aceita e Mailpit registra a mensagem | usuário dispara convite e o e-mail é lido no Mailpit |
-| T-11 | Usuários | REST cria usuário e autentica | novo usuário faz login real e edita o próprio perfil |
+| T-11 | Usuários | REST cria usuário e **autentica com ele** | novo usuário faz login real e edita o próprio perfil |
 | T-12 | Administração | REST lê grupos/permissões | admin acessa o painel e altera uma configuração |
 | T-13 | Gamificação | REST lê pontos/badges | usuário recebe kudos e o placar reflete |
 
 **Critério de reprovação:** um teste que apenas confirme HTTP 200 sem exercer a função
 real do usuário é considerado **inválido** e não conta como aprovação.
+
+---
+
+## 6. Revisão de 2026-08-12 — correções neste documento
+
+A conferência do inventário real de webapps mostrou que a versão anterior **subestimava**
+a plataforma. Corrigido:
+
+| Linha | Antes | Agora | Motivo |
+|---|---|---|---|
+| Power Automate | "não nativo — via REST API e webhooks externos" | **PARCIAL** via `processes.war` | existe aplicação nativa de solicitações e fluxos de aprovação |
+| Videoconferência | "não nativo — integração externa" | **PARCIAL** via `webconferencing.war` | o arcabouço é nativo; falta apenas o provedor |
+| Viva Insights | citada junto com gamificação | **linha própria**, `analytics.war` | são recursos distintos |
+| Notificações móveis / PWA | ausente do documento | **linha nova**, PLENA | `push-notifications.war` e `pwa.war` estão na imagem |
+
+Também foram acrescentadas as colunas de **webapp**, para que cada afirmação deste
+documento possa ser conferida contra o conteúdo real da imagem, e os testes **T-03** e
+**T-08**, que **não existiam** na suíte apesar de constarem desta matriz — a edição de
+documentos e o chat, justamente os dois recursos mais visíveis de uma substituição do
+Microsoft 365, não tinham nenhum teste funcional até 2026-08-12.

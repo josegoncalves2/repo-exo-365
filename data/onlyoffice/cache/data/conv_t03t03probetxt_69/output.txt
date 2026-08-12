@@ -1,3 +1,0 @@
-﻿MARCADOR-T03-t03probe-CONTEUDO-VERIFICAVEL
-Segunda linha do documento de prova.
-Execucao t03probe.

@@ -1,6 +1,7 @@
 # ===================================================================
-# MySQL 8.4 — ajuste para eXo Platform em host com 7941 MB de RAM
-# Objetivo: caber em mem_limit=600m sem degradar o eXo.
+# MySQL 8.4 — ajuste para eXo Platform (VM 9945 MB / 4 vCPU)
+# Objetivo: caber em mem_limit=640m sem degradar o eXo, e iniciar com
+# ZERO warnings no log (exigência do projeto).
 # ===================================================================
 [mysqld]
 
@@ -11,12 +12,20 @@ collation-server                = utf8mb4_unicode_ci
 # --- Pacotes grandes: necessário para binários no JCR e anexos ---
 max_allowed_packet              = 256M
 
-# --- InnoDB dimensionado para o limite de 600 MB do container ---
+# --- InnoDB dimensionado para o limite do container ---
 innodb_buffer_pool_size         = 192M
-innodb_log_file_size            = 128M
 innodb_flush_log_at_trx_commit  = 2
 innodb_flush_method             = O_DIRECT
 innodb_lock_wait_timeout        = 120
+
+# Capacidade do redo log.
+# NÃO usar innodb_log_file_size / innodb_log_files_in_group: no MySQL 8.4
+# são DEPRECIADOS e o servidor emite, a cada início:
+#   [Warning] [MY-013907] [InnoDB] Deprecated configuration parameters
+#   innodb_log_file_size and/or innodb_log_files_in_group have been used
+#   to compute innodb_redo_log_capacity=268435456.
+# O parâmetro atual expressa a mesma intenção sem aviso.
+innodb_redo_log_capacity        = 256M
 
 # --- Conexões: eXo abre 3 pools (IDM 20 + JCR 20 + JPA 20) ---
 max_connections                 = 200
@@ -37,3 +46,28 @@ lower_case_table_names          = 0
 
 # --- Logs de erro no stdout do container ---
 log_error_verbosity             = 2
+
+# -------------------------------------------------------------------
+# Eliminação de warnings de início (medida, não presumida)
+# -------------------------------------------------------------------
+# 1) [MY-011810] "Insecure configuration for --pid-file: Location
+#    '/var/run/mysqld' in the path is accessible to all OS users."
+#    Medido dentro da imagem: /var/run/mysqld e /var/lib/mysql têm modo
+#    1777 (world-writable) — é isso que dispara o aviso, não o 755 dos
+#    diretórios acima. O pid vai para um diretório dedicado, montado com
+#    modo 750 e dono mysql(999), portanto não acessível a todos.
+pid-file                        = /var/lib/mysql-run/mysqld.pid
+
+# 2) [MY-010068] "CA certificate ca.pem is self signed."
+#    Desligar a geração automática (auto_generate_certs=OFF) foi TESTADO e
+#    piora: o servidor passa a emitir QUATRO avisos novos —
+#    MY-010069, MY-011302 e MY-013595 — porque ainda tenta inicializar TLS
+#    sem certificado. A solução correta é fornecer uma PKI de DOIS níveis:
+#    a CA raiz (autoassinada) fica de fora, e o MySQL recebe a CA
+#    INTERMEDIÁRIA, que é assinada pela raiz e portanto NÃO é autoassinada.
+#    Sem CA autoassinada, o aviso não tem o que reportar — e a conexão
+#    continua cifrada, ao contrário de simplesmente desligar o TLS.
+#    Gerados por scripts/gerar-certificados-mysql.sh.
+ssl_ca                          = /etc/mysql/certs/ca-chain.pem
+ssl_cert                        = /etc/mysql/certs/server-cert.pem
+ssl_key                         = /etc/mysql/certs/server-key.pem

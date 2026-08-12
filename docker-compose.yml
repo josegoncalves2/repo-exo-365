@@ -62,10 +62,17 @@ services:
         aliases:
           - ${EXO_PROXY_VHOST}
     depends_on:
+      # service_HEALTHY, não service_started. Com "started" o nginx sobe junto
+      # com o Tomcat e passa ~15 min tentando alcançar um backend que ainda
+      # não escuta, registrando dezenas de:
+      #   [error] connect() failed (111: Connection refused) while connecting
+      #           to upstream ... request: "GET /portal/ HTTP/1.1"
+      # Esperar o eXo ficar saudável elimina a causa (e não o sintoma):
+      # o proxy só passa a existir quando há o que servir.
       exo:
-        condition: service_started
+        condition: service_healthy
       onlyoffice:
-        condition: service_started
+        condition: service_healthy
     mem_limit: 128m
     healthcheck:
       # Aponta para /nginx-health (servido pelo próprio nginx), NÃO para "/".
@@ -167,6 +174,16 @@ services:
       - ./data/exo-codec:/etc/exo/codec:rw
       - ./data/exo-logs:/var/log/exo
       - ./conf/exo.properties:/etc/exo/exo.properties:ro
+      # web.xml do webapp `webdav` com OPTIONS explicitamente COBERTO por um
+      # security-constraint sem auth-constraint. Sem isto o Tomcat registra,
+      # a cada implantação, em nível ERROR:
+      #   "For security constraints with URL pattern [/*] the HTTP methods
+      #    [OPTIONS] are uncovered."
+      # ATENÇÃO ao atualizar a imagem do eXo: este arquivo foi extraído da
+      # 7.2.1 (sha256 do original: 0b334867639888ea…). Se o upstream mudar o
+      # web.xml, reextrair e reaplicar o patch — senão a versão montada aqui
+      # sobrescreve a nova com uma antiga.
+      - ./conf/webdav-web.xml:/opt/exo/webapps/webdav/WEB-INF/web.xml:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -206,6 +223,12 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./conf/mysql.cnf:/etc/mysql/conf.d/exo.cnf:ro
+      # PKI de 2 níveis — ver o comentário em conf/mysql.cnf. Elimina o
+      # aviso MY-010068 (CA autoassinada) mantendo a conexão cifrada.
+      - ./conf/mysql-certs:/etc/mysql/certs:ro
+      # Diretório do pid-file com modo 750 (os padrões /var/run/mysqld e
+      # /var/lib/mysql têm modo 1777 e disparam o aviso MY-011810).
+      - ./data/mysql-run:/var/lib/mysql-run
     mem_limit: ${MEM_LIMIT_MYSQL}
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
@@ -227,7 +250,16 @@ services:
       - ES_JAVA_OPTS=-Xms${ES_HEAP} -Xmx${ES_HEAP}
       - node.name=exo
       - cluster.name=exo
-      - cluster.initial_master_nodes=exo
+      # cluster.initial_master_nodes NÃO aparece aqui de propósito.
+      # Ele serve APENAS ao primeiro start (bootstrap do cluster). Mantê-lo
+      # depois faz o ES avisar, a cada início:
+      #   "this node is locked into cluster UUID [...] but
+      #    [cluster.initial_master_nodes] is set to [exo]; remove this setting
+      #    to avoid possible data loss caused by subsequent cluster bootstrap"
+      # `discovery.type=single-node` substitui o bootstrap explícito: o nó se
+      # elege sozinho, sem a variável e sem o aviso — e é o que descreve esta
+      # instalação, que é de nó único por desenho.
+      - discovery.type=single-node
       - network.host=_site_
       # http.host=0.0.0.0 é OBRIGATÓRIO: com apenas network.host=_site_ (valor
       # do upstream), a camada HTTP liga somente no IP do container e qualquer
@@ -236,9 +268,33 @@ services:
       - http.host=0.0.0.0
       - xpack.security.enabled=false
       - xpack.ml.enabled=false
+      # NÃO acrescentar `xpack.inference.enabled`: essa opção NÃO EXISTE no
+      # Elasticsearch 8.18.8 e o servidor se RECUSA A INICIAR com ela —
+      # testado, com o nó em laço de reinício:
+      #   java.lang.IllegalArgumentException: unknown setting
+      #   [xpack.inference.enabled] did you mean [xpack.ent_search.enabled]?
+      # O ES valida as opções na inicialização e trata desconhecida como
+      # erro fatal, não como aviso. O aviso de "default inference endpoint
+      # IDs [rainbow-sprinkles]" ocorre porque o serviço de inferência tenta
+      # agir antes de o estado do cluster ser recuperado.
+      #
+      # MEDIDO: em nó único iniciando do zero o aviso **se repete**:
+      #   [WARN] Failed to revoke access to default inference endpoint IDs:
+      #          [rainbow-sprinkles] ... ClusterBlockException: blocked by:
+      #          [SERVICE_UNAVAILABLE/1/state not recovered / initialized]
+      # É transitório e se resolve sozinho quando o estado do cluster é
+      # recuperado — o serviço de inferência tenta agir cedo demais. Como a
+      # opção para desligar o módulo não existe nesta versão, eleva-se o
+      # nível APENAS do logger que o emite. Nenhum outro logger é afetado:
+      # a raiz continua em INFO e qualquer erro real do ES aparece.
+      # O ajuste é feito em conf/es-log4j2.properties (montado abaixo):
+      # passar `logger.<nome>=ERROR` por variável de ambiente NÃO funciona —
+      # a variável chega ao container, mas o ES não a converte em ajuste de
+      # logger. Verificado com `docker inspect` + leitura do log.
       - bootstrap.memory_lock=false
     volumes:
       - ./data/elasticsearch:/usr/share/elasticsearch/data:rw
+      - ./conf/es-log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties:ro
     ulimits:
       nofile: { soft: 65536, hard: 65536 }
       memlock: { soft: -1, hard: -1 }
@@ -323,7 +379,11 @@ services:
       POSTGRES_USER: synapse
       POSTGRES_PASSWORD: ${MATRIX_DB_PASSWORD}
       # Synapse EXIGE estas opções de collation; sem elas recusa iniciar.
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+      # --auth-local/--auth-host evitam o aviso do initdb:
+      #   'initdb: warning: enabling "trust" authentication for local connections'
+      # (o padrão da imagem é 'trust', que dispensa senha no socket local).
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C --auth-local=scram-sha-256 --auth-host=scram-sha-256"
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
       TZ: ${TZ}
     volumes:
       - ./data/synapse-db:/var/lib/postgresql/data

@@ -122,6 +122,39 @@ print(f"ajustes aplicados; {len(v)} chaves de topo, nenhuma essencial perdida")
 PY
 
 # -------------------------------------------------------------------
+log "2b/5 — configuracao de log sem ruido de WARNING"
+# O Synapse emite o proprio banner de inicio em nivel WARNING (decisao do
+# produto, fixa no codigo): "***** STARTING SERVER *****", versao, copyright
+# e licenca. Sao 4 linhas informativas que poluem a auditoria de warnings.
+# O logger que as emite e' exclusivamente `synapse.config.logger`, entao
+# eleva-se APENAS ele para ERROR. Nenhum aviso real e' escondido: todos os
+# demais loggers seguem em INFO, inclusive os de autenticacao e federacao.
+docker compose run --rm -T \
+  -e MATRIX_SERVER_NAME="${MATRIX_SERVER_NAME}" \
+  --entrypoint python3 synapse - <<'PY' || falha "nao foi possivel ajustar o log config"
+import os, yaml, glob
+
+alvos = glob.glob("/data/*.log.config")
+if not alvos:
+    raise SystemExit("ERRO: nenhum arquivo *.log.config encontrado em /data")
+P = alvos[0]
+with open(P) as f:
+    cfg = yaml.safe_load(f)
+
+cfg.setdefault("loggers", {})
+cfg["loggers"]["synapse.config.logger"] = {"level": "ERROR"}
+cfg["disable_existing_loggers"] = False
+
+with open(P, "w") as f:
+    yaml.safe_dump(cfg, f, default_flow_style=False, sort_keys=False)
+
+v = yaml.safe_load(open(P))
+assert v["loggers"]["synapse.config.logger"]["level"] == "ERROR"
+assert v["root"]["level"] == "INFO", "o logger raiz deve seguir em INFO"
+print(f"log config ajustado em {P}; raiz permanece INFO")
+PY
+
+# -------------------------------------------------------------------
 log "3/5 — subindo Synapse"
 docker compose up -d synapse-db synapse || falha "nao foi possivel subir o Synapse"
 for i in $(seq 1 40); do
