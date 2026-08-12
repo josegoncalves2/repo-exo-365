@@ -3,3 +3,8 @@
 [2026-08-12T13:38:41.816] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
 [2026-08-12T13:38:42.591] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
 [2026-08-12T13:38:42.592] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+[2026-08-12T13:43:15.082] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+[2026-08-12T13:43:15.086] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+[2026-08-12T13:43:15.087] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+[2026-08-12T13:43:15.133] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+[2026-08-12T13:43:15.143] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
