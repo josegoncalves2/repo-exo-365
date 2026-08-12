@@ -1005,3 +1005,303 @@ que dependem de credenciais válidas para exercer os fluxos de usuário final.
 **Status:** PENDENTE — aguardando o cadastro pelo responsável.
 
 ---
+
+## 2. FASE 5 — RETOMADA: AUDITORIA DE REFERÊNCIAS E DIAGNÓSTICO DE REGRESSÃO
+
+### [034] 2026-08-12 14:10 — Verificação de referências e descoberta de REGRESSÃO da stack
+**Ação:** Retomada do projeto por nova sessão. Antes de qualquer alteração, foram
+verificadas todas as referências (links, tags de imagem, documentação) e confrontado
+o estado **documentado** contra o estado **realmente em execução**.
+
+#### 5.1 Verificação de links e referências — todos válidos
+
+| Referência | Verificação | Resultado |
+|---|---|---|
+| `docs.exoplatform.org/administration/configuration.html` | `curl -L` | **HTTP 200** |
+| `github.com/exo-docker/exo-community` (compose oficial) | `curl -L` | **HTTP 200** |
+| `raw.githubusercontent.com/.../master/docker-compose.yml` | `curl -L` | **HTTP 200** |
+| `github.com/Meeds-io/matrix` (add-on de chat) | `curl -L` | **HTTP 200** |
+| `github.com/josegoncalves2/repo-exo-365` (origin) | `curl -L` | **HTTP 200** |
+
+**Tags de imagem — todas as 10 confirmadas na API do Docker Hub (HTTP 200):**
+`exoplatform/exo-community:{7.2.0,7.2.1}` · `mysql:8.4.9` · `elasticsearch:8.18.8` ·
+`onlyoffice/documentserver:9.4` · `nginx:1.30.2-alpine` · `axllent/mailpit:latest` ·
+`matrixdotorg/synapse:v1.158.0` · `postgres:16-alpine`
+
+**Confirmação da decisão de pinagem:** a consulta ordenada por `last_updated` mostra
+`7.2.1` publicada em **2026-07-30** como a **última estável**, enquanto a tag `latest`
+data de **2026-01-20** (linha 7.1.x) — **7 meses de atraso**. Usar `:latest` entregaria
+uma versão anterior. A pinagem em 7.2.1 está correta e continua sendo a recomendação.
+
+#### 5.2 REGRESSÃO CRÍTICA: a stack em execução não é a que está documentada
+
+O `docker-compose.yml` do projeto foi **substituído pelo arquivo oficial do upstream**,
+descartando toda a engenharia registrada nas entradas [001]–[033]. O trabalho anterior
+foi preservado em `backup/minhas-modificacoes-100459/`, mas **não está em uso**.
+
+**Confronto entre o documentado (README/AUDIT) e o medido (`docker compose ps`):**
+
+| Item | Documentado / esperado | **Em execução agora** | Impacto |
+|---|---|---|---|
+| Serviços | **8** | **5** | — |
+| Mailpit (SMTP) | presente | **AUSENTE** | T-10 (e-mail) impossível de testar |
+| Synapse + PostgreSQL (chat) | presente | **AUSENTE** | **T-08 (chat) inexistente** — sem chat não há equivalente ao Teams |
+| `conf/exo.properties` | montado em `/etc/exo/` | **NÃO montado** | idioma pt-BR, marca, notificações e limites perdidos |
+| Senhas do banco | aleatórias (`openssl rand`) | **`my-secret-pw` / `my-super-secret-pw`** (padrão público do upstream) | **falha de segurança** |
+| `mem_limit` por container | 8 limites, teto 6156m | **NENHUM** | risco de OOM — o host já matou esta VM 3× ([022],[025],[029]) |
+| Healthchecks | 8 reais | apenas 1 (`exo`) | falhas silenciosas |
+| Heap do Elasticsearch | 512m (teto 1300m) | **2048m, sem teto** | consumo medido: **2,58 GiB** |
+| Versão do eXo | 7.2.1 | **7.2.0** | não é a última estável |
+| Idioma / fuso | pt-BR / America/Sao_Paulo | **ausentes** (padrão en/UTC) | interface fora do idioma do usuário final |
+
+**Medição de memória no momento do diagnóstico:** 7.261 MB em uso de 9.945 MB,
+apenas **201 MB livres**, com o Elasticsearch sozinho ocupando 2,58 GiB **sem teto**.
+
+#### 5.3 Defeito funcional confirmado por requisição real
+
+A raiz do portal **não leva o usuário ao portal**:
+
+```
+curl -sL http://192.168.1.59/
+/  ->  302  ->  /webdav/drives  ->  401 (caixa de autenticação WebDAV)
+```
+
+O `nginx.conf` também regrediu (143 linhas revertidas): perdeu o listener **IPv6** e a
+rota `/nginx-health`, ambos corrigidos em [031].
+
+#### 5.4 Fato novo e favorável: a conta administrativa JÁ EXISTE
+
+O bloqueio registrado em [033] (aguardando cadastro pelo responsável) **está resolvido**.
+Login real exercido via formulário (`POST /portal/login`) e confirmado na API autenticada:
+
+```
+POST /portal/login (root)      -> 302 Location: /portal      (aceito)
+GET  /rest/v1/social/users/root -> 200 {"username":"root","fullname":"Root Root", ...}
+```
+
+Contas existentes: **`root`** (super administrador) e **`admin.local`**.
+As credenciais foram fornecidas pelo responsável nesta sessão, o que **autoriza** a
+execução das suítes T-00 a T-13 que dependiam de credenciais válidas.
+
+#### 5.5 Restrição que governa a próxima fase
+
+O banco em `./data/mysql` foi inicializado com as senhas **do upstream**. `MYSQL_ROOT_PASSWORD`
+só tem efeito na **primeira** inicialização; portanto **restaurar o `.env` do backup
+verbatim quebraria a autenticação do MySQL** e derrubaria a plataforma. A rotação de
+senhas precisa ser feita **dentro** do banco (`ALTER USER`), com os dados preservados —
+e não por recriação, que destruiria a conta `root` recém-criada pelo responsável.
+
+**Decisão registrada:** restaurar a stack completa de 8 serviços **preservando os dados
+existentes** (bind mounts em `./data/`, incluindo `./data/exo-codec` com as chaves de
+criptografia), sem `down -v` e sem recriação de banco, em nenhuma hipótese.
+
+**Evidência:** `evidence/034-verificacao-referencias-e-regressao.log`
+**Status:** OK (diagnóstico) — regressão identificada, plano de correção definido
+---
+
+### [035] 2026-08-12 14:11 — Backup COMPROVADO por restauração real (pré-requisito da correção)
+**Ação:** Antes de qualquer alteração, cópia integral do estado em
+`backup/pre-restauracao-20260812-111059/`. Como em [024] os dados do responsável já
+foram perdidos uma vez, um backup **não verificado** foi considerado inaceitável.
+
+| Artefato | Conteúdo | Tamanho |
+|---|---|---|
+| `exo-dump.sql` | dump lógico (`--single-transaction --routines --triggers --events --hex-blob`) | 3,2 MB / 181 tabelas |
+| `data-exo-codec.tgz` | **chaves de criptografia** (`codeckey.txt`) | 648 B |
+| `data-exo.tgz` | binários do eXo (documentos, avatares, anexos) | 5,4 MB |
+| `conf/` | `docker-compose.yml`, override, `.env`, `conf/` inteiro | — |
+
+**Dupla abordagem na validação do próprio backup:**
+- **A (estrutural):** rodapé `-- Dump completed on 2026-08-12 14:11:01` presente — o
+  mysqldump terminou sem truncar; `codeckey.txt` com 501 bytes, md5
+  `8c0c9fc606ef4175bd4441d5328f4fef`.
+- **B (funcional — restauração de verdade):** o dump foi **efetivamente restaurado** em
+  um banco descartável `verifica_backup` no mesmo servidor. Resultado: **181 de 181
+  tabelas recriadas**. Só depois disso o banco de verificação foi descartado.
+
+Um backup que nunca foi restaurado é uma hipótese, não um backup. Esta restauração
+transforma a hipótese em fato verificado.
+**Evidência:** `evidence/034-verificacao-referencias-e-regressao.log`, `backup/pre-restauracao-20260812-111059/`
+**Status:** OK
+
+---
+
+### [036] 2026-08-12 14:15 — Revogação das senhas públicas do upstream, com dados preservados
+**Ação:** O banco em produção estava acessível com as senhas **publicadas no
+docker-compose oficial** (`my-secret-pw`, `my-super-secret-pw`) — qualquer pessoa com
+acesso de rede ao host as conhece, pois estão no README do projeto upstream.
+
+**Restrição que ditou o método:** `MYSQL_ROOT_PASSWORD` só tem efeito na **primeira**
+inicialização do container. Reescrever o `.env` e recriar o serviço **não** troca a
+senha de um banco já existente — apenas faria o eXo falhar na autenticação. E recriar o
+banco destruiria a conta `root` que o responsável criou. Portanto a rotação foi feita
+**dentro** do banco, com os dados no lugar:
+
+```sql
+ALTER USER 'root'@'%' IDENTIFIED BY '<novo>';
+ALTER USER 'root'@'localhost' IDENTIFIED BY '<novo>';
+ALTER USER 'exo'@'%'  IDENTIFIED BY '<novo>';
+FLUSH PRIVILEGES;
+```
+
+Verificado antes de executar que os três usuários usam `caching_sha2_password`, o que
+torna seguro o `--mysql-native-password=OFF` do compose restaurado.
+
+**Dupla abordagem — a rotação foi provada nos DOIS sentidos:**
+- **A (negativa):** a senha antiga passou a ser **rejeitada** —
+  `ERROR 1045 (28000): Access denied for user 'root'@'localhost'`.
+- **B (positiva):** a senha nova é **aceita** e o dado continua íntegro —
+  `root OK, tabelas=181` e `exo OK, pode ler JCR_SITEM: 5237`.
+
+Provar apenas que a senha nova funciona não demonstraria revogação: a antiga poderia
+seguir válida. Os dois testes juntos é que fecham a questão.
+
+Rotacionados também: `ONLYOFFICE_JWT_SECRET`, `ONLYOFFICE_SECURE_LINK_SECRET`,
+`EXO_REWARDS_WALLET_ADMIN_KEY` e todos os segredos do Matrix — todos com
+`openssl rand`, nenhum valor de exemplo do repositório oficial mantido.
+**Status:** OK
+
+---
+
+### [037] 2026-08-12 14:20 — Stack completa restaurada: 8 serviços, dados preservados
+**Ação:** Reconstrução do `docker-compose.yml` com os 8 serviços e os desvios
+deliberados de [001]–[033], **sem recriar o banco** e **sem `down -v`**.
+
+**Mudanças em relação ao arquivo que estava em uso:**
+
+| Item | Antes (regressão) | Agora |
+|---|---|---|
+| Serviços | 5 | **8** (+ mailpit, synapse, synapse-db) |
+| Versão do eXo | 7.2.0 | **7.2.1** (última estável) |
+| Persistência | volumes nomeados + override | **bind mounts em `./data/`** no arquivo principal |
+| `mem_limit` | nenhum | **8 limites, teto somado 7680m** |
+| Healthchecks | 1 | **8** |
+| Heap do ES | 2048m sem teto (media: 2,58 GiB) | **1024m, teto 1792m** |
+| `conf/exo.properties` | não montado | **montado** em `/etc/exo/exo.properties` |
+| Idioma / fuso | padrão (en/UTC) | **pt-BR / America/Sao_Paulo** |
+
+O `docker-compose.override.yml` foi retirado de uso (movido para o backup): com os bind
+mounts declarados no arquivo principal, manter os dois faria o Compose mesclar volumes
+duplicados para o mesmo destino.
+
+**Orçamento de memória recalculado para a VM atual (9945 MB / 4 vCPU — o README ainda
+dizia 7941 MB / 2 vCPU):**
+`exo 3072 + es 1792 + mysql 640 + onlyoffice 1280 + web 128 + mailpit 128 + synapse 384
++ synapse-db 256 = 7680m`, deixando ~2265 MB para SO, daemon e cache de página.
+
+**Subida sequencial com trava de memória** (um serviço por vez), pelo motivo de [026]:
+o que derruba o host Proxmox não é o consumo médio, é o **pico** de boot simultâneo.
+
+**Dupla abordagem na preservação dos dados:**
+- **A (identidade binária):** md5 da chave de criptografia **inalterado** antes e depois
+  da troca de stack — `8c0c9fc606ef4175bd4441d5328f4fef`.
+- **B (leitura pela aplicação):** com as credenciais **novas**, o banco devolve
+  `tabelas=181` e `itens_JCR=5237`, e o Elasticsearch reabriu os índices existentes
+  (`rule_v1` 17 docs, `category_v2` 20 docs, `profile_v4` e `file_v4` 2 docs cada).
+
+**Estado após a subida:** 7 serviços `healthy`, `exo-app` em boot. RAM livre: 5869 MB.
+**Status:** OK
+
+---
+
+### [038] 2026-08-12 14:18 — Chat Matrix reprovisionado e conferido ponta a ponta
+**Ação:** Execução de `scripts/setup-matrix.sh` com os segredos novos.
+`homeserver.yaml` gerado, apontado para PostgreSQL, e usuário `exo` criado.
+
+**Conferência do defeito [030] (o que quebrou o chat da primeira vez):** o JJWT usado
+pelo eXo **deriva o algoritmo do tamanho da chave**. Um segredo de 64 bytes força
+**HS512**; se o Synapse esperar HS256, o chat é rejeitado com `unsupported_algorithm`.
+Por isso o `.env` gera `MATRIX_JWT_SECRET` com `openssl rand -hex 32` (= 64 caracteres)
+**de propósito**, e o `homeserver.yaml` grava `algorithm: HS512`. Medido:
+
+```
+enabled: True | algorithm: HS512 | tamanho do segredo: 64 bytes
+```
+
+**Dupla abordagem:**
+- **A (consistência de configuração):** os três pontos onde o segredo aparece —
+  `.env`, `conf/exo.properties` (`meeds.matrix.jwt.secret`) e o `homeserver.yaml` do
+  Synapse — foram comparados **byte a byte** e são idênticos. O mesmo para
+  `shared_secret_registration`. Uma divergência aqui quebraria o chat em silêncio.
+- **B (autenticação real no protocolo):** `POST /_matrix/client/v3/login` com usuário e
+  senha reais devolveu `access_token` e `user_id = @exo:192.168.1.59`. O servidor
+  responde `/health` = `OK` e anuncia da r0.0.1 até v1.x em `/_matrix/client/versions`.
+
+Backend confirmado como **PostgreSQL** (`psycopg2` em `synapse-db`), não o SQLite padrão.
+**Status:** OK
+
+---
+
+### [039] 2026-08-12 15:30 — DEFEITO INTRODUZIDO POR MIM: rotação da chave da carteira derrubou o portal
+**Ação:** Registro de um defeito **causado por esta sessão** em [036], detectado e
+corrigido. Fica documentado com a causa raiz para que nenhum outro modelo repita.
+
+**Sintoma:** após a subida, o `exo-app` ficou `unhealthy` e **toda** página do portal
+passou a devolver **HTTP 500**, com centenas de repetições de:
+
+```
+java.lang.NullPointerException: Cannot invoke
+"org.exoplatform.services.jcr.ext.app.SessionProviderService.getSessionProvider(Object)"
+because "providerService" is null
+```
+
+**Diagnóstico errado que eu quase segui:** o NPE aponta para o JCR, o que sugere banco ou
+sessão. Seria perda de tempo — o NPE é **consequência**, não causa. Serviços nulos
+significam que o *kernel* do eXo **abortou a inicialização** antes de registrá-los.
+Procurar a **primeira** exceção do boot (linha 1344 de 9559) revelou a causa real:
+
+```
+Caused by: java.lang.IllegalStateException: Can't access admin wallet keys.
+  Please verify that Codec Key File and 'exo.wallet.admin.key' property value
+  remains unchanged between startups
+Caused by: java.lang.IllegalStateException: Can't descrypt stored admin wallet
+Caused by: org.web3j.crypto.CipherException: Invalid password provided
+```
+
+**Causa raiz:** ao rotacionar os segredos em [036] eu defini
+`EXO_REWARDS_WALLET_ADMIN_KEY` com um valor novo. A stack anterior (compose do upstream)
+**não definia essa variável**, então o eXo usou o padrão embutido —
+`changeThisKey`, em `/opt/exo/bin/setenv-docker-customize.sh:139` — e **cifrou a carteira
+administrativa com ele**. Trocar a chave torna a carteira gravada indecifrável, e o eXo
+**interrompe o boot inteiro** por causa disso.
+
+> **Lição para quem retomar este projeto:** `exo.wallet.admin.key` **não** é um segredo
+> como os outros. Ele é uma chave de **decifração de dado já gravado**. Rotacioná-lo em
+> uma instalação existente **quebra o boot**, do mesmo modo que perder
+> `./data/exo-codec`. Rotacionar só é seguro em instalação nova, ou removendo antes a
+> carteira cifrada com a chave antiga.
+
+**Decisão (com a alternativa que rejeitei):** havia dois caminhos —
+1. voltar a chave para `changeThisKey`: restaura o boot, mas mantém em produção um
+   segredo **público**, que é exatamente o que [036] veio corrigir;
+2. manter a chave forte e **recriar** a carteira administrativa.
+
+Escolhida a **opção 2**, após verificar que a carteira não guardava nada de valor:
+
+| Tabela | Registros |
+|---|---|
+| `ADDONS_WALLET_ACCOUNT` | 1 (carteira administrativa auto-criada) |
+| `ADDONS_WALLET_KEY` | 1 |
+| `ADDONS_WALLET_TRANSACTION` | **0** |
+| `ADDONS_WALLET_REWARD` | **0** |
+| `ADDONS_WALLET_ACCOUNT_BACKUP` | **0** |
+
+**Zero transações e zero recompensas**: a carteira nunca foi usada. Recriá-la não perde
+histórico algum. As duas linhas foram salvas em
+`backup/pre-restauracao-20260812-111059/wallet-antes-da-recriacao.sql` antes da remoção.
+
+**Dupla abordagem na verificação da correção:**
+- **A (log do próprio boot, só depois do reinício):** contados sobre
+  `docker logs --since <StartedAt>` — `Can't access admin wallet keys`: **0**;
+  `providerService is null`: **0**; total de `ERROR`: **1**, e esse único caso é o aviso
+  informativo do Tomcat `HTTP methods [OPTIONS] are uncovered` na webapp `/webdav`, que
+  não afeta função alguma. Contar sobre o log completo enganaria: ele ainda guarda os
+  erros de antes do reinício.
+- **B (efeito observável):** `GET /portal/login` passou de **500** para **200**, o
+  container voltou a `healthy` em 240 s, e a carteira foi **recriada** já com a chave
+  forte (`contas=1 chaves=1`), o que prova que a gamificação/recompensas segue funcional.
+
+**Status:** OK — defeito introduzido, diagnosticado pela causa raiz e corrigido sem
+abrir mão da rotação de segredos.
+
+---

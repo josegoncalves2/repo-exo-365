@@ -8,3 +8,17 @@
 [2026-08-12T13:43:15.087] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
 [2026-08-12T13:43:15.133] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
 [2026-08-12T13:43:15.143] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+[2026-08-12T14:19:55.872] [WARN] [localhost] [docId] [userId] nodeJS - start shutdown:true
+[2026-08-12T14:19:55.873] [WARN] [localhost] [docId] [userId] nodeJS - active connections: 0
+[2026-08-12T14:19:55.873] [WARN] [localhost] [docId] [userId] nodeJS - end shutdown
+[2026-08-12T14:24:58.937] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+[2026-08-12T14:24:58.943] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+[2026-08-12T14:24:58.944] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+[2026-08-12T14:25:00.917] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+[2026-08-12T14:25:00.918] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+[2026-08-12T14:29:54.018] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+[2026-08-12T14:29:54.022] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+[2026-08-12T14:29:54.023] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+[2026-08-12T14:29:54.704] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+[2026-08-12T14:29:54.704] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+[2026-08-12T14:30:01.891] [WARN] [localhost] [docId] [userId] nodeJS - convertRequest auth failed {"code":-120,"description":"","isDecoded":false,"params":{}}

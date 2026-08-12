@@ -1,0 +1,59 @@
+server_name: 192.168.1.59
+pid_file: /data/homeserver.pid
+listeners:
+- port: 8008
+  tls: false
+  type: http
+  x_forwarded: true
+  bind_addresses:
+  - 0.0.0.0
+  resources:
+  - names:
+    - client
+    - federation
+    compress: false
+database:
+  name: psycopg2
+  txn_limit: 10000
+  args:
+    user: synapse
+    password: 4149d2a7d04d3cb8604b66abd4769861ee7d3df926b3edad
+    dbname: synapse
+    host: synapse-db
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+log_config: /data/192.168.1.59.log.config
+media_store_path: /data/media_store
+registration_shared_secret: 5816fda93f3bcb784aa47aa69e6a3634b75ff388c6e3cafeac539ac7cf908521
+report_stats: false
+macaroon_secret_key: d37f9add5686abb8c218d5fe5db775a5a84e93e920bc4e75f701c41b0609ca44
+form_secret: a28670438bf3b9192bd87e5c0769d39951f3ab4176f1311c4075fa41429e803b
+signing_key_path: /data/192.168.1.59.signing.key
+trusted_key_servers:
+- server_name: matrix.org
+enable_registration: false
+enable_3pid_changes: true
+public_baseurl: http://192.168.1.59/
+serve_server_wellknown: true
+suppress_key_server_warning: true
+jwt_config:
+  enabled: true
+  secret: 81bf76d64d40450e46868a1b7368d7417fc47824c90c6362f800e430d794baaf
+  algorithm: HS512
+email:
+  smtp_host: mailpit
+  smtp_port: 1025
+  force_tls: false
+  require_transport_security: false
+  enable_tls: false
+  notif_from: eXo Chat <noreply@exo.local>
+  app_name: eXo Matrix Chat
+  enable_notifs: true
+  notif_for_new_users: true
+rc_message:
+  per_second: 10
+  burst_count: 50
+rc_registration:
+  per_second: 5
+  burst_count: 20

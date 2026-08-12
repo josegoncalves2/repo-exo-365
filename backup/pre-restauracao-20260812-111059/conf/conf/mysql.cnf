@@ -1,0 +1,39 @@
+# ===================================================================
+# MySQL 8.4 — ajuste para eXo Platform em host com 7941 MB de RAM
+# Objetivo: caber em mem_limit=600m sem degradar o eXo.
+# ===================================================================
+[mysqld]
+
+# --- Charset: eXo exige utf8mb4 (acentuação PT-BR, emoji em atividades) ---
+character-set-server            = utf8mb4
+collation-server                = utf8mb4_unicode_ci
+
+# --- Pacotes grandes: necessário para binários no JCR e anexos ---
+max_allowed_packet              = 256M
+
+# --- InnoDB dimensionado para o limite de 600 MB do container ---
+innodb_buffer_pool_size         = 192M
+innodb_log_file_size            = 128M
+innodb_flush_log_at_trx_commit  = 2
+innodb_flush_method             = O_DIRECT
+innodb_lock_wait_timeout        = 120
+
+# --- Conexões: eXo abre 3 pools (IDM 20 + JCR 20 + JPA 20) ---
+max_connections                 = 200
+wait_timeout                    = 28800
+interactive_timeout             = 28800
+
+# --- Economia de memória: performance_schema custa ~400 MB ---
+performance_schema              = OFF
+
+table_open_cache                = 400
+tmp_table_size                  = 32M
+max_heap_table_size             = 32M
+sort_buffer_size                = 2M
+join_buffer_size                = 2M
+
+# --- eXo usa nomes de tabela em maiúsculas/minúsculas de forma consistente ---
+lower_case_table_names          = 0
+
+# --- Logs de erro no stdout do container ---
+log_error_verbosity             = 2

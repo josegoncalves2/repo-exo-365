@@ -1,0 +1,54 @@
+# Evidência [034] — Verificação de referências e diagnóstico de regressão
+# Data: 2026-08-12 11:10:37 -03
+# ---------------------------------------------------------
+## Tags de imagem (Docker Hub API)
+exoplatform/exo-community:7.2.0               200
+exoplatform/exo-community:7.2.1               200
+exoplatform/exo-community:latest              200
+library/mysql:8.4.9                           200
+library/elasticsearch:8.18.8                  200
+onlyoffice/documentserver:9.4                 200
+library/nginx:1.30.2-alpine                   200
+axllent/mailpit:latest                        200
+matrixdotorg/synapse:v1.158.0                 200
+library/postgres:16-alpine                    200
+
+## URLs externas
+https://docs.exoplatform.org/administration/configuration.html         200
+https://github.com/exo-docker/exo-community                            200
+https://github.com/Meeds-io/matrix                                     200
+https://github.com/josegoncalves2/repo-exo-365                         200
+
+## docker compose ps (estado real)
+NAME                    IMAGE                             COMMAND                  SERVICE      CREATED          STATUS                    PORTS
+exo-community-es-1      elasticsearch:8.18.8              "/bin/tini -- /usr/l…"   es           33 minutes ago   Up 32 minutes             9200/tcp, 9300/tcp
+exo-community-exo-1     exoplatform/exo-community:7.2.0   "/usr/local/bin/tini…"   exo          29 minutes ago   Up 29 minutes (healthy)   
+exo-community-mysql-1   mysql:8.4.9                       "docker-entrypoint.s…"   mysql        33 minutes ago   Up 32 minutes             3306/tcp, 33060/tcp
+exo-community-web-1     nginx:1.30.2-alpine               "/docker-entrypoint.…"   web          29 minutes ago   Up 29 minutes             0.0.0.0:80->80/tcp, [::]:80->80/tcp
+onlyoffice              onlyoffice/documentserver:9.4     "/app/ds/run-documen…"   onlyoffice   33 minutes ago   Up 32 minutes             80/tcp, 443/tcp
+
+## docker stats
+NAME                    MEM USAGE / LIMIT     MEM %
+exo-community-web-1     7.25MiB / 9.712GiB    0.07%
+exo-community-exo-1     2.232GiB / 9.712GiB   22.98%
+onlyoffice              449.5MiB / 9.712GiB   4.52%
+exo-community-mysql-1   590.6MiB / 9.712GiB   5.94%
+exo-community-es-1      2.596GiB / 9.712GiB   26.73%
+
+## free -m
+               total        used        free      shared  buff/cache   available
+Mem:            9945        7463         151           1        2650        2481
+Swap:           8191          19        8172
+
+## Defeito da raiz /
+HTTP/1.1 302 
+Server: nginx
+Date: Wed, 12 Aug 2026 14:10:45 GMT
+Content-Length: 0
+Connection: keep-alive
+Location: /webdav/drives
+curl -sL / final:
+http://192.168.1.59/webdav/drives -> 401
+
+## Login real root
+POST /portal/login -> 302 Location=http://192.168.1.59/portal
