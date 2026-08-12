@@ -1,0 +1,20 @@
+# ===================================================================
+# NUNCA versionar segredos.
+# O .env e o conf/exo.properties contêm senhas de banco, segredo de
+# registro do Matrix e chaves JWT em texto claro. São gerados por
+# scripts/gerar-segredos.sh e scripts/setup-matrix.sh a cada instalação.
+# ===================================================================
+.env
+.env.bak-*
+.env.local
+conf/exo.properties
+
+# Ambiente virtual da suíte de testes (157 MB de binários; recriável
+# com scripts/preparar-testes.sh)
+tests/.venv/
+__pycache__/
+*.pyc
+
+# Dados de execução que não descrevem o projeto
+conf/synapse/
+*.pid

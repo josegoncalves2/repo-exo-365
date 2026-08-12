@@ -1,0 +1,123 @@
+{
+  "base": "http://192.168.1.59",
+  "login_ok": false,
+  "auth_method": null,
+  "me": null,
+  "endpoints": {
+    "/rest/v1/platform/info": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/platform/info"
+    },
+    "/rest/v1/social/users": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/social/users/me": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/social/spaces": {
+      "status": 401,
+      "ctype": "",
+      "sample": ""
+    },
+    "/rest/v1/social/activities": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/social/spaceMemberships": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/social/spaceMemberships"
+    },
+    "/rest/v1/social/identities": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/notes": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/notes"
+    },
+    "/rest/notes/note": {
+      "status": 405,
+      "ctype": "text/plain",
+      "sample": "GET method is not allowed for resource /notes/note"
+    },
+    "/rest/v1/tasks/projects": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/tasks/projects"
+    },
+    "/rest/tasks/projects": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/agenda/events": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/agenda/calendars": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/v1/documents": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/private/jcr": {
+      "status": 401,
+      "ctype": "text/html",
+      "sample": "<!doctype html><html lang=\"pt\"><head><title>HTTP Status 401 – Unauthorized</title><style type=\"text/css\">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76"
+    },
+    "/rest/jcr": {
+      "status": 405,
+      "ctype": "text/plain",
+      "sample": "GET method is not allowed for resource /jcr"
+    },
+    "/rest/v1/chat/whoami": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/chat/whoami"
+    },
+    "/chat/api/1.0/user/onlineUsers": {
+      "status": 404,
+      "ctype": "text/html",
+      "sample": "<!doctype html><html lang=\"pt\"><head><title>HTTP Status 404 – Não Encontrado</title><style type=\"text/css\">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D"
+    },
+    "/rest/v1/gamification/leaderboard": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/gamification/leaderboard"
+    },
+    "/rest/gamification/api/badges": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /gamification/api/badges"
+    },
+    "/rest/v1/onlyoffice/editor/status": {
+      "status": 404,
+      "ctype": "text/plain",
+      "sample": "There is no any resources matched to request path /v1/onlyoffice/editor/status"
+    },
+    "/rest/v1/platform/branding": {
+      "status": 403,
+      "ctype": "text/plain",
+      "sample": "You do not have access rights to this resource, please contact your administrator. "
+    },
+    "/rest/private/v1/settings": {
+      "status": 401,
+      "ctype": "text/html",
+      "sample": "<!doctype html><html lang=\"pt\"><head><title>HTTP Status 401 – Unauthorized</title><style type=\"text/css\">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76"
+    }
+  }
+}
