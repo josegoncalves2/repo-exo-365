@@ -1,0 +1,1 @@
+[2026-08-12T13:38:25.125] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
