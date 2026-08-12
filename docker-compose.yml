@@ -45,6 +45,18 @@ x-logging: &default-logging
 
 services:
 
+  # NENHUM serviço declara `restart:` de propósito.
+  # A política de reinício do Docker sobe TODOS os containers ao mesmo tempo
+  # quando o daemon inicia, e isso tem dois efeitos indesejados aqui:
+  #   1. pico de memória no boot — foi o que fez o hipervisor matar esta VM
+  #      três vezes (AUDIT [022], [025], [029]);
+  #   2. o nginx no ar antes do eXo, registrando `connect() failed (111)` por
+  #      10-20 min — `depends_on: service_healthy` só vale para
+  #      `docker compose up`, não para a política de reinício do daemon.
+  # A subida é feita pela unidade systemd `exo.service`, que executa
+  # scripts/subir-ordenado.sh: um serviço por vez, com trava de memória, e o
+  # proxy por último. Ver AUDIT [047].
+
   # ----------------------------------------------------------------
   # Proxy reverso — único ponto de entrada (porta 80)
   # Roteia / para o eXo e as rotas de documento para o ONLYOFFICE
@@ -52,7 +64,6 @@ services:
   web:
     image: ${NGINX_IMAGE}
     container_name: exo-web
-    restart: unless-stopped
     ports:
       - "${EXO_HTTP_PORT:-80}:80"
     volumes:
@@ -94,7 +105,6 @@ services:
   exo:
     image: ${EXO_IMAGE}
     container_name: exo-app
-    restart: unless-stopped
     environment:
       TZ: ${TZ}
 
@@ -212,7 +222,6 @@ services:
   mysql:
     image: ${MYSQL_IMAGE}
     container_name: exo-mysql
-    restart: unless-stopped
     command: --mysql-native-password=OFF
     environment:
       TZ: ${TZ}
@@ -244,7 +253,6 @@ services:
   es:
     image: ${ES_IMAGE}
     container_name: exo-es
-    restart: unless-stopped
     environment:
       - TZ=${TZ}
       - ES_JAVA_OPTS=-Xms${ES_HEAP} -Xmx${ES_HEAP}
@@ -314,7 +322,6 @@ services:
   onlyoffice:
     image: ${ONLYOFFICE_IMAGE}
     container_name: onlyoffice
-    restart: unless-stopped
     environment:
       TZ: ${TZ}
       JWT_ENABLED: "true"
@@ -343,7 +350,6 @@ services:
   mailpit:
     image: ${MAILPIT_IMAGE}
     container_name: exo-mailpit
-    restart: unless-stopped
     environment:
       TZ: ${TZ}
       MP_MAX_MESSAGES: 5000
@@ -373,7 +379,6 @@ services:
   synapse-db:
     image: ${SYNAPSE_DB_IMAGE}
     container_name: exo-synapse-db
-    restart: unless-stopped
     environment:
       POSTGRES_DB: synapse
       POSTGRES_USER: synapse
@@ -399,7 +404,6 @@ services:
   synapse:
     image: ${SYNAPSE_IMAGE}
     container_name: exo-synapse
-    restart: unless-stopped
     environment:
       SYNAPSE_SERVER_NAME: ${MATRIX_SERVER_NAME}
       SYNAPSE_REPORT_STATS: "no"

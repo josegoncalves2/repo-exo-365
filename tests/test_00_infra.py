@@ -26,7 +26,11 @@ from exolib import (BASE, EVIDENCE, MAILPIT, Mail, Recorder, Result,  # noqa: E4
 
 import requests  # noqa: E402
 
-SERVICES = ["exo-app", "exo-web", "exo-es", "exo-mysql", "onlyoffice", "exo-mailpit"]
+# Os 8 serviços da stack. `exo-synapse` e `exo-synapse-db` faltavam nesta
+# lista: sem eles o chat (T-08, equivalente ao Teams) não existe, e a suíte
+# declarava "todos os serviços saudáveis" sem sequer olhar para o chat.
+SERVICES = ["exo-app", "exo-web", "exo-es", "exo-mysql", "onlyoffice",
+            "exo-mailpit", "exo-synapse", "exo-synapse-db"]
 SHOTS = EVIDENCE / "capturas"
 SHOTS.mkdir(exist_ok=True)
 
@@ -40,7 +44,7 @@ def sh(cmd: list[str], timeout: int = 60) -> tuple[int, str]:
 
 def a_containers(rec: Recorder) -> None:
     t0 = time.time()
-    r = Result("T-00.1", "Todos os 6 servicos em execucao e saudaveis", "A-maquina")
+    r = Result("T-00.1", "Todos os 8 servicos em execucao e saudaveis", "A-maquina")
     rc, out = sh(["docker", "inspect", "--format",
                   "{{.Name}}|{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}sem-healthcheck{{end}}",
                   *SERVICES])
@@ -66,6 +70,9 @@ def a_versions(rec: Recorder) -> None:
         "exo-es": "elasticsearch:8.18.8",
         "onlyoffice": "onlyoffice/documentserver:9.4",
         "exo-web": "nginx:1.30.2-alpine",
+        "exo-synapse": "matrixdotorg/synapse:v1.158.0",
+        "exo-synapse-db": "postgres:16",
+        "exo-mailpit": "axllent/mailpit:latest",
     }
     got, mismatch = {}, []
     for c, want in expected.items():

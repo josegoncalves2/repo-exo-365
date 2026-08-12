@@ -21,3 +21,12 @@ conf/synapse/
 
 # Banco de dados
 /data
+
+# Chaves privadas do MySQL (PKI de 2 níveis gerada em cada instalação).
+# A chave da CA intermediária permite emitir certificados novos confiáveis
+# para esta cadeia — não pode ser versionada. Tudo é regenerável com
+# scripts/gerar-certificados-mysql.sh.
+conf/mysql-certs/
+
+# Backups locais (dumps de banco, tarballs de dados, cópias de config)
+backup/
