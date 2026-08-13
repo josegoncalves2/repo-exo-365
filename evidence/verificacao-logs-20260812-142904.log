@@ -1,0 +1,59 @@
+# Verificacao de erros e warnings — 2026-08-12 14:29:04 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        24
+            1 Aug 12 13:31:57 pmoexo sudo[242125]:    saexo : a password is required ; PWD=/opt/projetos/exo/conf/mysql-certs ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 12 13:31:55 pmoexo sudo[242054]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 12 13:31:50 pmoexo sudo[242020]:    saexo : a password is required ; PWD=/opt/projetos/exo/conf/mysql-certs ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 12 13:29:48 pmoexo sudo[240584]: pam_unix(sudo:auth): conversation failed
+            1 Aug 12 13:29:48 pmoexo sudo[240584]: pam_unix(sudo:auth): auth could not identify password for [saexo]
+            1 Aug 12 13:29:47 pmoexo sudo[240513]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 12 13:29:12 pmoexo sudo[240408]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 12 13:27:42 pmoexo sudo[239715]: pam_unix(sudo:auth): conversation failed
+dmesg err,warn         0
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                13
+            1 OpenJDK 64-Bit Server VM warning: Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.
+            1 2026-08-12 14:27:09,127 | WARN  | File not found: /js/metamaskSetupForm.js [o.g.p.controller.resource.script.Module<http-nio-0.0.0.0-8080-exec-1>] 
+            1 2026-08-12 14:27:04,165 | WARN  | File not found: /js/loginCommon.bundle.js [o.g.p.controller.resource.script.Module<pool-37-thread-1>] 
+            1 2026-08-12 14:26:52,911 | WARN  | GROUP/contentLinkGRP.js:6:613: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-12 14:26:52,911 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<ForkJoinPool.commonPool-worker-2>] 
+            1 2026-08-12 14:26:36,730 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<pool-37-thread-1>] 
+            1 2026-08-12 14:26:36,726 | WARN  | GROUP/SpacesAdministration.js:6:4095: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-12 14:25:44,860 | WARN  | Duplicated upgrade plugin 'ContentEditorPageUpgradePlugin'. [o.e.c.upgrade.UpgradeProductService<main>] 
+exo-web                0
+exo-mysql              0
+exo-es                 1
+            1 {"@timestamp":"2026-08-12T17:05:53.409Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            2
+            1 2026-08-12 14:19:27,786 - synapse.http.server - 879 - WARNING - GET-64 - Not sending response to request <XForwardedForRequest at 0x78205cbbfed0 method='GET' uri='/_matrix/client/v3/sync?filter=0&sinc
+            1 2026-08-12 14:17:59,801 - synapse.http.server - 879 - WARNING - GET-49 - Not sending response to request <XForwardedForRequest at 0x7820622a7110 method='GET' uri='/_matrix/client/v3/sync?filter=0&sinc
+exo-synapse-db         0
+onlyoffice             21
+            2 2026/08/12 16:44:03 [error] 578#578: *7 connect() failed (111: Connection refused) while connecting to upstream, client: ::1, server: , request: "GET /healthcheck HTTP/1.1", upstream: "http://127.0.0.
+            2 2026/08/12 16:43:58 [error] 578#578: *4 connect() failed (111: Connection refused) while connecting to upstream, client: ::1, server: , request: "GET /healthcheck HTTP/1.1", upstream: "http://127.0.0.
+            2 2026/08/12 16:43:53 [error] 578#578: *1 connect() failed (111: Connection refused) while connecting to upstream, client: ::1, server: , request: "GET /healthcheck HTTP/1.1", upstream: "http://127.0.0.
+            1 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            1 [2026-08-12T17:10:52.282] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-12T17:10:52.282] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-12T17:10:52.225] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-12T17:10:52.224] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+exo-mailpit            0
+
+===== 3. ESTADO DE SAUDE =====
+NAME             STATUS
+exo-app          Up 5 minutes (healthy)
+exo-es           Up 23 minutes (healthy)
+exo-mailpit      Up 24 minutes (healthy)
+exo-mysql        Up 23 minutes (healthy)
+exo-synapse      Up 22 minutes (healthy)
+exo-synapse-db   Up 22 minutes (healthy)
+exo-web          Up About a minute (healthy)
+onlyoffice       Up 22 minutes (healthy)
+
+===== RESULTADO =====
+REPROVADO — 61 ocorrencias somadas.

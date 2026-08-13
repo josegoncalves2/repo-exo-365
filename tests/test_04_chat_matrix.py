@@ -309,10 +309,30 @@ def b_chat_no_navegador(rec: Recorder) -> bool:
             pg.wait_for_load_state("networkidle", timeout=90_000)
             steps.append(f"login efetuado; URL atual: {pg.url[:90]}")
 
-            pg.goto(f"{BASE}/portal/dw/chat", wait_until="domcontentloaded",
+            # O chat NÃO é uma página. Verificado: `/portal/dw/chat` (e as
+            # variantes /portal/chat, /portal/intranet/chat) redirecionam para
+            # `/portal/dw/page-not-found`. O que existe é um BOTÃO na barra
+            # superior — o HTML do portal traz `ChatButton` e `ChatNotification`.
+            # A versão anterior deste teste navegava para uma URL inexistente e
+            # reprovava o chat por isso, sem que o chat tivesse defeito algum.
+            pg.goto(f"{BASE}/portal/myworkspace", wait_until="domcontentloaded",
                     timeout=90_000)
             time.sleep(8)
-            steps.append(f"pagina do chat: HTTP-final {pg.url[:90]}")
+            achou = pg.evaluate("""() => {
+                const q = document.querySelector(
+                  '#ChatButton,[id*=ChatButton],[class*=chatButton],'
+                  + '[data-testid*=chat],a[href*=chat],button[title*=hat]');
+                return q ? (q.id || q.className || q.tagName) : null;
+            }""")
+            steps.append(f"botao de chat na barra superior: {achou}")
+            if achou:
+                try:
+                    pg.click("#ChatButton,[id*=ChatButton],[class*=chatButton]",
+                             timeout=15_000)
+                    time.sleep(6)
+                    steps.append("painel de chat aberto por clique real")
+                except Exception as e:  # noqa: BLE001
+                    steps.append(f"clique no botao falhou: {str(e)[:90]}")
 
             corpo = pg.inner_text("body")[:400].replace("\n", " ")
             steps.append(f"texto visivel: {corpo[:200]!r}")
@@ -321,7 +341,7 @@ def b_chat_no_navegador(rec: Recorder) -> bool:
             steps.append(f"captura: {shot.name}")
 
             # Sucesso = a aplicação de chat montou (não é 404/erro do portal)
-            ruim = any(t in corpo.lower() for t in
+            ruim = (achou is None) or any(t in corpo.lower() for t in
                        ("página não encontrada", "page not found",
                         "erro interno", "internal server error", "http status 5"))
             ok = (not ruim) and not falhas

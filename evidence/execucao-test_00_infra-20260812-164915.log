@@ -1,0 +1,17 @@
+======================================================================
+T-00 — INFRAESTRUTURA (dupla abordagem)
+======================================================================
+
+--- Abordagem A: maquina ---
+[PASSOU] T-00.1 (A-maquina) Todos os 8 servicos em execucao e saudaveis — 8/8 servicos; todos running+healthy
+[FALHOU] T-00.2 (A-maquina) Versoes das imagens sao as fixadas (sem :latest oculto) — DIVERGENCIA: ['exo-app: esperado exoplatform/exo-community:7.2.1, obtido exo-pmo:7.2.1']
+[PASSOU] T-00.3 (A-maquina) MySQL: schema do eXo criado e gravavel (SQL real) — 181 tabelas; escrita/leitura confirmada
+[PASSOU] T-00.4 (A-maquina) Elasticsearch: indexa e recupera documento (ciclo real) — cluster saudavel e ciclo indexar/buscar confirmado
+[PASSOU] T-00.5 (A-maquina) ONLYOFFICE: servico pronto, JWT ativo e API servida — documentserver pronto, JWT ligado e api.js entregue pelo proxy
+[PASSOU] T-00.6 (A-maquina) SMTP: mensagem enviada e recebida de fato — e-mail entregue e conteudo conferido no Mailpit
+
+--- Abordagem B: usuario final em navegador real ---
+[PASSOU] T-00.7 (B-usuario) Navegador real carrega o portal e renderiza conteudo — portal renderizado, titulo='Login - PMETO - Workspace'
+[PASSOU] T-00.8 (B-usuario) Tela de login apresenta campos utilizaveis — formulario de login utilizavel
+
+== T-00-infraestrutura: 7 passaram, 1 falharam -> evidence/resultado-T-00-infraestrutura-20260812-164915.json

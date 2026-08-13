@@ -1,0 +1,940 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr"><head id="head">
+    <title>People - PMETO - Workspace</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<link rel="preload" href="/platform-ui/skin/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2" as="font" type="font/woff2" crossorigin="">
+<link rel="preload" href="/platform-ui/skin/fonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin="">
+<link rel="preload" href="/platform-ui/skin/fonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin="">
+<link rel="preload" href="/platform-ui/skin/fonts/materialdesignicons-webfont.woff2?v=5.9.55" as="font" type="font/woff2" crossorigin="">
+
+<link rel="preload" as="style" type="text/css" href="/portal/rest/v1/platform/branding/css?v=1786556956075">
+<link rel="preload" href="/eXoSkin/skin/css/Core.css?orientation=LT&amp;minify=true&amp;hash=-1831494097" as="style" type="text/css">
+<link rel="preload" href="/platform-ui/skin/css/core.css?orientation=LT&amp;minify=true&amp;hash=-1264352608" as="style" type="text/css">
+<link rel="preload" href="/documents-portlet/skin/css/global-documents.css?orientation=LT&amp;minify=true&amp;hash=1781216627" as="style" type="text/css">
+<link rel="preload" href="/eXoSkin/skin/css/social/skin/social.css?orientation=LT&amp;minify=true&amp;hash=1725100411" as="style" type="text/css">
+<link rel="preload" href="/eXoWCMResources/skin/css/ecms/skin/ecms-resources-wcmskin.css?orientation=LT&amp;minify=true&amp;hash=-473521527" as="style" type="text/css">
+<link rel="preload" href="/digital-workplace/skin/css/siteLayout.css?orientation=LT&amp;minify=true&amp;hash=-1367710169" as="style" type="text/css">
+<link rel="preload" href="/platform-ui/skin/css/vuetify-all.css?orientation=LT&amp;minify=true&amp;hash=-777772780" as="style" type="text/css">
+<link rel="preload" href="/editors/css/editors.css?orientation=LT&amp;minify=true&amp;hash=-1473889189" as="style" type="text/css">
+<link rel="preload" href="/onlyoffice/skin/onlyoffice-extras.css?orientation=LT&amp;minify=true&amp;hash=1979652681" as="style" type="text/css">
+<link rel="preload" href="/social/skin/css/portlet/PeopleList/Style.css?orientation=LT&amp;minify=true&amp;hash=-1608093778" as="style" type="text/css"><link rel="preload" href="/documents-portlet/skin/css/attachmentsApp.css?orientation=LT&amp;minify=true&amp;hash=689876875" as="style" type="text/css"><link rel="preload" href="/app-center/skin/css/app-center.css?orientation=LT&amp;minify=true&amp;hash=-1075983682" as="style" type="text/css"><link rel="preload" href="/social/skin/css/portlet/Sidebar/Style.css?orientation=LT&amp;minify=true&amp;hash=-1419758751" as="style" type="text/css"><link rel="preload" href="/social/skin/css/portlet/Search/Style.css?orientation=LT&amp;minify=true&amp;hash=-1120184516" as="style" type="text/css"><link rel="preload" href="/social/skin/css/portlet/TopBarMenu/Style.css?orientation=LT&amp;minify=true&amp;hash=1675843516" as="style" type="text/css"><link rel="preload" href="/kudos/skin/css/main.css?orientation=LT&amp;minify=true&amp;hash=1149979656" as="style" type="text/css"><link rel="preload" href="/gamification-portlets/skin/css/usersLeaderboard.css?orientation=LT&amp;minify=true&amp;hash=1291253194" as="style" type="text/css"><link rel="preload" href="/social/skin/css/portlet/TopBarNotification/Style.css?orientation=LT&amp;minify=true&amp;hash=341513843" as="style" type="text/css"><link rel="preload" href="/matrix/css/matrix.css?orientation=LT&amp;minify=true&amp;hash=2000198204" as="style" type="text/css"><link rel="preload" href="/platform-ui/skin/css/component/ImageCropper/cropper.min.css?orientation=LT&amp;minify=true&amp;hash=-580015221" as="style" type="text/css"><link rel="preload" href="/social/skin/css/portlet/SuggestionsPeopleAndSpace/Style.css?orientation=LT&amp;minify=true&amp;hash=42011158" as="style" type="text/css"><link rel="preload" href="/social/skin/css/portlet/PeopleOverview/Style.css?orientation=LT&amp;minify=true&amp;hash=388968066" as="style" type="text/css"><link rel="preload" href="/eXoSkin/skin/css/platform/skin/enterprise.css?orientation=LT&amp;minify=true&amp;hash=-15987490" as="style" type="text/css">
+<link rel="preload" href="/digital-workplace/skin/css/digital-workplace.css?orientation=LT&amp;minify=true&amp;hash=-1816796471" as="style" type="text/css">
+<link rel="preload" href="/social/js/SuggestionsPeopleAndSpace.js?hash=1577633245&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/vueGRP.js?hash=-582356454&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/cometd/js/cometdGRP.js?hash=-1620374443&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/baseGRP.js?hash=-1943628855&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/purifyGRP.js?hash=-1404732605&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/imageCropper.js?hash=-66439438&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/cropper.js?hash=110904492&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/attachImage.js?hash=836900441&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/popoverGRP.js?hash=-1395100239&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/TopBarLogo.js?hash=1638001308&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/PeopleList.js?hash=-677963275&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/peopleListComponents.js?hash=92828969&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/applicationToolbarComponent.js?hash=1987755514&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/app-center/js/UserPinnedApplications.js?hash=383372077&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/app-center/js/appCenterCommon.js?hash=1021681943&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/layout/js/QuickActionsGrp.js?hash=-1066029195&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/TopBarMenu.js?hash=1400953483&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/TopBarNotificationGRP.js?hash=119312124&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/eXoResources/js/common.js?hash=1142040313&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/eXoResources/js/webuiGRP.js?hash=1423606607&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/eXoSkin/js/bts.js?hash=-277259388&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/webconferencing/js/merged.js?hash=1633293857&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/PeopleOverview.js?hash=-838444276&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/documents-portlet/js/DocumentsListenerGRP.js?hash=1018267316&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/translationField.js?hash=710472524&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/layout/js/commonLayoutComponents.js?hash=-93235126&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/layout/js/page-layout-group.js?hash=-244850389&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/layout/js/SiteNavigation.js?hash=-672970541&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/fontIcons.js?hash=-1532402344&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/search-extensions.js?hash=2052943596&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/notes/js/TermsAndConditionsUpdater.js?hash=-1433739230&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/matrix/js/Matrix.js?hash=582374455&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/sortablejs.js?hash=157077561&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/spaceMembersDrawer.js?hash=753832878&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/spaceInvitation.js?hash=-923077411&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/emojisGRP.js?hash=-916347823&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/suggesterGRP.js?hash=1659642726&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/spaceForm.js?hash=2020344006&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/vueDraggable.js?hash=-213126523&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/UsersLeaderboard.js?hash=517643023&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/gamification-user-connectors.js?hash=1919293527&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/ruleComponents.js?hash=1363472664&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/gamificationCommon.js?hash=1299797810&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/usersLeaderboardCommon.js?hash=-856211450&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/analytics/js/StatisticsCollectionGroup.js?hash=-1742755893&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/bootstrap.js?hash=-1070680691&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/Sidebar.js?hash=-1270958361&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/userStatusPopup.js?hash=560355235&amp;scope=SHARED&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/social/js/categoryGRP.js?hash=-1571869611&amp;scope=GROUP&amp;minify=true" as="script" type="text/javascript">
+<link rel="preload" href="/onlyoffice/js/NewDocumentExtension.js?hash=1090521076&amp;scope=PORTLET&amp;minify=true" as="script" type="text/javascript">
+
+    <script type="text/javascript">
+      const meedsChat = {};
+      matrixServerName = '192.168.1.59';
+      matrixUserId = '@root:192.168.1.59';
+      
+      meedsChat.privateRoomsEnabled = true;
+      meedsChat.spaceRoomsEnabled = true;
+      
+    </script>
+
+<meta name="theme-color" content="#2424FF">
+<link rel="manifest" href="/pwa/rest/manifest" crossorigin="use-credentials">
+
+  <link rel="preload" href="/portal/rest/gamification/leaderboard?identityId=1&amp;period=WEEK&amp;limit=6" as="fetch" crossorigin="use-credentials">
+  
+  <link rel="preload" href="/portal/rest/gamification/programs?type=ALL" as="fetch" crossorigin="use-credentials">
+  
+  <link rel="preload" href="/portal/rest/v1/social/identities/1?expand=" as="fetch" crossorigin="use-credentials">
+  
+    <link rel="prefetch" href="/portal/rest/v1/social/users/connections/invitations?offset=0&amp;limit=0&amp;expand=&amp;returnSize=true" as="fetch" crossorigin="use-credentials">
+  
+    <link rel="prefetch" href="/portal/rest/v1/social/users/connections/pending?offset=0&amp;limit=0&amp;expand=&amp;returnSize=true" as="fetch" crossorigin="use-credentials">
+  
+
+    <link rel="shortcut icon" href="/portal/rest/v1/platform/branding/favicon?v=-162570946">
+    
+    <link id="brandingSkin" rel="stylesheet" type="text/css" href="/portal/rest/v1/platform/branding/css?v=1786556956075">
+    <link id="Core" rel="stylesheet" type="text/css" href="/eXoSkin/skin/css/Core.css?orientation=LT&amp;minify=true&amp;hash=-1831494097" skin-type="portal-skin">
+    <link id="core" rel="stylesheet" type="text/css" href="/platform-ui/skin/css/core.css?orientation=LT&amp;minify=true&amp;hash=-1264352608" skin-type="portal-skin">
+    <link id="Documents" rel="stylesheet" type="text/css" href="/documents-portlet/skin/css/global-documents.css?orientation=LT&amp;minify=true&amp;hash=1781216627" skin-type="portal-skin">
+    <link id="Social" rel="stylesheet" type="text/css" href="/eXoSkin/skin/css/social/skin/social.css?orientation=LT&amp;minify=true&amp;hash=1725100411" skin-type="portal-skin">
+    <link id="WCMSkin" rel="stylesheet" type="text/css" href="/eXoWCMResources/skin/css/ecms/skin/ecms-resources-wcmskin.css?orientation=LT&amp;minify=true&amp;hash=-473521527" skin-type="portal-skin">
+    <link id="siteLayout" rel="stylesheet" type="text/css" href="/digital-workplace/skin/css/siteLayout.css?orientation=LT&amp;minify=true&amp;hash=-1367710169" skin-type="portal-skin">
+    <link id="vuetify" rel="stylesheet" type="text/css" href="/platform-ui/skin/css/vuetify-all.css?orientation=LT&amp;minify=true&amp;hash=-777772780" skin-type="portal-skin">
+    <link id="editors" rel="stylesheet" type="text/css" href="/editors/css/editors.css?orientation=LT&amp;minify=true&amp;hash=-1473889189" skin-type="portal-skin">
+    <link id="onlyoffice-extras" rel="stylesheet" type="text/css" href="/onlyoffice/skin/onlyoffice-extras.css?orientation=LT&amp;minify=true&amp;hash=1979652681" skin-type="portal-skin">
+    <link id="PeopleList" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/PeopleList/Style.css?orientation=LT&amp;minify=true&amp;hash=-1608093778" skin-type="portal-skin">
+    <link id="documents_AttachmentApp" rel="stylesheet" type="text/css" href="/documents-portlet/skin/css/attachmentsApp.css?orientation=LT&amp;minify=true&amp;hash=689876875" skin-type="portlet-skin">
+    <link id="appCenter" rel="stylesheet" type="text/css" href="/app-center/skin/css/app-center.css?orientation=LT&amp;minify=true&amp;hash=-1075983682" skin-type="portal-skin">
+    <link id="social_Sidebar" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/Sidebar/Style.css?orientation=LT&amp;minify=true&amp;hash=-1419758751" skin-type="portlet-skin">
+    <link id="social_Search" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/Search/Style.css?orientation=LT&amp;minify=true&amp;hash=-1120184516" skin-type="portlet-skin">
+    <link id="social_TopBarMenu" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/TopBarMenu/Style.css?orientation=LT&amp;minify=true&amp;hash=1675843516" skin-type="portlet-skin">
+    <link id="kudos" rel="stylesheet" type="text/css" href="/kudos/skin/css/main.css?orientation=LT&amp;minify=true&amp;hash=1149979656" skin-type="portal-skin">
+    <link id="gamification-portlets_UsersLeaderboard" rel="stylesheet" type="text/css" href="/gamification-portlets/skin/css/usersLeaderboard.css?orientation=LT&amp;minify=true&amp;hash=1291253194" skin-type="portlet-skin">
+    <link id="social_TopBarNotification" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/TopBarNotification/Style.css?orientation=LT&amp;minify=true&amp;hash=341513843" skin-type="portlet-skin">
+    <link id="matrix" rel="stylesheet" type="text/css" href="/matrix/css/matrix.css?orientation=LT&amp;minify=true&amp;hash=2000198204" skin-type="portal-skin">
+    <link id="ImageCropper" rel="stylesheet" type="text/css" href="/platform-ui/skin/css/component/ImageCropper/cropper.min.css?orientation=LT&amp;minify=true&amp;hash=-580015221" skin-type="portal-skin">
+    <link id="social_SuggestionsPeopleAndSpace" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/SuggestionsPeopleAndSpace/Style.css?orientation=LT&amp;minify=true&amp;hash=42011158" skin-type="portlet-skin">
+    <link id="social_PeopleOverview" rel="stylesheet" type="text/css" href="/social/skin/css/portlet/PeopleOverview/Style.css?orientation=LT&amp;minify=true&amp;hash=388968066" skin-type="portlet-skin">
+    <link id="customModuleEnterprise" rel="stylesheet" type="text/css" href="/eXoSkin/skin/css/platform/skin/enterprise.css?orientation=LT&amp;minify=true&amp;hash=-15987490" skin-type="custom-skin">
+    <link id="customModuleDigitalWorkplace" rel="stylesheet" type="text/css" href="/digital-workplace/skin/css/digital-workplace.css?orientation=LT&amp;minify=true&amp;hash=-1816796471" skin-type="custom-skin">
+    
+    <script type="text/javascript" id="jsConfig">
+      var require = {"paths":{"SHARED/wikiPageContent":"/notes/js/wikiPageContent.js?hash=-1848944662&scope=SHARED&minify=true","PORTLET/social/TopBarNotification":"/social/js/TopBarNotificationGRP.js?hash=119312124&scope=GROUP&minify=true","SHARED/termsAndConditionsNotesEditorExtension":"/notes/js/NotesEditorGRP.js?hash=-1321278587&scope=GROUP&minify=true","SHARED/notificationExtensions":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/spaceInvitation":"/social/js/spaceInvitation.js?hash=-923077411&scope=SHARED&minify=true","SHARED/wcm-utils":"/eXoWCMResources/js/wcm-utils.js?hash=-1593728282&scope=SHARED&minify=true","SHARED/pwa":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/vuetify":"/social/js/vueGRP.js?hash=-582356454&scope=GROUP&minify=true","PORTLET/analytics/SpacesListWidget":"/analytics/js/SpacesListWidget.js?hash=-1855771795&scope=PORTLET&minify=true","SHARED/flowplayer":"/eXoWCMResources/js/flowplayer.js?hash=121067061&scope=SHARED&minify=true","SHARED/mobileSwipeContainer":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/AgendaEmbedMapExtensions":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/PeopleSearchResultCard":"/social/js/PeopleSearchResultCard.js?hash=-1797904381&scope=SHARED&minify=true","SHARED/AgendaActivityStreamExtensions":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/peopleListComponents":"/social/js/peopleListComponents.js?hash=92828969&scope=SHARED&minify=true","SHARED/emojiPicker":"/social/js/emojisGRP.js?hash=-916347823&scope=GROUP&minify=true","SHARED/AgendaCommon":"/agenda/js/AgendaGrp.js?hash=1949922714&scope=GROUP&minify=true","PORTLET/documents-portlet/AttachmentApp":"/documents-portlet/js/AttachmentIntegrationGRP.js?hash=-1192479629&scope=GROUP&minify=true","PORTLET/social/IDMGroupsManagement":"/social/js/IDMGroupsManagement.js?hash=664348795&scope=PORTLET&minify=true","PORTLET/task-management/TasksManagement":"/task-management/js/TasksManagement.js?hash=-1193743259&scope=PORTLET&minify=true","PORTLET/app-center/AppCenterUserSettings":"/app-center/js/AppCenterUserSettings.js?hash=770755959&scope=PORTLET&minify=true","PORTLET/social/IDMUsersManagement":"/social/js/IDMUsersManagement.js?hash=-224168105&scope=PORTLET&minify=true","SHARED/merged":"/webconferencing/js/merged.js?hash=1633293857&scope=SHARED&minify=true","SHARED/filedrop":"/perk-store/js/filedrop.js?hash=1346954372&scope=SHARED&minify=true","PORTLET/social/PlatformName":"/social/js/PlatformName.js?hash=1235944334&scope=PORTLET&minify=true","SHARED/webConferencingPortlet":"/external-visio/js/webConferencingGRP.js?hash=-600814428&scope=GROUP&minify=true","SHARED/openDocumentInOffice":"/eXoWCMResources/js/openDocumentInOffice.js?hash=-1671006994&scope=SHARED&minify=true","SHARED/AppCenterTopbarExtension":"/social/js/generalSettingsGrp.js?hash=-2052042484&scope=GROUP&minify=true","SHARED/topbarApplication":"/app-center/js/topbarApplication.js?hash=1712955917&scope=SHARED&minify=true","SHARED/engagementCenterConnectorEventsTwitterExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","SHARED/engagementCenterConnectorEventsWalletExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","SHARED/autoLinker":"/social/js/purifyGRP.js?hash=-1404732605&scope=GROUP&minify=true","PORTLET/layout/SectionTemplates":"/layout/js/SectionTemplates.js?hash=1874114539&scope=PORTLET&minify=true","SHARED/engagementCenterActionsAgendaExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/jquery":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","PORTLET/social/TopBarLogin":"/social/js/TopBarLogin.js?hash=-879150606&scope=PORTLET&minify=true","SHARED/versionHistoryDrawer":"/social/js/versionHistoryDrawer.js?hash=-1037376744&scope=SHARED&minify=true","PORTLET/agenda/agendaAdminSettings":"/agenda/js/agendaAdminSettings.js?hash=1551208257&scope=PORTLET&minify=true","PORTLET/layout/LayoutEditor":"/layout/js/layout-editor-group.js?hash=427776465&scope=GROUP&minify=true","PORTLET/gamification-portlets/ConnectorUserSettings":"/gamification-portlets/js/ConnectorUserSettings.js?hash=1137323330&scope=PORTLET&minify=true","SHARED/OAuthUserSecuritySetting":"/social/js/UserSettingSecurityGRP.js?hash=467755444&scope=GROUP&minify=true","SHARED/DocumentsFavoriteDrawerExtensions":"/social/js/FavoriteDrawerGRP.js?hash=-1266582361&scope=GROUP&minify=true","PORTLET/documents-portlet/RestrictedDrive":"/documents-portlet/js/RestrictedDrive.js?hash=1244411209&scope=PORTLET&minify=true","SHARED/ecm-bootstrap":"/eXoWCMResources/js/ecm-bootstrap.js?hash=-210065637&scope=SHARED&minify=true","PORTLET/social/VerticalMenu":"/social/js/VerticalMenu.js?hash=129006375&scope=PORTLET&minify=true","SHARED/upload":"/eXoResources/js/webuiExtGRP.js?hash=-1006674029&scope=GROUP&minify=true","SHARED/agendaSearchCard":"/agenda/js/agendaSearchCard.js?hash=-1843365807&scope=SHARED&minify=true","PORTLET/deeds-tenant/WoMSetupAdmin":"/deeds-tenant/js/WoMSetupAdmin.js?hash=1935861671&scope=PORTLET&minify=true","PORTLET/wallet/RewardAdmin":"/wallet/js/wallet-rewarding.js?hash=620511053&scope=GROUP&minify=true","PORTLET/auth-server/OAuthConsent":"/auth-server/js/OAuthConsent.js?hash=2045369870&scope=PORTLET&minify=true","SHARED/ethQRCode":"/wallet/js/ethQRCode.js?hash=-1994146905&scope=SHARED&minify=true","PORTLET/social/SpaceWidgetMembers":"/social/js/SpaceWidgetMembers.js?hash=-2024011030&scope=PORTLET&minify=true","SHARED/engagementCenterConnectorsCrowdinExtensions":"/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&scope=GROUP&minify=true","PORTLET/social/TopBarMenu":"/social/js/TopBarMenu.js?hash=1400953483&scope=PORTLET&minify=true","PORTLET/matrix/Matrix":"/matrix/js/Matrix.js?hash=582374455&scope=PORTLET&minify=true","PORTLET/social/PlatformAdminsWidget":"/social/js/PlatformAdminsWidget.js?hash=364999852&scope=PORTLET&minify=true","PORTLET/gamification-portlets/EngagementCenterActions":"/gamification-portlets/js/EngagementCenterActions.js?hash=1382533139&scope=PORTLET&minify=true","SHARED/topbarLoading":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/WalletQuickActionExtensions":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","PORTLET/layout/PortletEditor":"/layout/js/portlet-editor-group.js?hash=1766576032&scope=GROUP&minify=true","SHARED/perkStoreNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/gamificationUserConnectorsExtensionsCrowdin":"/gamification-portlets/js/gamification-user-connectors.js?hash=1919293527&scope=GROUP&minify=true","SHARED/appCenterCommon":"/app-center/js/appCenterCommon.js?hash=1021681943&scope=SHARED&minify=true","SHARED/iphoneStyleCheckbox":"/eXoResources/js/iphoneStyleCheckbox.js?hash=339875759&scope=SHARED&minify=true","SHARED/onlyofficeJqueryPnotify":"/onlyoffice/js/onlyofficeGRP.js?hash=-1146627674&scope=GROUP&minify=true","SHARED/uiPopup":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","PORTLET/gamification-portlets/PopularSpaces":"/gamification-portlets/js/PopularSpaces.js?hash=2011913076&scope=PORTLET&minify=true","PORTLET/social/ExternalSpacesList":"/social/js/ExternalSpacesList.js?hash=-121478446&scope=PORTLET&minify=true","PORTLET/agenda/AgendaSettings":"/agenda/js/AgendaSettings.js?hash=-1686523684&scope=PORTLET&minify=true","PORTLET/social/TopBarLogo":"/social/js/TopBarLogo.js?hash=1638001308&scope=PORTLET&minify=true","SHARED/bootstrap":"/social/js/bootstrap.js?hash=-1070680691&scope=SHARED&minify=true","SHARED/VideoConferenceSpaceSettingExtension":"/social/js/SpaceSettingExtensions.js?hash=-896748302&scope=GROUP&minify=true","PORTLET/wallet/WalletSetupAdmin":"/wallet/js/WalletSetupAdmin.js?hash=2078168307&scope=PORTLET&minify=true","SHARED/MatrixUserSettingsNotificationsExtension":"/social/js/UserSettingNotificationsGRP.js?hash=361655169&scope=GROUP&minify=true","SHARED/commons-cometd3":"/cometd/js/cometdGRP.js?hash=-1620374443&scope=GROUP&minify=true","SHARED/CalDateTimePicker":"/eXoResources/js/CalDateTimePicker.js?hash=-378564215&scope=SHARED&minify=true","PORTLET/layout/SiteTemplates":"/layout/js/SiteTemplates.js?hash=323871437&scope=PORTLET&minify=true","PORTLET/wallet/Wallet":"/wallet/js/Wallet.js?hash=-2034863798&scope=PORTLET&minify=true","SHARED/engagementCenterActionsEvmExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/externalVisioConnector":"/external-visio/js/webConferencingGRP.js?hash=-600814428&scope=GROUP&minify=true","SHARED/NotesActivityStreamExtension":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/bts_typeahead":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/NotesAnalyticsTableExtension":"/analytics/js/commonAnalyticsVueComponentsGroup.js?hash=1231255250&scope=GROUP&minify=true","SHARED/DocumentsInfoDrawerListener":"/documents-portlet/js/DocumentsListenerGRP.js?hash=1018267316&scope=GROUP&minify=true","SHARED/gamificationUserConnectorsExtensionsGitHub":"/gamification-portlets/js/gamification-user-connectors.js?hash=1919293527&scope=GROUP&minify=true","SHARED/NewsSearchCard":"/content/js/NewsSearchCard.js?hash=1625601713&scope=SHARED&minify=true","SHARED/eXoVueI18n":"/social/js/vueGRP.js?hash=-582356454&scope=GROUP&minify=true","PORTLET/social/ProfileWorkExperience":"/social/js/ProfileWorkExperience.js?hash=923977562&scope=PORTLET&minify=true","SHARED/complementaryFilter":"/social/js/complementaryFilter.js?hash=2008620781&scope=SHARED&minify=true","PORTLET/layout/PageLayout":"/layout/js/page-layout-group.js?hash=-244850389&scope=GROUP&minify=true","SHARED/gamificationAdminConnectors":"/gamification-portlets/js/gamification-admin-connectors.js?hash=408229486&scope=GROUP&minify=true","SHARED/AgendaSpaceSettingExtension":"/social/js/SpaceSettingExtensions.js?hash=-896748302&scope=GROUP&minify=true","PORTLET/analytics/AnalyticsTablePortlet":"/analytics/js/AnalyticsTablePortletGroup.js?hash=-238413416&scope=GROUP&minify=true","SHARED/profilePropertiesPopoverExtension":"/social/js/popoverGRP.js?hash=-1395100239&scope=GROUP&minify=true","SHARED/base":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/tagSuggester":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","PORTLET/gamification-portlets/ConnectorUserProfile":"/gamification-portlets/js/ConnectorUserProfile.js?hash=721626077&scope=PORTLET&minify=true","PORTLET/social/Sidebar":"/social/js/Sidebar.js?hash=-1270958361&scope=PORTLET&minify=true","PORTLET/social/UserSettingSecurity":"/social/js/UserSettingSecurityGRP.js?hash=467755444&scope=GROUP&minify=true","SHARED/common":"/eXoResources/js/common.js?hash=1142040313&scope=SHARED&minify=true","PORTLET/content/News":"/content/js/News.js?hash=-4884780&scope=PORTLET&minify=true","SHARED/DocumentsPWARegisterExtension":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","PORTLET/social/SpaceTemplateManagement":"/social/js/SpaceTemplateManagement.js?hash=2074680897&scope=GROUP&minify=true","SHARED/mentionsLib":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","SHARED/walletNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/suggester":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","PORTLET/gamification-portlets/programsOverview":"/gamification-portlets/js/programsOverview.js?hash=-46954258&scope=PORTLET&minify=true","SHARED/taskCommentsDrawer":"/task-management/js/taskCommentsDrawer.js?hash=-1075180014&scope=SHARED&minify=true","SHARED/WalletAPIBundle":"/wallet/js/reward-overview-group.js?hash=945038286&scope=GROUP&minify=true","SHARED/engagementCenterConnectorsGitHubExtensions":"/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&scope=GROUP&minify=true","PORTLET/notes/Notes":"/content/js/NotesGRP.js?hash=428727297&scope=GROUP&minify=true","SHARED/agendaBaseExtension":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/newsTargetsManagement":"/content/js/newsTargetsManagement.js?hash=2111764209&scope=SHARED&minify=true","SHARED/ActivitySearchResultCard":"/social/js/ActivitySearchResultCard.js?hash=-434694559&scope=SHARED&minify=true","SHARED/applicationToolbarComponent":"/social/js/applicationToolbarComponent.js?hash=1987755514&scope=SHARED&minify=true","SHARED/matrixManageSpacesExtension":"/social/js/SpacesAdministration.js?hash=754811914&scope=GROUP&minify=true","PORTLET/social/ProfileContactInformation":"/social/js/ProfileContactInformation.js?hash=-455348378&scope=PORTLET&minify=true","SHARED/ActivityStream":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/analyticsManageSpacesExtension":"/social/js/SpacesAdministration.js?hash=754811914&scope=GROUP&minify=true","SHARED/loginCommon":"/social/js/loginCommon.js?hash=1608063800&scope=SHARED&minify=true","PORTLET/gamification-portlets/BadgesOverview":"/gamification-portlets/js/BadgesOverview.js?hash=1808549728&scope=PORTLET&minify=true","SHARED/MatrixSpaceTemplateManagementExtension":"/social/js/SpaceTemplateManagement.js?hash=2074680897&scope=GROUP&minify=true","PORTLET/gamification-portlets/EngagementCenterAchievements":"/gamification-portlets/js/EngagementCenterAchievements.js?hash=-1605481559&scope=PORTLET&minify=true","SHARED/NewsNotificationExtensions":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/engagementCenterActionsTwitterExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/documentsNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/engagementCenterActionsWalletExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/WidgetEditor":"/ide/js/WidgetEditor.js?hash=-1831384012&scope=SHARED&minify=true","SHARED/uiPopupMessages":"/eXoResources/js/webuiGRP.js?hash=1423606607&scope=GROUP&minify=true","SHARED/engagementCenterConnectorEventsNotesExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","SHARED/Jdenticon":"/wallet/js/Jdenticon.js?hash=-994712904&scope=SHARED&minify=true","PORTLET/social/Login":"/social/js/login-extensions.js?hash=1857289161&scope=GROUP&minify=true","PORTLET/social/SpaceWidgetDescription":"/social/js/SpaceDescriptionGRP.js?hash=-881554270&scope=GROUP&minify=true","SHARED/jQueryUI12":"/eXoWCMResources/js/jQueryUI12.js?hash=429698100&scope=SHARED&minify=true","PORTLET/social/NotificationAdministration":"/social/js/NotificationAdministration.js?hash=664000391&scope=PORTLET&minify=true","SHARED/PublishNotesExtension":"/content/js/NotesGRP.js?hash=428727297&scope=GROUP&minify=true","SHARED/engagementCenterConnectorEventsKudosExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","PORTLET/social/IDMMembershipTypesManagement":"/social/js/IDMMembershipTypesManagement.js?hash=-1742110897&scope=PORTLET&minify=true","PORTLET/layout/SiteLayoutEditor":"/layout/js/SiteLayoutEditor.js?hash=2079108402&scope=PORTLET&minify=true","PORTLET/content/NewsComposer":"/content/js/NewsComposer.js?hash=-1562589750&scope=PORTLET&minify=true","SHARED/ethers":"/deeds-tenant/js/ethers.js?hash=-226157266&scope=SHARED&minify=true","SHARED/LayoutSpaceTemplateManagementExtension":"/social/js/SpaceTemplateManagement.js?hash=2074680897&scope=GROUP&minify=true","PORTLET/layout/Portlets":"/layout/js/Portlets.js?hash=-665673707&scope=PORTLET&minify=true","SHARED/NewsDetailsActivityStreamExtensions":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/jqueryCaret":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","PORTLET/matrix/MatrixAdministration":"/matrix/js/MatrixAdministration.js?hash=-907864902&scope=PORTLET&minify=true","PORTLET/wallet/SpaceWallet":"/wallet/js/SpaceWallet.js?hash=215453503&scope=PORTLET&minify=true","PORTLET/kudos/KudosOverview":"/kudos/js/KudosOverview.js?hash=-157473976&scope=PORTLET&minify=true","SHARED/wcm_bts_typeahead":"/eXoWCMResources/js/wcm_bts_typeahead.js?hash=-2105230827&scope=SHARED&minify=true","PORTLET/social/SimpleStorage":"/social/js/SimpleStorage.js?hash=-1622232511&scope=PORTLET&minify=true","SHARED/favoriteDrawerExtensions":"/social/js/FavoriteDrawerGRP.js?hash=-1266582361&scope=GROUP&minify=true","SHARED/metamaskSetupForm":"/deeds-tenant/js/metamaskSetupForm.js?hash=-927347938&scope=SHARED&minify=true","SHARED/AgendaContentEditorExtensions":"/content/js/NotesGRP.js?hash=428727297&scope=GROUP&minify=true","SHARED/onlyofficeJqueryEIP":"/onlyoffice/js/onlyofficeGRP.js?hash=-1146627674&scope=GROUP&minify=true","PORTLET/content/Links":"/content/js/Links.js?hash=-360449824&scope=PORTLET&minify=true","PORTLET/social/ParentSpaceListing":"/social/js/ParentSpaceListing.js?hash=-578993588&scope=PORTLET&minify=true","SHARED/uiSelectImage":"/eXoWCMResources/js/uiSelectImage.js?hash=2122739059&scope=SHARED&minify=true","SHARED/tasksBundle":"/task-management/js/tasksBundle.js?hash=-1931623060&scope=SHARED&minify=true","PORTLET/social/SpacesAdministration":"/social/js/SpacesAdministration.js?hash=754811914&scope=GROUP&minify=true","SHARED/engagementCenterConnectorEventsCrowdinExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","PORTLET/social/ProfileSettingsPortlet":"/social/js/ProfileSettingsPortlet.js?hash=-1678321729&scope=PORTLET&minify=true","SHARED/notesNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/appLauncherBundle":"/app-center/js/appLauncherBundle.js?hash=291715010&scope=SHARED&minify=true","PORTLET/pwa/UserSettingPwa":"/documents-portlet/js/pwaUserSettingsGRP.js?hash=1877404393&scope=GROUP&minify=true","PORTLET/gamification-portlets/UsersLeaderboard":"/gamification-portlets/js/UsersLeaderboard.js?hash=517643023&scope=PORTLET&minify=true","PORTLET/social/ProfileHeader":"/social/js/ProfileHeader.js?hash=673630819&scope=PORTLET&minify=true","SHARED/organizationalChartPopoverExtension":"/social/js/popoverGRP.js?hash=-1395100239&scope=GROUP&minify=true","PORTLET/social/PlatformLogo":"/social/js/PlatformLogo.js?hash=301273578&scope=PORTLET&minify=true","PORTLET/social/SidebarLogin":"/social/js/SidebarLogin.js?hash=-160289982&scope=PORTLET&minify=true","SHARED/agendaContentListExtensions":"/content/js/contentGRP.js?hash=-1868586208&scope=GROUP&minify=true","SHARED/adminSetupPortletBundle":"/app-center/js/adminSetupPortletBundle.js?hash=1284999565&scope=SHARED&minify=true","SHARED/AttachmentPreviewListener":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","PORTLET/social/SpaceCreation":"/social/js/SpaceCreation.js?hash=-122245658&scope=PORTLET&minify=true","SHARED/NewsFavoriteDrawerExtensions":"/social/js/FavoriteDrawerGRP.js?hash=-1266582361&scope=GROUP&minify=true","SHARED/webConferencingCallButton":"/webconferencing/js/webConferencingCallButton.js?hash=271659632&scope=SHARED&minify=true","SHARED/fontIcons":"/social/js/fontIcons.js?hash=-1532402344&scope=SHARED&minify=true","PORTLET/agenda/Agenda":"/agenda/js/Agenda.js?hash=-1556355796&scope=PORTLET&minify=true","SHARED/engagementCenterActionsGitHubExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","PORTLET/app-center/UserPinnedApplications":"/app-center/js/UserPinnedApplications.js?hash=383372077&scope=PORTLET&minify=true","SHARED/DocumentsDraggable":"/documents-portlet/js/DocumentsDraggable.js?hash=1075862569&scope=SHARED&minify=true","PORTLET/analytics/AnalyticsRatePortlet":"/analytics/js/AnalyticsRatePortletGroup.js?hash=206261590&scope=GROUP&minify=true","SHARED/GamificationContentLinkExtension":"/social/js/contentLinkGRP.js?hash=-1074620876&scope=GROUP&minify=true","SHARED/transferRules":"/transfer-rules/js/transferRules.js?hash=-1744826354&scope=SHARED&minify=true","SHARED/engagementCenterAchievementsExtensions":"/gamification-portlets/js/engagement-center-achievements-extensions.js?hash=-1019786266&scope=GROUP&minify=true","SHARED/agendaNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/generalSettingsTermsExtension":"/social/js/generalSettingsGrp.js?hash=-2052042484&scope=GROUP&minify=true","SHARED/Web3":"/wallet/js/Web3.js?hash=1940587689&scope=SHARED&minify=true","SHARED/bodyScrollListener":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/onlyoffice":"/onlyoffice/js/onlyofficeGRP.js?hash=-1146627674&scope=GROUP&minify=true","PORTLET/social/SuggestionsPeopleAndSpace":"/social/js/SuggestionsPeopleAndSpace.js?hash=1577633245&scope=PORTLET&minify=true","SHARED/WoMWalletAdministrationExtension":"/wallet/js/wallet-administration.js?hash=-1993198957&scope=GROUP&minify=true","PORTLET/task-management/RestrictedProject":"/task-management/js/RestrictedProject.js?hash=-918081313&scope=PORTLET&minify=true","PORTLET/wallet/WalletAPI":"/wallet/js/WalletAPI.js?hash=2007114863&scope=PORTLET&minify=true","PORTLET/layout/SiteNavigation":"/layout/js/SiteNavigation.js?hash=-672970541&scope=PORTLET&minify=true","SHARED/imageCropper":"/social/js/imageCropper.js?hash=-66439438&scope=SHARED&minify=true","SHARED/documentsSnackbarComponent":"/documents-portlet/js/documentsSnackbarComponent.js?hash=712748081&scope=SHARED&minify=true","SHARED/jquery_cometd":"/cometd/js/cometdGRP.js?hash=-1620374443&scope=GROUP&minify=true","SHARED/commonLayoutComponents":"/layout/js/commonLayoutComponents.js?hash=-93235126&scope=SHARED&minify=true","SHARED/categoryVueComponents":"/social/js/categoryGRP.js?hash=-1571869611&scope=GROUP&minify=true","SHARED/webConferencing_externalvisio":"/external-visio/js/webConferencingExternalVisioGRP.js?hash=-198676516&scope=GROUP&minify=true","SHARED/selectize2":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","PORTLET/gamification-portlets/challengesOverview":"/gamification-portlets/js/challengesOverview.js?hash=1850225067&scope=PORTLET&minify=true","SHARED/eCharts":"/social/js/eCharts.js?hash=-1178686247&scope=SHARED&minify=true","SHARED/processNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","PORTLET/perk-store/PerkStore":"/perk-store/js/PerkStore.js?hash=1485934865&scope=PORTLET&minify=true","SHARED/engagementCenterConnectorEventsPollExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","PORTLET/layout/SiteManagement":"/layout/js/SiteManagementGRP.js?hash=1420809078&scope=GROUP&minify=true","SHARED/vueI18n":"/social/js/vueGRP.js?hash=-582356454&scope=GROUP&minify=true","SHARED/gamificationAdminConnectorsExtensionsTwitter":"/gamification-portlets/js/gamification-admin-connectors.js?hash=408229486&scope=GROUP&minify=true","PORTLET/content/NewsListView":"/content/js/contentGRP.js?hash=-1868586208&scope=GROUP&minify=true","PORTLET/social/MembersPortlet":"/social/js/MembersPortlet.js?hash=1973300193&scope=PORTLET&minify=true","SHARED/analyticsApi":"/analytics/js/analyticsApi.js?hash=1501399146&scope=SHARED&minify=true","SHARED/latestNews":"/content/js/latestNews.js?hash=-249486637&scope=SHARED&minify=true","SHARED/siteDetailsComponent":"/social/js/vueGRP.js?hash=-582356454&scope=GROUP&minify=true","SHARED/userStatusPopup":"/social/js/userStatusPopup.js?hash=560355235&scope=SHARED&minify=true","PORTLET/perk-store/PerkStoreAdmin":"/perk-store/js/PerkStoreAdmin.js?hash=-346489345&scope=PORTLET&minify=true","SHARED/analyticsExtensionContent":"/analytics/js/commonAnalyticsVueComponentsGroup.js?hash=1231255250&scope=GROUP&minify=true","PORTLET/social/CategoryManagement":"/social/js/CategoryManagement.js?hash=565361060&scope=PORTLET&minify=true","SHARED/engagementCenterActionsCrowdinExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","PORTLET/social/TopBarFavorites":"/social/js/TopBarFavorites.js?hash=-1176134237&scope=PORTLET&minify=true","SHARED/jQueryUI":"/eXoResources/js/jQueryUI.js?hash=-420809764&scope=SHARED&minify=true","SHARED/gamificationAdminConnectorsExtensionsCrowdin":"/gamification-portlets/js/gamification-admin-connectors.js?hash=408229486&scope=GROUP&minify=true","PORTLET/social/LoginForm":"/social/js/login-extensions.js?hash=1857289161&scope=GROUP&minify=true","SHARED/engagementCenterActionsKudosExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/DocumentsInfoDrawer":"/documents-portlet/js/DocumentsInfoDrawer.js?hash=-1776888133&scope=SHARED&minify=true","SHARED/NotesTreeview":"/content/js/NotesGRP.js?hash=428727297&scope=GROUP&minify=true","SHARED/ruleSearch":"/gamification-portlets/js/ruleSearch.js?hash=-1452785530&scope=SHARED&minify=true","PORTLET/social/PlatformAccess":"/social/js/PlatformAccess.js?hash=1414194114&scope=PORTLET&minify=true","SHARED/metamaskLoginExtension":"/social/js/login-extensions.js?hash=1857289161&scope=GROUP&minify=true","SHARED/gamificationAdminConnectorsExtensionsGitHub":"/gamification-portlets/js/gamification-admin-connectors.js?hash=408229486&scope=GROUP&minify=true","SHARED/notesContentLinkExtension":"/social/js/contentLinkGRP.js?hash=-1074620876&scope=GROUP&minify=true","PORTLET/social/TopBarPublishSite":"/social/js/TopBarPublishSite.js?hash=-1587981634&scope=PORTLET&minify=true","PORTLET/documents-portlet/Documents":"/documents-portlet/js/DocumentsGRP.js?hash=795934953&scope=GROUP&minify=true","SHARED/commonVueComponents":"/social/js/vueGRP.js?hash=-582356454&scope=GROUP&minify=true","SHARED/AnalyticsActivityStreamExtension":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","PORTLET/documents-portlet/TrashManagement":"/documents-portlet/js/TrashManagement.js?hash=-1622186973&scope=PORTLET&minify=true","SHARED/UISelectFromDrives":"/eXoWCMResources/js/UISelectFromDrives.js?hash=-895197903&scope=SHARED&minify=true","PORTLET/social/UserSettingLanguage":"/social/js/UserSettingLanguage.js?hash=-200811062&scope=PORTLET&minify=true","SHARED/spaceMembersDrawer":"/social/js/spaceMembersDrawer.js?hash=753832878&scope=SHARED&minify=true","SHARED/spaceForm":"/social/js/spaceForm.js?hash=2020344006&scope=SHARED&minify=true","SHARED/engagementCenterConnectorEventsTaskExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","SHARED/metamaskRegisterExtension":"/social/js/register-extensions.js?hash=-48854874&scope=GROUP&minify=true","SHARED/bts_button":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/jspdf":"/social/js/jspdf.js?hash=-832297642&scope=SHARED&minify=true","SHARED/extensionRegistry":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","PORTLET/gamification-portlets/ConnectorAdminSettings":"/gamification-portlets/js/gamification-admin-connectors.js?hash=408229486&scope=GROUP&minify=true","PORTLET/app-center/AppCenterMyApplicationsPortlet":"/app-center/js/AppCenterMyApplicationsPortlet.js?hash=-1118702732&scope=PORTLET&minify=true","SHARED/vue":"/social/js/vueGRP.js?hash=-582356454&scope=GROUP&minify=true","PORTLET/wallet/WalletAdmin":"/wallet/js/wallet-administration.js?hash=-1993198957&scope=GROUP&minify=true","PORTLET/notes/TermsAndConditionsUpdater":"/notes/js/TermsAndConditionsUpdater.js?hash=-1433739230&scope=PORTLET&minify=true","SHARED/MatrixChatNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/translationField":"/social/js/translationField.js?hash=710472524&scope=SHARED&minify=true","PORTLET/social/UserSettingNotifications":"/social/js/UserSettingNotificationsGRP.js?hash=361655169&scope=GROUP&minify=true","SHARED/NotesRichEditor":"/notes/js/NotesEditorGRP.js?hash=-1321278587&scope=GROUP&minify=true","SHARED/AttachmentIntegration":"/documents-portlet/js/AttachmentIntegrationGRP.js?hash=-1192479629&scope=GROUP&minify=true","SHARED/uiMaskLayer":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","SHARED/engagementCenterConnectorsExoplatformExtension":"/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&scope=GROUP&minify=true","SHARED/engagementCenterActionsTaskExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/WalletSpaceSettingExtension":"/social/js/SpaceSettingExtensions.js?hash=-896748302&scope=GROUP&minify=true","SHARED/coediting":"/social/js/coeditingGRP.js?hash=-1422059729&scope=GROUP&minify=true","SHARED/bts_modal":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/jqueryAtWho":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","SHARED/GamificationQuickActionExtensions":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","SHARED/engagementCenterConnectorEventsEvmExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","SHARED/connectorExtensions":"/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&scope=GROUP&minify=true","PORTLET/notes/TermsAndConditionsView":"/notes/js/TermsAndConditionsView.js?hash=-1873025119&scope=PORTLET&minify=true","SHARED/ExternalVisioAdditionalActionsExtension":"/external-visio/js/AdditionalActionsExtensionGRP.js?hash=-423256&scope=GROUP&minify=true","PORTLET/social/PeopleList":"/social/js/PeopleList.js?hash=-677963275&scope=PORTLET&minify=true","SHARED/cometd":"/cometd/js/cometdGRP.js?hash=-1620374443&scope=GROUP&minify=true","SHARED/kudosNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","PORTLET/social/SpaceBannerPortlet":"/social/js/SpaceBannerPortlet.js?hash=220674001&scope=PORTLET&minify=true","PORTLET/social/GettingStarted":"/social/js/GettingStarted.js?hash=-1118573643&scope=PORTLET&minify=true","SHARED/NotesFavoriteDrawerExtension":"/social/js/FavoriteDrawerGRP.js?hash=-1266582361&scope=GROUP&minify=true","SHARED/newsDetails":"/content/js/NewsDetailsGRP.js?hash=1143098515&scope=GROUP&minify=true","PORTLET/social/ForgotPassword":"/social/js/forgot-password-extensions.js?hash=414099878&scope=GROUP&minify=true","PORTLET/social/Search":"/social/js/search-extensions.js?hash=2052943596&scope=GROUP&minify=true","SHARED/taskQuickActionExtension":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","SHARED/taskDrawer":"/task-management/js/taskDrawerGrp.js?hash=-2014826615&scope=GROUP&minify=true","SHARED/wikiSearchCard":"/notes/js/wikiSearchCard.js?hash=1707541034&scope=SHARED&minify=true","PORTLET/social/PageNotFound":"/social/js/PageNotFound.js?hash=-1756723093&scope=PORTLET&minify=true","SHARED/analyticsExtensionNotes":"/analytics/js/commonAnalyticsVueComponentsGroup.js?hash=1231255250&scope=GROUP&minify=true","SHARED/commons-editor":"/commons-extension/js/commons-editor.js?hash=-1300826401&scope=SHARED&minify=true","PORTLET/social/OrganizationalChart":"/social/js/OrganizationalChart.js?hash=-1322374558&scope=PORTLET&minify=true","SHARED/engagementCenterNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/gamificationUserConnectors":"/gamification-portlets/js/gamification-user-connectors.js?hash=1919293527&scope=GROUP&minify=true","PORTLET/onlyoffice/NewDocumentExtension":"/onlyoffice/js/NewDocumentExtension.js?hash=1090521076&scope=PORTLET&minify=true","PORTLET/notes/NotesEditor":"/notes/js/NotesEditor.js?hash=1579178801&scope=PORTLET&minify=true","SHARED/purifyVue":"/social/js/purifyGRP.js?hash=-1404732605&scope=GROUP&minify=true","SHARED/NotesPublication":"/content/js/NotesGRP.js?hash=428727297&scope=GROUP&minify=true","SHARED/ActivityReactions":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/onlyofficeRedux":"/onlyoffice/js/onlyofficeGRP.js?hash=-1146627674&scope=GROUP&minify=true","PORTLET/content/Image":"/content/js/Image.js?hash=568080766&scope=PORTLET&minify=true","PORTLET/gamification-portlets/EngagementCenterPrograms":"/gamification-portlets/js/EngagementCenterPrograms.js?hash=-105108130&scope=PORTLET&minify=true","SHARED/NewsActivityStreamExtensions":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","PORTLET/social/ExternalOnboarding":"/social/js/external-onboarding-extensions.js?hash=-743764002&scope=GROUP&minify=true","SHARED/engagementCenterConnectorEventsGitHubExtensions":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","PORTLET/social/Breadcrumb":"/social/js/Breadcrumb.js?hash=72445129&scope=PORTLET&minify=true","PORTLET/auth-server/OAuthAdministration":"/auth-server/js/OAuthAdministration.js?hash=-1768950983&scope=PORTLET&minify=true","PORTLET/social/SpaceSettingPortlet":"/social/js/SpaceSettingExtensions.js?hash=-896748302&scope=GROUP&minify=true","SHARED/editorbuttons":"/editors/js/editorbuttons.js?hash=-1217143194&scope=SHARED&minify=true","SHARED/mentionsPlugin":"/social/js/suggesterGRP.js?hash=1659642726&scope=GROUP&minify=true","PORTLET/webconferencing/webConferencingAdminPortlet":"/webconferencing/js/webConferencingAdminPortlet.js?hash=-1719737885&scope=PORTLET&minify=true","SHARED/spacesListComponents":"/social/js/SpaceListGRP.js?hash=311595006&scope=GROUP&minify=true","SHARED/ExtendedDomPurify":"/social/js/purifyGRP.js?hash=-1404732605&scope=GROUP&minify=true","SHARED/uiCalendar":"/eXoResources/js/webuiExtGRP.js?hash=-1006674029&scope=GROUP&minify=true","PORTLET/wallet/myRewards":"/wallet/js/reward-overview-group.js?hash=945038286&scope=GROUP&minify=true","PORTLET/documents-portlet/DocumentsSizeGadget":"/documents-portlet/js/DocumentsSizeGadget.js?hash=-850756996&scope=PORTLET&minify=true","PORTLET/social/InternalOnboarding":"/social/js/internal-onboarding-extensions.js?hash=1893242979&scope=GROUP&minify=true","SHARED/taskNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/vueDraggable":"/social/js/vueDraggable.js?hash=-213126523&scope=SHARED&minify=true","PORTLET/analytics/AnalyticsPortlet":"/analytics/js/AnalyticsPortletGroup.js?hash=1617684590&scope=GROUP&minify=true","PORTLET/pwa/OfflineApplication":"/documents-portlet/js/pwaOfflineGRP.js?hash=1595575502&scope=GROUP&minify=true","SHARED/webConferencingNotificationExtension":"/social/js/notificationGRP.js?hash=-491111288&scope=GROUP&minify=true","SHARED/bts_tab":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/popover":"/social/js/popoverGRP.js?hash=-1395100239&scope=GROUP&minify=true","SHARED/LayoutQuickActionExtensions":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","SHARED/html2canvas":"/social/js/html2canvas.js?hash=-959293277&scope=SHARED&minify=true","SHARED/profileStatsBundle":"/gamification-portlets/js/profileStatsBundle.js?hash=287665764&scope=SHARED&minify=true","SHARED/agendaPublicationExtensions":"/content/js/NotesGRP.js?hash=428727297&scope=GROUP&minify=true","PORTLET/social/PeopleOverview":"/social/js/PeopleOverview.js?hash=-838444276&scope=PORTLET&minify=true","PORTLET/social/SpacesOverview":"/social/js/SpacesOverview.js?hash=-74844990&scope=PORTLET&minify=true","SHARED/documentsPreviewExtension":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/analyticsExtensionMatrix":"/analytics/js/commonAnalyticsVueComponentsGroup.js?hash=1231255250&scope=GROUP&minify=true","SHARED/WoMWalletRewardingExtension":"/wallet/js/wallet-rewarding.js?hash=620511053&scope=GROUP&minify=true","PORTLET/analytics/StatisticsCollection":"/analytics/js/StatisticsCollectionGroup.js?hash=-1742755893&scope=GROUP&minify=true","SHARED/webui-ext":"/eXoResources/js/webuiExtGRP.js?hash=-1006674029&scope=GROUP&minify=true","SHARED/AnalyticsQuickActionExtensions":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","PORTLET/documents-portlet/DocumentsUserSettings":"/documents-portlet/js/DocumentsUserSettings.js?hash=1703082551&scope=PORTLET&minify=true","SHARED/onlyofficeJqueryUI":"/onlyoffice/js/onlyofficeGRP.js?hash=-1146627674&scope=GROUP&minify=true","SHARED/bts_popover":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","PORTLET/social/SpaceWidgetManagers":"/social/js/SpaceWidgetManagers.js?hash=1744958758&scope=PORTLET&minify=true","SHARED/xss-utils":"/eXoResources/js/xss-utils.js?hash=1978340531&scope=SHARED&minify=true","SHARED/editorsupport":"/editors/js/editorsupport.js?hash=-576228535&scope=SHARED&minify=true","PORTLET/agenda/AgendaTimeline":"/agenda/js/AgendaTimeline.js?hash=1434341854&scope=PORTLET&minify=true","PORTLET/layout/PageTemplatesManagement":"/layout/js/PageTemplatesManagement.js?hash=768973515&scope=PORTLET&minify=true","SHARED/ecm-utils":"/eXoWCMResources/js/ecm-utils.js?hash=828948463&scope=SHARED&minify=true","SHARED/webConferencing_VisioConnectorMeet":"/external-visio/js/webConferencingExternalVisioGRP.js?hash=-198676516&scope=GROUP&minify=true","SHARED/SpaceSearchResultCard":"/social/js/SpaceSearchResultCard.js?hash=238750604&scope=SHARED&minify=true","SHARED/file_drop":"/eXoResources/js/file_drop.js?hash=619620197&scope=SHARED&minify=true","SHARED/DocumentsPWAUserSettings":"/documents-portlet/js/pwaUserSettingsGRP.js?hash=1877404393&scope=GROUP&minify=true","SHARED/portalRequest":"/social/js/baseGRP.js?hash=-1943628855&scope=GROUP&minify=true","PORTLET/documents-portlet/DocumentGadget":"/documents-portlet/js/DocumentGadget.js?hash=1216354512&scope=PORTLET&minify=true","SHARED/gamificationConnectorEvents":"/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&scope=GROUP&minify=true","SHARED/engagementCenterConnectorsTwitterExtensions":"/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&scope=GROUP&minify=true","PORTLET/pwa/PwaSettings":"/pwa/js/PwaSettings.js?hash=936488588&scope=PORTLET&minify=true","SHARED/gamificationUserConnectorsExtensionsTwitter":"/gamification-portlets/js/gamification-user-connectors.js?hash=1919293527&scope=GROUP&minify=true","SHARED/uiPopupWindow":"/eXoResources/js/webuiGRP.js?hash=1423606607&scope=GROUP&minify=true","SHARED/DocumentsPWAOfflineApp":"/documents-portlet/js/pwaOfflineGRP.js?hash=1595575502&scope=GROUP&minify=true","PORTLET/wallet/WalletOverview":"/wallet/js/WalletOverview.js?hash=1365916546&scope=PORTLET&minify=true","SHARED/engagementCenterFavoriteDrawerExtension":"/social/js/FavoriteDrawerGRP.js?hash=-1266582361&scope=GROUP&minify=true","PORTLET/content/NewsDetail":"/content/js/NewsDetail.js?hash=-932395564&scope=PORTLET&minify=true","SHARED/ganttChart":"/task-management/js/ganttChart.js?hash=1595083664&scope=SHARED&minify=true","PORTLET/social/ProfileAboutMe":"/social/js/ProfileAboutMe.js?hash=-9451419&scope=PORTLET&minify=true","SHARED/AttachmentPreview":"/social/js/AttachmentPreview.js?hash=-1246557406&scope=SHARED&minify=true","PORTLET/processes/Processes":"/processes/js/Processes.js?hash=-1039187632&scope=PORTLET&minify=true","PORTLET/social/TopBarPreview":"/social/js/TopBarPreview.js?hash=-883503898&scope=PORTLET&minify=true","SHARED/jquery-touch":"/eXoResources/js/jquery-touch.js?hash=1416691996&scope=SHARED&minify=true","PORTLET/analytics/AnalyticsDashboardBreadcrumb":"/analytics/js/AnalyticsDashboardBreadcrumbGroup.js?hash=910940159&scope=GROUP&minify=true","SHARED/NewsAnalyticsTableExtensions":"/analytics/js/AnalyticsTablePortletGroup.js?hash=-238413416&scope=GROUP&minify=true","PORTLET/social/OnboardingRegisterExtension":"/social/js/register-extensions.js?hash=-48854874&scope=GROUP&minify=true","SHARED/StaticApplicationSiteManagementExtension":"/layout/js/SiteManagementGRP.js?hash=1420809078&scope=GROUP&minify=true","SHARED/ContentLink":"/social/js/contentLinkGRP.js?hash=-1074620876&scope=GROUP&minify=true","PORTLET/social/WhoIsOnLinePortlet":"/social/js/WhoIsOnLinePortlet.js?hash=-198128659&scope=PORTLET&minify=true","SHARED/engagementCenterActionsNoteExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/Carousel":"/content/js/Carousel.js?hash=-1743177651&scope=SHARED&minify=true","SHARED/TaskSearch":"/task-management/js/TaskSearch.js?hash=-763883402&scope=SHARED&minify=true","PORTLET/social/SpacesList":"/social/js/SpacesList.js?hash=-1434155851&scope=PORTLET&minify=true","PORTLET/gamification-portlets/CreateProgramButton":"/gamification-portlets/js/CreateProgramButton.js?hash=533167350&scope=PORTLET&minify=true","PORTLET/documents-portlet/DownloadDocumentsPublicAccess":"/documents-portlet/js/DownloadDocumentsPublicAccess.js?hash=-1912446214&scope=PORTLET&minify=true","SHARED/gamificationCommon":"/gamification-portlets/js/gamificationCommon.js?hash=1299797810&scope=SHARED&minify=true","PORTLET/content/newsPublishTargetsManagement":"/content/js/newsPublishTargetsManagement.js?hash=-1210966747&scope=PORTLET&minify=true","SHARED/chart":"/wallet/js/chart.js?hash=-452228125&scope=SHARED&minify=true","PORTLET/gamification-portlets/myContributions":"/gamification-portlets/js/myContributions.js?hash=-230207412&scope=PORTLET&minify=true","SHARED/sortablejs":"/social/js/sortablejs.js?hash=157077561&scope=SHARED&minify=true","PORTLET/social/SpaceInfos":"/social/js/SpaceInfos.js?hash=691443903&scope=PORTLET&minify=true","SHARED/animationComponents":"/social/js/animationComponents.js?hash=150274039&scope=SHARED&minify=true","SHARED/qrcode":"/eXoResources/js/qrcode.js?hash=-1997259775&scope=SHARED&minify=true","SHARED/jQueryPnotify12":"/eXoWCMResources/js/jQueryPnotify12.js?hash=784497303&scope=SHARED&minify=true","SHARED/bts_collapse":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/kudosQuickActionExtension":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","SHARED/ruleExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/vueCustomElement":"/notes/js/vueCustomElement.js?hash=-826016940&scope=SHARED&minify=true","SHARED/contentTranslationMenu":"/content/js/contentTranslationMenu.js?hash=-606598630&scope=SHARED&minify=true","SHARED/walletCommon":"/wallet/js/walletCommon.js?hash=-1939480093&scope=SHARED&minify=true","PORTLET/layout/SectionEditor":"/layout/js/layout-editor-group.js?hash=427776465&scope=GROUP&minify=true","SHARED/cropper":"/social/js/cropper.js?hash=110904492&scope=SHARED&minify=true","PORTLET/social/GeneralSettings":"/social/js/generalSettingsGrp.js?hash=-2052042484&scope=GROUP&minify=true","SHARED/analyticsExtensionGamification":"/analytics/js/commonAnalyticsVueComponentsGroup.js?hash=1231255250&scope=GROUP&minify=true","SHARED/usersLeaderboardCommon":"/gamification-portlets/js/usersLeaderboardCommon.js?hash=-856211450&scope=SHARED&minify=true","SHARED/bts_tooltip":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/metamaskOnboarding":"/deeds-tenant/js/metamaskOnboarding.js?hash=-1165268965&scope=SHARED&minify=true","SHARED/PollActivityStreamExtension":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/engagementCenterConnectorsEvmExtensions":"/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&scope=GROUP&minify=true","PORTLET/social/SpaceAccessPortlet":"/social/js/SpaceAccessPortlet.js?hash=2066169339&scope=PORTLET&minify=true","SHARED/vueChart":"/wallet/js/vueChart.js?hash=-660166753&scope=SHARED&minify=true","SHARED/QuickActionExtensions":"/layout/js/QuickActionsGrp.js?hash=-1066029195&scope=GROUP&minify=true","PORTLET/gamification-portlets/topChallengers":"/gamification-portlets/js/topChallengers.js?hash=1491370115&scope=PORTLET&minify=true","SHARED/manageBadges":"/gamification-portlets/js/manageBadges.js?hash=-602981123&scope=SHARED&minify=true","SHARED/AdditionalActionsExtension":"/external-visio/js/AdditionalActionsExtensionGRP.js?hash=-423256&scope=GROUP&minify=true","PORTLET/social/RegisterForm":"/social/js/register-extensions.js?hash=-48854874&scope=GROUP&minify=true","PORTLET/notes/NotePageView":"/notes/js/NotePageView.js?hash=-1341113013&scope=PORTLET&minify=true","SHARED/kudos":"/social/js/popoverGRP.js?hash=-1395100239&scope=GROUP&minify=true","SHARED/uiVirtualList":"/eXoResources/js/webuiExtGRP.js?hash=-1006674029&scope=GROUP&minify=true","SHARED/engagementCenterActionsNewsExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","PORTLET/notes/TermsAndConditionsUserSettings":"/notes/js/TermsAndConditionsUserSettings.js?hash=1716372259&scope=PORTLET&minify=true","SHARED/engagementCenterActionsPollExtensions":"/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&scope=GROUP&minify=true","SHARED/taskContentLinkExtension":"/social/js/contentLinkGRP.js?hash=-1074620876&scope=GROUP&minify=true","PORTLET/wallet/WalletSettings":"/wallet/js/WalletSettings.js?hash=-945063575&scope=PORTLET&minify=true","SHARED/DocumentsLeftHeaderExtension":"/documents-portlet/js/documentLeftHeaderGRP.js?hash=-596758690&scope=GROUP&minify=true","SHARED/LayoutManageSpacesExtension":"/layout/js/ManageSpaceGRP.js?hash=-728840254&scope=GROUP&minify=true","SHARED/bts_dropdown":"/eXoSkin/js/bts.js?hash=-277259388&scope=GROUP&minify=true","SHARED/engagementCenterAchievementsWalletExtensions":"/gamification-portlets/js/engagement-center-achievements-extensions.js?hash=-1019786266&scope=GROUP&minify=true","SHARED/purify":"/social/js/purifyGRP.js?hash=-1404732605&scope=GROUP&minify=true","PORTLET/kudos/KudosAdmin":"/kudos/js/KudosAdmin.js?hash=-80429403&scope=PORTLET&minify=true","SHARED/OAuthCommon":"/auth-server/js/OAuthCommon.js?hash=-939828127&scope=SHARED&minify=true","SHARED/commonAnalyticsVueComponents":"/analytics/js/commonAnalyticsVueComponentsGroup.js?hash=1231255250&scope=GROUP&minify=true","SHARED/webConferencing":"/external-visio/js/webConferencingGRP.js?hash=-600814428&scope=GROUP&minify=true","SHARED/agendaEventContentLinkExtension":"/social/js/contentLinkGRP.js?hash=-1074620876&scope=GROUP&minify=true","SHARED/engagementCenterActivityStreamExtension":"/social/js/ActivityStreamGRP.js?hash=-1287437487&scope=GROUP&minify=true","SHARED/ruleComponents":"/gamification-portlets/js/ruleComponents.js?hash=1363472664&scope=SHARED&minify=true","SHARED/attachImage":"/social/js/attachImage.js?hash=836900441&scope=SHARED&minify=true","SHARED/FileSearch":"/documents-portlet/js/FileSearch.js?hash=1189699734&scope=SHARED&minify=true"},"shim":{}};
+    </script>
+    <script type="text/javascript" src="/social/js/bootstrap.js?hash=-1070680691&amp;scope=SHARED&amp;minify=true" data-id="header-script"></script>
+    <script type="text/javascript" src="/webconferencing/js/merged.js?hash=1633293857&amp;scope=SHARED&amp;minify=true" data-id="header-script"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/extensionRegistry" src="/social/js/baseGRP.js?hash=-1943628855&amp;scope=GROUP&amp;minify=true"></script>
+    
+   <script type="text/javascript" id="remoteScripts">
+     eXo.env.addLoadedRemoteScripts([]);
+     
+   </script>
+   <script type="text/javascript" id="portalHeadScripts">
+     eXo.env.portal.context = "/portal";
+     eXo.env.portal.accessMode = "private";
+     eXo.env.portal.homeLink = "null";
+     eXo.env.portal.containerName = "portal";
+     eXo.env.portal.userName='root';
+     eXo.env.portal.language='en';
+     eXo.env.portal.defaultLanguage='en';
+     eXo.env.portal.orientation='ltr';
+     eXo.env.portal.selectedNodeId = '109';
+     eXo.env.portal.selectedNodeUri = 'people';
+     eXo.env.portal.siteKeyName = 'dw';
+     eXo.env.portal.siteKeyType = 'portal';
+     eXo.env.portal.previousURI = 'home';
+     eXo.env.portal.rest = 'rest';
+     eXo.env.portal.csrfToken = "F7347914AC1400081D6F517CB6D3930D";
+     eXo.env.portal.productName = "eXo Platform CE";
+     eXo.env.portal.productLink = "https://www.exoplatform.com/open-source";
+     eXo.env.portal.defaultPath = "/portal/myworkspace";
+     eXo.env.portal.siteId = '10';
+     eXo.env.portal.siteLabel = 'dw';
+     eXo.env.server.context = "/portal";
+     eXo.env.server.portalBaseURL = "/portal/dw/";
+     eXo.env.server.portalURLTemplate = "/portal/dw/?portal:action=_portal:action_&portal:componentId=_portal:componentId_";
+     eXo.env.client.skin = "Enterprise";
+     eXo.env.client.assetsVersion = "7.2.1-exo-20260730114738";
+     eXo.env.portal.onLoadCallbacks = eXo.env.portal.onLoadCallbacks || [];
+     eXo.env.portal.addOnLoadCallback = callback => {
+       eXo.env.portal.onLoadCallbacks.push(callback);
+       if (document.readyState === 'complete') {
+         callback();
+       }
+     };
+     eXo.env.portal.onLoad = () => {
+       if (!eXo.env.portal.onLoadTriggered && eXo.env.portal.onLoadCallbacks && eXo.env.portal.onLoadCallbacks.length) {
+         eXo.env.portal.onLoadTriggered = true;
+         eXo.env.portal.onLoadCallbacks.forEach(callback => callback());
+       }
+     };
+   </script>
+   
+
+   
+   <style type="text/css" id="Compliancy508Style">
+     .skipHidden {
+       position:absolute !important;
+       left:-10000px !important;
+       top:auto !important;
+       width:1px !important;
+       height:1px !important;
+       overflow:hidden !important; 
+     }
+     html[dir="rtl"] .skipHidden {
+       right: -10000px !important;
+       left: auto !important;
+     }
+   </style>
+   
+   <script type="text/javascript" id="Compliancy508Script">
+     if (window.onload) {
+       var currentOnLoad = window.onload;
+       window.onload = function() { currentOnLoad(); checkRTLWidth() };
+     } else {
+       window.onload = checkRTLWidth;
+     }
+     function checkRTLWidth() {
+       if (document.documentElement && document.documentElement.getAttribute("dir") == "rtl" && document.body.scrollWidth >= 10000) {
+         var stylesheet = document.styleSheets[document.styleSheets.length - 1];
+         stylesheet.insertRule("html[dir='rtl'] .skipHidden { right: 10000px !important;}", stylesheet.cssRules.length);
+       }
+     }
+   </script>
+   
+<script type="text/javascript" id="sitesHeadScripts">
+  eXo.env.portal.portalName = "dw";
+  eXo.env.portal.defaultPortal = "dw";
+  eXo.env.portal.metaPortalName = "dw";
+  eXo.env.portal.engagementSiteName = "dw" ;
+</script>
+
+<script type="text/javascript" id="socialHeadScripts">
+     eXo.env.portal.spaceId = "" ;
+     eXo.env.portal.previewSpaceId = null;
+     eXo.env.portal.spaceName = "" ;
+     eXo.env.portal.spaceUrl = "" ;
+     eXo.env.portal.spaceDisplayName = decodeURIComponent("") ;
+     eXo.env.portal.spaceGroup = "" ;
+     eXo.env.portal.spaceIdentityId = "" ;
+     eXo.env.portal.profileOwner = "root" ;
+     eXo.env.portal.profileOwnerIdentityId = "1" ;
+     eXo.env.portal.userIdentityId = "1" ;
+     eXo.env.portal.companyLogo = "/portal/rest/v1/platform/branding/logo?v=-162571994" ;
+     eXo.env.portal.companyName = decodeURIComponent("PMETO - Workspace") ;
+     eXo.env.portal.isExternal = false;
+     eXo.env.portal.cometdToken = "1tpfk6u266g6q";
+     eXo.env.portal.cometdContext = "cometd";
+     eXo.env.portal.isOrganizationalChartEnabled = true;
+     eXo.env.portal.vuetifyPreset = {
+       dark: true,
+       silent: !eXo.developing,
+       iconfont: 'mdi',
+       rtl: eXo.env.portal.orientation === 'rtl',
+       theme: { disable: true },
+       breakpoint: {
+         mobileBreakpoint: 600,
+         thresholds: {
+           xs: 0,
+           sm: 600,
+           md: 960,
+           lg: 1264,
+           xl: 1904,
+         },
+       },
+     };
+
+     eXo.env.portal.postToNetworkEnabled = true;
+     eXo.env.portal.editorAttachImageEnabled = true;
+     eXo.env.portal.attachmentObjectTypes = ['wikiPage', 'spaceTemplateBanner', 'sectionTemplate', 'activity', 'portletInstance', 'articlePage', 'pageTemplate', 'rule', 'oauthClient', 'site', 'task', 'public', 'taskComment', 'containerBackground', 'imagePortlet', 'wikiDraft', 'siteTemplate', 'cmsPortlet'];
+     eXo.env.portal.customStylesheetEnabled = false;
+</script>
+
+<script type="text/javascript">
+  eXo.env.portal.maxToUpload = 20;
+  eXo.env.portal.maxFileSize = 200;
+</script><script type="text/javascript" id="serviceWorkerScript">
+  eXo.env.portal.pwaEnabled = true;
+  eXo.env.portal.pwaPushPublicKey = 'BLeAqbMY0gOlD2Sk9jaePFZs6L4-p1dTc4BVriswhh3xdrTKYpGkRmYSXApsomHXG3fNoufoue4ozfEX_c8hg1E';
+  window.require(["SHARED/pwa"], pwa => pwa.init());
+  if (typeof navigator.serviceWorker !== 'undefined' && window.initPwaEnabled) {
+    navigator.serviceWorker.register('/service-worker.js')
+  }
+</script><script type="text/javascript">
+  eXo.env.portal.userTimezone='America/Sao_Paulo';
+</script><script type="text/javascript" id="legacyEcmsObject">
+  if (!window.eXo) {
+    window.eXo = {};
+  }
+  if (!window.eXo.ecm) {
+    window.eXo.ecm = {};
+  }
+</script>
+
+
+<script type="text/javascript">
+  eXo.env.portal.requestStartTime = 1786559340993;
+  eXo.env.portal.pageTitle = `People`;
+  eXo.env.portal.applicationNames = `PlatformSettings,UserPinnedApplications,PeopleList,TopBarMenu,UsersLeaderboard,SiteNavigation,PeopleOverview,Matrix,AppCenterAppLauncherPortlet,Search,TopBarNotification,TopBarLogo,Sidebar,SuggestionsPeopleAndSpace`;
+</script>
+
+ <script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/eXoVueI18n" src="/social/js/vueGRP.js?hash=-582356454&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/Sidebar" src="/social/js/Sidebar.js?hash=-1270958361&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/TopBarLogo" src="/social/js/TopBarLogo.js?hash=1638001308&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/TopBarMenu" src="/social/js/TopBarMenu.js?hash=1400953483&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/matrix/Matrix" src="/matrix/js/Matrix.js?hash=582374455&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/TopBarNotification" src="/social/js/TopBarNotificationGRP.js?hash=119312124&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/purifyVue" src="/social/js/purifyGRP.js?hash=-1404732605&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/commons-cometd3" src="/cometd/js/cometdGRP.js?hash=-1620374443&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/categoryVueComponents" src="/social/js/categoryGRP.js?hash=-1571869611&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/userStatusPopup" src="/social/js/userStatusPopup.js?hash=560355235&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/suggester" src="/social/js/suggesterGRP.js?hash=1659642726&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/vueDraggable" src="/social/js/vueDraggable.js?hash=-213126523&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/emojiPicker" src="/social/js/emojisGRP.js?hash=-916347823&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/spaceForm" src="/social/js/spaceForm.js?hash=2020344006&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/spaceMembersDrawer" src="/social/js/spaceMembersDrawer.js?hash=753832878&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/app-center/UserPinnedApplications" src="/app-center/js/UserPinnedApplications.js?hash=383372077&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/layout/PageLayout" src="/layout/js/page-layout-group.js?hash=-244850389&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/popover" src="/social/js/popoverGRP.js?hash=-1395100239&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/analytics/StatisticsCollection" src="/analytics/js/StatisticsCollectionGroup.js?hash=-1742755893&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/notes/TermsAndConditionsUpdater" src="/notes/js/TermsAndConditionsUpdater.js?hash=-1433739230&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/documents-portlet/AttachmentApp" src="/documents-portlet/js/AttachmentIntegrationGRP.js?hash=-1192479629&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/onlyoffice/NewDocumentExtension" src="/onlyoffice/js/NewDocumentExtension.js?hash=1090521076&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/uiPopupMessages" src="/eXoResources/js/webuiGRP.js?hash=1423606607&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/DocumentsInfoDrawerListener" src="/documents-portlet/js/DocumentsListenerGRP.js?hash=1018267316&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/layout/SiteNavigation" src="/layout/js/SiteNavigation.js?hash=-672970541&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/Search" src="/social/js/search-extensions.js?hash=2052943596&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/PeopleList" src="/social/js/PeopleList.js?hash=-677963275&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/PeopleOverview" src="/social/js/PeopleOverview.js?hash=-838444276&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/social/SuggestionsPeopleAndSpace" src="/social/js/SuggestionsPeopleAndSpace.js?hash=1577633245&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="PORTLET/gamification-portlets/UsersLeaderboard" src="/gamification-portlets/js/UsersLeaderboard.js?hash=517643023&amp;scope=PORTLET&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/applicationToolbarComponent" src="/social/js/applicationToolbarComponent.js?hash=1987755514&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/fontIcons" src="/social/js/fontIcons.js?hash=-1532402344&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/sortablejs" src="/social/js/sortablejs.js?hash=157077561&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/imageCropper" src="/social/js/imageCropper.js?hash=-66439438&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/spaceInvitation" src="/social/js/spaceInvitation.js?hash=-923077411&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/peopleListComponents" src="/social/js/peopleListComponents.js?hash=92828969&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/QuickActionExtensions" src="/layout/js/QuickActionsGrp.js?hash=-1066029195&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/appCenterCommon" src="/app-center/js/appCenterCommon.js?hash=1021681943&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/commonLayoutComponents" src="/layout/js/commonLayoutComponents.js?hash=-93235126&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/attachImage" src="/social/js/attachImage.js?hash=836900441&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/documentsPreviewExtension" src="/social/js/ActivityStreamGRP.js?hash=-1287437487&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/bts_collapse" src="/eXoSkin/js/bts.js?hash=-277259388&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/common" src="/eXoResources/js/common.js?hash=1142040313&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/translationField" src="/social/js/translationField.js?hash=710472524&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/usersLeaderboardCommon" src="/gamification-portlets/js/usersLeaderboardCommon.js?hash=-856211450&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/ruleExtensions" src="/gamification-portlets/js/engagement-center-user-actions.js?hash=1297459450&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/cropper" src="/social/js/cropper.js?hash=110904492&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/gamificationCommon" src="/gamification-portlets/js/gamificationCommon.js?hash=1299797810&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/ruleComponents" src="/gamification-portlets/js/ruleComponents.js?hash=1363472664&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/connectorExtensions" src="/commons-exo-extension/js/engagement-center-connector-extensions.js?hash=107182378&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/gamificationConnectorEvents" src="/gamification-portlets/js/engagement-center-connector-event-extensions.js?hash=882488777&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/gamificationUserConnectors" src="/gamification-portlets/js/gamification-user-connectors.js?hash=1919293527&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/webConferencing" src="/external-visio/js/webConferencingGRP.js?hash=-600814428&amp;scope=GROUP&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/webConferencingCallButton" src="/webconferencing/js/webConferencingCallButton.js?hash=271659632&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/jQueryUI12" src="/eXoWCMResources/js/jQueryUI12.js?hash=429698100&amp;scope=SHARED&amp;minify=true"></script><script type="text/javascript" charset="utf-8" data-requirecontext="_" data-requiremodule="SHARED/jQueryPnotify12" src="/eXoWCMResources/js/jQueryPnotify12.js?hash=784497303&amp;scope=SHARED&amp;minify=true"></script></head>
+ <body style="height: 100%;--allPagesBackgroundColor: #F0F0F0;--allPagesBackgroundImage: linear-gradient(#2F6EF1, #F0F0F0FF); --allPagesBackgroundRepeat: no-repeat;--allPagesBackgroundSize: unset;--allPagesBackgroundPosition: unset;--allPagesWidth: 100%;" class="" onload="eXo.env.portal.onLoad()">
+   <div class="visible-tablet"></div>
+   <div class="visible-tabletL"></div>
+   <div class="visible-phone"></div>
+   <div class="visible-phone-small"></div>
+   <div class="VuetifyApp"><div data-app="true" class="v-application v-application--is-ltr transparent theme--light VuetifyApp" id="vuetify-apps"><div data-app="true" class="v-application v-application--is-ltr theme--light" id="alert-notifications"><div class="v-application--wrap"><!----></div></div><div class="v-menu"><!----></div><div id="Popovers"><!----> </div><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial attachmentsAppDrawer v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial attachmentsListDrawer v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial meeds-chat-drawer v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="meedsChatDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="ChatDiscussionDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="QuickCreateDiscussionDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--temporary theme--light d-none d-sm-flex v-navigation-drawer--is-mobile snippet-mobile-menu rounded-tr-xl rounded-tl-xl pt-5 layout-drawer" left="true" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(-100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="messageReadReceiptListDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" width="500px" hide-actions="" id="activityKudosDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial kudosOverviewDrawer v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><div id="EngagementCenterDrawers">      <div role="dialog" class="v-dialog__container"><!----></div> <!--function(e,n,r,i){return Pt(t,e,n,r,i,!0)}--> <!--function(e,n,r,i){return Pt(t,e,n,r,i,!0)}--></div><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="ruleDetailDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="AchievementsDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial EngagementCenterDrawer v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="programDetailDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial EngagementCenterDrawer overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"><div class="pa-0 fill-width fill-height"><div class="layout fill-height column"><div class="flex mx-0 drawerHeader flex-grow-0"><div tabindex="-1" class="px-0 v-list-item theme--light"><!----> <!----> <div class="v-list-item__content drawerTitle align-start text-header-title ps-4"><div class="text-truncate full-width">
+    Add campaign
+  </div> <!----></div> <div class="v-list-item__action drawerIcons align-end d-flex flex-row pe-3 v-list-item__action--stack"> <!----> <button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" title="Expand"><span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate fas fa-expand-alt theme--light" style="font-size: 20px;"></i></span></button> <button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" title="Close"><span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate icon-default-color fa fa-times theme--light" style="font-size: 20px;"></i></span></button></div></div></div> <hr role="separator" aria-orientation="horizontal" class="my-0 v-divider theme--light"> <!----> <div class="flex flex-grow-1 border-box-sizing overflow-hidden"><div class="d-flex flex-row fill-height"><!----> <div class="d-flex flex-column fill-height flex-grow-1 flex-shrink-1 overflow-hidden"><div class="drawerContent flex-grow-1 flex-shrink-1 fill-height specific-scrollbar overflow-x-auto overflow-y-auto" style="display: none;"> <!----></div> <hr role="separator" aria-orientation="horizontal" class="my-0 v-divider theme--light"> <div class="flex drawerFooter border-box-sizing flex-grow-0 px-4 py-3"><div class="d-flex mr-2"><div class="spacer"></div> <button type="button" class="btn me-2 v-btn v-btn--contained theme--light v-size--default"><span class="v-btn__content">
+        Cancel
+      </span></button> <button type="button" disabled="disabled" class="btn btn-primary v-btn v-btn--contained v-btn--disabled theme--light v-size--default"><span class="v-btn__content">
+        Create
+      </span></button></div></div></div></div></div> <!----></div></div></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial user-achievements-drawer v-navigation-drawer v-navigation-drawer--close v-navigation-drawer--fixed v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial program-selector-drawer v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="programSelectorDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" body-classes="hide-scroll decrease-z-index-more" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside><aside class="drawerParent overflow-initial v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--close v-navigation-drawer--right v-navigation-drawer--temporary theme--light d-none d-sm-flex layout-drawer" max-height="100%" max-width="100vw" tabindex="0" id="peopleAdvancedFilterDrawer" data-booted="true" style="height: 100%; top: 0px; transform: translateX(100%); width: 420px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside></div></div>
+   <div class="VuetifyApp"><div data-app="true" class="v-application v-application--is-ltr theme--light" id="drawers-overlay"><div class="v-application--wrap"><div class="v-overlay v-overlay--absolute v-overlay--active theme--dark" id="drawers-overlay" style="z-index: 1034; display: none;"><div class="v-overlay__scrim" style="opacity: 0.46; background-color: rgb(33, 33, 33); border-color: rgb(33, 33, 33);"></div><div class="v-overlay__content"></div></div></div></div></div><div class="VuetifyApp TopbarLoading position-sticky t-0 z-index-modal hidden" id="TopbarLoading">
+  <div data-app="true" class="v-application position-absolute full-width v-application--is-ltr transparent theme--light">
+    <div role="progressbar" aria-valuemin="0" aria-valuemax="100" class="v-progress-linear v-progress-linear--rounded theme--light" style="height: 6px; top: 0px;">
+      <div class="v-progress-linear__stream primary--text" style="width: 0%;"></div>
+      <div class="v-progress-linear__background primary" style="opacity: 0.4; left: 0%; width: 100%;"></div>
+      <div class="v-progress-linear__buffer"></div>
+      <div class="v-progress-linear__indeterminate v-progress-linear__indeterminate--active" style="">
+        <div class="v-progress-linear__indeterminate long primary"></div>
+        <div class="v-progress-linear__indeterminate short primary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+   <div class="Enterprise" id="UIPortalApplication" style="!height: 100%;">
+     <div class="ajaxLoadingMask clearfix" id="AjaxLoadingMask" style="display: none; margin: auto;">
+       <a onclick="javascript:ajaxAbort();" class="uiIconClose uiIconWhite pull-right"></a>
+       <i class="loadingProgressBar pull-left"></i>
+       <div class="loadingText">Loading...</div>
+     </div>
+<div id="UIWorkingWorkspace" class="UIWorkingWorkspace" style="z-index: 0; position: relative;">
+  <div class="UIViewWS" id="UIViewWS"><div id="ParentSiteContainer">
+  <div id="ParentSiteLeftContainer">
+    <div class="VuetifyApp">
+      <div class="v-application v-application--is-ltr transparent theme--light layout-side-bar">
+        <div id="ParentSiteStickyMenu"></div>
+      </div>
+    </div>
+  </div>
+  <div id="ParentSiteRightContainer">
+    <div id="ParentSiteContainerChildren">
+      
+<div id="UITopBarContainerParent" class="layout-banner-top-section layout-sticky-section layout-sticky-top-bar" role="banner">
+  <div class="UIContainer UITopBarContainer layout-top-bar" id="UITopBarContainer">
+    <div class="NormalContainerBlock">
+      <div class="VIEW-CONTAINER VIEW-BLOCK">
+        <div>
+          <div class="UITableColumnContainer" style="margin: 0px auto; ">
+            <div id="UITopBarContainerChildren" class="TRContainer clearfix UITopBarContainerItemsParent">
+              
+              <div class="UITopBarContainerItem left-topNavigation-container left-topNavigation-containerTDContainer">
+                
+<div class="UIContainer  left-topNavigation-container" id="left-topNavigation-container">
+	<div class="NormalContainerBlock UIComponentBlock">
+		<div class="VIEW-CONTAINER VIEW-BLOCK">
+      <div class="UIIntermediateContainer">
+        <div id="left-topNavigation-containerChildren" class="UIRowContainer">
+					
+				</div>
+      </div>
+		</div>
+	</div>
+</div>
+              </div>
+              
+              <div class="UITopBarContainerItem sidebar-items-container sidebar-items-containerTDContainer">
+                
+<div class="UIContainer  sidebar-items-container" id="sidebar-items-container">
+	<div class="NormalContainerBlock UIComponentBlock">
+		<div class="VIEW-CONTAINER VIEW-BLOCK">
+      <div class="UIIntermediateContainer">
+        <div id="sidebar-items-containerChildren" class="UIRowContainer">
+					<div id="b8584969-ca41-4022-8cca-c5e11c10be06">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="VuetifyApp layout-side-bar">
+  <div data-app="true" class="v-application HamburgerNavigationMenu v-application--is-ltr theme--light" id="HamburgerNavigationMenu" color="transaprent" flat=""><div class="v-application--wrap"><button type="button" class="HamburgerNavigationMenuLink border-box-sizing rounded-0 layout-top-bar v-btn v-btn--flat v-btn--text theme--light v-size--default" title="Open Sidebar" style="height: 54px; width: 69px;"><span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate fa fa-bars theme--light" style="font-size: 20px; display: none;"></i> <div class="hamburger-unread-badge position-absolute r-0" style="display: none;"><div class="hamburger-unread-badge error-color-background"></div></div></span></button> <div class="layout-side-bar"><aside class="HamburgerMenuThirdLevelParent layout-side-bar border-box-sizing v-navigation-drawer v-navigation-drawer--close theme--light" max-width="100%" data-booted="true" style="height: 100%; top: 0px; transform: translateX(-100%); width: 310px; left: 620px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside> <aside class="HamburgerMenuSecondLevelParent layout-side-bar border-box-sizing v-navigation-drawer v-navigation-drawer--close theme--light" max-width="100%" data-booted="true" style="height: 100%; top: 0px; transform: translateX(-100%); width: 310px; left: 310px; z-index: 1035;"><div class="v-navigation-drawer__content"></div><div class="v-navigation-drawer__border"></div></aside> <aside class="drawerParent overflow-initial HamburgerMenuFirstLevelParent layout-side-bar no-box-shadow border-box-sizing v-navigation-drawer v-navigation-drawer--absolute v-navigation-drawer--open v-navigation-drawer--temporary theme--light" left="true" max-height="100%" max-width="100vw" tabindex="0" id="HamburgerMenuNavigation" data-booted="true" style="height: 100%; top: 0px; transform: translateX(0%); width: 70px; z-index: 2 !important;"><div class="v-navigation-drawer__content"><div class="pa-0 fill-width fill-height"><div class="layout fill-height column"><!----> <div class="flex flex-grow-1 border-box-sizing overflow-hidden"><div class="d-flex flex-row fill-height"><!----> <div class="d-flex flex-column fill-height flex-grow-1 flex-shrink-1 overflow-hidden"><div class="drawerContent flex-grow-1 flex-shrink-1 fill-height specific-scrollbar overflow-x-auto overflow-y-auto"><div class="d-flex flex-column fill-height HamburgerNavigationMenu transparent v-card v-card--flat v-sheet theme--light rounded-0 white" aria-label="First Level Navigation" role="navigation" style="max-height: var(--100vh, 100vh); max-width: 310px;"><div class="d-flex flex-column overflow-hidden transparent v-card v-card--flat v-sheet theme--light" style="height: fit-content; min-height: 100%; max-height: 100%;"><div role="list" class="v-list list-border-active transparent d-flex flex-column overflow-hidden py-0 flex-grow-1 flex-shrink-1 v-sheet theme--light"><div class="no-border-radius flex-grow-0 flex-shrink-0 transparent v-card v-card--flat v-sheet theme--light" style="min-height: 57px;"><a tabindex="0" href="http://192.168.1.59/portal/myworkspace" target="_self" aria-label="Personal Home Link" role="listitem" class="fill-height v-list-item v-list-item--link theme--light"><div class="v-avatar v-list-item__avatar my-auto mx-0 rounded-0 v-avatar--tile" style="height: 36px; min-width: auto; width: auto; max-width: 100px;"><img src="/portal/rest/v1/platform/branding/logo?v=-162571994" alt="" height="36" width="auto" class="object-fit-contain"></div> <div class="v-list-item__content"><!----></div> <!----></a></div> <div class="flex-grow-1 flex-shrink-1 overflow-x-hidden specific-scrollbar transparent overflow-y-hidden"><div role="listbox" class="v-item-group theme--light v-list-item-group"><a tabindex="0" href="http://192.168.1.59/portal/myworkspace" title="Access Site: My Workspace" role="listitem" aria-selected="false" class="d-flex ps-3 v-list-item v-list-item--dense v-list-item--link theme--light"><div class="v-avatar v-list-item__avatar my-auto me-2" style="height: 40px; min-width: 40px; width: 40px;"><i aria-hidden="true" class="v-icon notranslate icon-default-color fa fa-dice-d6 theme--light" style="font-size: 18px;"></i></div> <!----> <!----> <!----> <!----> <!----></a><div><div role="listbox" class="v-item-group theme--light v-list-item-group"><a tabindex="0" href="http://192.168.1.59/portal/dw/people" title="Access Page: People" role="listitem" aria-selected="false" class="d-flex ps-3 v-list-item v-list-item--dense v-list-item--link theme--light"><div class="v-avatar v-list-item__avatar my-auto me-2" style="height: 40px; min-width: 40px; width: 40px;"><i aria-hidden="true" class="v-icon notranslate icon-default-color fas fa-users theme--light" style="font-size: 18px;"></i></div> <!----> <!----> <!----> <div class="v-list-item__action my-auto align-center"><!----></div> <!----></a><a tabindex="0" href="http://192.168.1.59/portal/dw/spaces" title="Access Page: Spaces" role="listitem" aria-selected="false" class="d-flex ps-3 v-list-item v-list-item--dense v-list-item--link theme--light"><div class="v-avatar v-list-item__avatar my-auto me-2" style="height: 40px; min-width: 40px; width: 40px;"><i aria-hidden="true" class="v-icon notranslate icon-default-color fas fa-people-arrows theme--light" style="font-size: 18px;"></i></div> <!----> <!----> <!----> <div class="v-list-item__action my-auto align-center"><!----></div> <!----></a></div></div><hr role="separator" aria-orientation="horizontal" class="my-1 v-divider theme--light"><div><!----> <!----></div><div><!----> <!----></div><div><!----> <!----></div><div><!----> <!----></div><div><div tabindex="0" title="Access All Spaces" role="listitem" aria-selected="false" class="d-flex ps-3 v-list-item v-list-item--dense v-list-item--link theme--light mx-0"><div class="v-avatar v-list-item__avatar me-2 my-auto" style="height: 40px; min-width: 40px; width: 40px;"><i aria-hidden="true" class="v-icon notranslate fa fa-layer-group theme--light" style="font-size: 18px;"></i></div> <!----> <!----></div> <!----></div></div></div> <div class="d-flex flex-grow-0 flex-shrink-0 transparent v-card v-card--flat v-sheet theme--light" style="height: 48px;"><div tabindex="-1" role="listitem" class="my-auto v-list-item v-list-item--dense theme--light mx-0 px-0"><!----> <div class="me-3"></div> <div class="v-list-item__action my-auto d-flex flex-row user-avatar-footer ms-2"><span class="v-badge my-auto pa-0 v-badge--bordered v-badge--bottom v-badge--dot v-badge--overlap theme--light"><div class="v-avatar userAvatar clickable" href="/portal/dw/profile" style="height: 24px; min-width: 24px; width: 24px;"><img src="/portal/rest/v1/social/users/1/avatar?lastModified=1786543693000&amp;r=ei8f%2BYjelVvTFW17WcCTccBLjI95IejM%2BIjjkqQYibvEO%2FP7GofngL6SMqz7P4Xx&amp;byId=true" alt="" height="24" width="24" contain=""></div><span class="v-badge__wrapper"><span aria-atomic="true" aria-label="Badge" aria-live="polite" role="status" class="v-badge__badge" style="inset: calc(100% - 8px) auto auto calc(100% - 8px); background-color: rgb(112, 112, 112); border-color: rgb(112, 112, 112);"></span></span></span> <!----> <!----></div></div> <!----></div></div> <div role="dialog" class="v-dialog__container"><!----></div> <div role="dialog" class="v-dialog__container"><!----></div></div></div> <!----></div> <hr role="separator" aria-orientation="horizontal" class="my-0 v-divider theme--light" style="display: none;"> <div class="flex drawerFooter border-box-sizing flex-grow-0 px-4 py-3" style="display: none;"><!----></div></div></div></div> <!----></div></div></div><div class="v-navigation-drawer__border"></div></aside> <!----></div></div></div>
+</div>
+
+
+	</div>
+</div>
+				</div>
+      </div>
+		</div>
+	</div>
+</div>
+              </div>
+              
+              <div class="UITopBarContainerItem top-bar-logo-container top-bar-logo-containerTDContainer">
+                
+<div class="UIContainer  top-bar-logo-container" id="top-bar-logo-container">
+	<div class="NormalContainerBlock UIComponentBlock">
+		<div class="VIEW-CONTAINER VIEW-BLOCK">
+      <div class="UIIntermediateContainer">
+        <div id="top-bar-logo-containerChildren" class="UIRowContainer">
+					<div id="9f575c9d-3b3c-463c-8795-b5e8f2ddde3a">
+	<div class="PORTLET-FRAGMENT no-layout-style full-height">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="VuetifyApp full-height">
+  <div data-app="true" class="v-application full-height v-application--is-ltr theme--light" id="brandingTopBar"><div class="v-application--wrap"><div class="d-flex flex-row full-height"><div class="d-inline-flex ms-4"><!----> <a href="/portal/myworkspace" aria-label="Platform Name: PMETO - Workspace" class="align-self-center brandingContainer"><div class="logoTitle text-body menu-text-color font-weight-bold">
+      PMETO - Workspace
+    </div></a></div> <!----> <!----></div></div></div>
+</div>
+
+
+	</div>
+</div><div id="e0721d8d-6eb2-4c28-9f6c-d77390266f93">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="siteNavigation">
+    <div class="v-application--wrap d-none d-sm-inline">
+      <button id="topBarSiteNavigation" type="button" role="button" class="ms-5 v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" title="Site navigation" onclick="Vue.startApp('PORTLET/layout/SiteNavigation', 'init', true)">
+        <span class="v-btn__content">
+          <i aria-hidden="true" class="v-icon notranslate fa fa-project-diagram theme--light" style="font-size: 20px;"></i>
+        </span>
+      </button>
+    </div>
+  </div>
+  <div id="siteNavigation">
+    <script type="text/javascript">
+      eXo.env.portal.isAdministrator = true;
+      eXo.env.portal.siteLabel = 'dw';
+    </script>
+  </div>
+</div>
+
+
+
+	</div>
+</div>
+				</div>
+      </div>
+		</div>
+	</div>
+</div>
+              </div>
+              
+              <div class="UITopBarContainerItem right-topNavigation-container right-topNavigation-containerTDContainer">
+                
+<div class="UIContainer  right-topNavigation-container" id="right-topNavigation-container">
+	<div class="NormalContainerBlock UIComponentBlock">
+		<div class="VIEW-CONTAINER VIEW-BLOCK">
+      <div class="UIIntermediateContainer">
+        <div id="right-topNavigation-containerChildren" class="UIRowContainer">
+					
+				</div>
+      </div>
+		</div>
+	</div>
+</div>
+              </div>
+              
+              <div class="UITopBarContainerItem menu-topNavigation-container menu-topNavigation-containerTDContainer">
+                
+<div class="UIContainer " id="menu-topNavigation-container">
+  <div class="NormalContainerBlock UIComponentBlock">
+    <div class="VIEW-CONTAINER VIEW-BLOCK">
+      <div class="UIIntermediateContainer">
+        <div id="menu-topNavigation-containerChildren" class="UIRowContainer">
+          <div id="1017458437">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application topBarMenu v-application--is-ltr theme--light top-bar-menu-58681" id="topBarMenu"><div class="v-application--wrap"><div class="v-tabs theme--light"><div role="tablist" class="v-item-group theme--light v-slide-group v-tabs-bar v-tabs-bar--show-arrows none--text transparent" data-booted="true" style="height: 57px;"><div class="v-slide-group__prev v-slide-group__prev--disabled"><i aria-hidden="true" class="v-icon notranslate v-icon--disabled mdi mdi-chevron-left theme--light"></i></div><div class="v-slide-group__wrapper"><div class="v-slide-group__content v-tabs-bar__content"><div class="v-tabs-slider-wrapper" style="transition: none; width: 0px;"><div class="v-tabs-slider"></div></div></div></div><div class="v-slide-group__next v-slide-group__next--disabled"><i aria-hidden="true" class="v-icon notranslate v-icon--disabled mdi mdi-chevron-right theme--light"></i></div></div></div></div></div>
+</div>
+
+	</div>
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+              </div>
+              
+              <div class="UITopBarContainerItem middle-topNavigation-container middle-topNavigation-containerTDContainer">
+                
+<div class="UIContainer  middle-topNavigation-container" id="middle-topNavigation-container">
+  <div class="NormalContainerBlock UIComponentBlock">
+    <div class="VIEW-CONTAINER VIEW-BLOCK">
+      <div class="VuetifyApp UIIntermediateContainer">
+        <div id="middle-topNavigation-containerChildren" class="UIRowContainer v-application">
+        
+            <div class="ms-2">
+                  <div id="topbarSearch">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="SearchApplication" role="search">
+    <div class="v-application--wrap">
+      <button type="button" title="Search (Ctrl + Shift + f)" class="transparent v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" onclick="Vue.startApp('PORTLET/social/Search', 'init')">
+        <span class="v-btn__content">
+          <i class="v-icon fas fa-search" style="font-size: 20px"></i>
+        </span>
+      </button>
+      <textarea id="searchConnectorsDefaultValue" aria-hidden="true" class="d-none" style="">[{"uri":"/content/rest/contents/search?query={keyword}&amp;limit={limit}","icon":"fas fa-newspaper","name":"news","enabled":true,"contentType":"news","spaceFilterEnabled":true,"jsModule":"SHARED/NewsSearchCard","cssModule":null,"i18nBundle":"locale.portlet.news.News","uiComponent":"news-search-card","favoritesEnabled":true,"tagsEnabled":true,"groupingEnabled":false},{"uri":"/portal/rest/notes/contextsearch?limit={limit}&amp;keyword={keyword}","icon":"fas fa-clipboard","name":"notes","enabled":true,"contentType":"notes","spaceFilterEnabled":true,"jsModule":"SHARED/wikiSearchCard","cssModule":null,"i18nBundle":"locale.portlet.wiki.WikiPortlet","uiComponent":"wiki-search-card","favoritesEnabled":true,"tagsEnabled":true,"groupingEnabled":false},{"uri":"/portal/rest/v1/social/activities/search?q={keyword}&amp;limit={limit}&amp;expand=shared","icon":"fas fa-stream","name":"activities","enabled":true,"contentType":"activity","spaceFilterEnabled":true,"jsModule":"SHARED/ActivitySearchResultCard","cssModule":"social/ActivitySearch","i18nBundle":null,"uiComponent":"activity-search-result-card","favoritesEnabled":true,"tagsEnabled":true,"groupingEnabled":false},{"uri":"/portal/rest/search/documents/recent?limit={limit}&amp;q={keyword}&amp;sort=relevancy","icon":"fas fa-file-alt","name":"files","enabled":true,"contentType":"document","spaceFilterEnabled":true,"jsModule":"SHARED/FileSearch","cssModule":null,"i18nBundle":"locale.portlet.Documents","uiComponent":"file-search-card","favoritesEnabled":true,"tagsEnabled":true,"groupingEnabled":false},{"uri":"/portal/rest/v1/social/spaces?q={keyword}&amp;limit={limit}&amp;sort={sortField}&amp;order={sortDirection}&amp;expand=managers,favorite","icon":"fas fa-layer-group","name":"spaces","enabled":true,"contentType":"space","spaceFilterEnabled":false,"jsModule":"SHARED/SpaceSearchResultCard","cssModule":null,"i18nBundle":"locale.portlet.social.SpacesListApplication","uiComponent":"space-search-result-card","favoritesEnabled":true,"tagsEnabled":true,"groupingEnabled":true},{"uri":"/portal/rest/gamification/rules?status=ENABLED&amp;programStatus=ENABLED&amp;type=ALL&amp;dateFilter=STARTED&amp;expand=countRealizations,favorites&amp;limit={limit}&amp;term={keyword}&amp;sortBy={sortField}&amp;sortDescending={sortDescending}","icon":"fas fa-trophy","name":"rules","enabled":true,"contentType":"rule","spaceFilterEnabled":true,"jsModule":"SHARED/ruleSearch","cssModule":"gamification-portlets/EngagementCenterActions","i18nBundle":"locale.portlet.Challenges","uiComponent":"engagement-center-rule-search-card","favoritesEnabled":true,"tagsEnabled":true,"groupingEnabled":false},{"uri":"/portal/rest/v1/social/users?q={keyword}&amp;limit={limit}&amp;expand=all,spacesCount,relationshipStatus,connectionsCount","icon":"fas fa-users","name":"people","enabled":true,"contentType":"user","spaceFilterEnabled":true,"jsModule":"SHARED/PeopleSearchResultCard","cssModule":"social/ProfileSearch","i18nBundle":"locale.portlet.social.PeopleListApplication","uiComponent":"people-search-result-card","favoritesEnabled":false,"tagsEnabled":false,"groupingEnabled":true},{"uri":"/portal/rest/tasks?limit={limit}&amp;q={keyword}","icon":"fas fa-tasks","name":"tasks","enabled":true,"contentType":"task","spaceFilterEnabled":true,"jsModule":"SHARED/TaskSearch","cssModule":null,"i18nBundle":"locale.portlet.taskManagement","uiComponent":"task-search-card","favoritesEnabled":false,"tagsEnabled":false,"groupingEnabled":false},{"uri":"/portal/rest/v1/agenda/events/search?limit={limit}&amp;query={keyword}&amp;expand=response","icon":"fas fa-calendar-alt","name":"events","enabled":true,"contentType":"agendaEvent","spaceFilterEnabled":true,"jsModule":"SHARED/agendaSearchCard","cssModule":"agenda/Agenda","i18nBundle":"locale.portlet.Agenda","uiComponent":"agenda-search-card","favoritesEnabled":false,"tagsEnabled":false,"groupingEnabled":false}]</textarea>
+      <textarea id="searchSkinUrlsDefaultValue" aria-hidden="true" class="d-none" style="">["/social/skin/css/portlet/ActivitySearch/Style.css?orientation=LT&amp;minify=true&amp;hash=-2111917058","/agenda/skin/css/agenda.css?orientation=LT&amp;minify=true&amp;hash=578830892","/social/skin/css/portlet/ProfileSearch/Style.css?orientation=LT&amp;minify=true&amp;hash=-198042456","/gamification-portlets/skin/css/engagementCenter.css?orientation=LT&amp;minify=true&amp;hash=1302634791"]</textarea>
+      <script type="text/javascript">
+        if (window.location.pathname?.endsWith?.('/search')) {
+          window.require(['PORTLET/social/Search'], app => app.init());
+        }
+        window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(['f'], () => {
+          window.require(['PORTLET/social/Search'], app => {
+            app.init();
+            document.dispatchEvent(new CustomEvent('search-open'));
+          });
+        }));
+      </script>
+    </div>
+  </div>
+</div>
+
+
+	</div>
+</div>
+            </div>
+                  
+            <div class="ms-2">
+                  <div id="chat">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="matrixChatButton" servername="192.168.1.59"><div class="v-application--wrap"><button type="button" class="text-xs-center v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" id="btnChatButtonNew" title="Open Chat room"><span class="v-btn__content"><span flat="" class="v-badge v-badge--overlap theme--light"><i aria-hidden="true" class="v-icon notranslate fa fa-comments theme--light" style="font-size: 20px; color: rgb(46, 181, 140); caret-color: rgb(46, 181, 140);"></i><span class="v-badge__wrapper"><span aria-atomic="true" aria-label="Badge" aria-live="polite" role="status" class="v-badge__badge" style="inset: auto auto calc(100% - 12px) calc(100% - 12px); background-color: var(--allPagesBadgePrimaryColor, #d32a2a); border-color: var(--allPagesBadgePrimaryColor, #d32a2a); display: none;"></span></span></span></span></button>    <div><div class="v-overlay theme--dark" style="z-index: 2000;"><div class="v-overlay__scrim" style="opacity: 0; background-color: rgb(33, 33, 33); border-color: rgb(33, 33, 33);"></div></div> </div>  <div role="dialog" class="v-dialog__container"><!----></div> <audio class="hidden"><source src="/matrix/audio/notif.wav"> <source src="/matrix/audio/notif.mp3"> <source src="/chat/audio/notif.ogg"></audio></div></div>
+</div>
+
+
+
+	</div>
+</div>
+            </div>
+                  
+            <div class="ms-2">
+                  <div id="topbarNotifications">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="NotificationPopoverPortlet"><div class="v-application--wrap"><div class="flex"><div class="layout"><button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" title="Notifications (Ctrl + Shift + e)"><span class="v-btn__content"><span flat="" class="v-badge v-badge--overlap theme--light"><i aria-hidden="true" class="v-icon notranslate icon-default-color fa fa-bell theme--light" style="font-size: 20px;"></i><span class="v-badge__wrapper"><span aria-atomic="true" aria-label="Badge" aria-live="polite" role="status" class="v-badge__badge" style="inset: auto auto calc(100% - 12px) calc(100% - 12px); background-color: var(--allPagesBadgePrimaryColor, #d32a2a); border-color: var(--allPagesBadgePrimaryColor, #d32a2a); display: none;"></span></span></span></span></button></div></div> <!----></div></div>
+</div>
+
+
+
+	</div>
+</div>
+            </div>
+                  
+            <div class="ms-2">
+                  <div id="user-pinned-applications">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="userPinnedApplications"><div class="v-application--wrap"></div></div>
+</div>
+
+
+	</div>
+</div>
+            </div>
+                  
+            <div class="ms-2">
+                  <div id="mandatory-appcenter">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="appLauncher">
+    <script>
+      document.addEventListener('CustomEventOpenApplicationLauncherDrawer', () => {
+        if (document.querySelector('#appCenterDrawer')) {
+          document.dispatchEvent(new CustomEvent('openApplicationLauncherDrawer'));
+        } else {
+          Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: this.isAdmin, pinnedApplicationIds: this.pinnedApplicationIds});
+        } 
+      });
+    </script>
+    <div class="v-application--wrap">
+      <div class="container px-0 py-0">
+        <div class="layout transparent">
+          <button type="button" title="Open the App Center (Ctrl + Shift + a)" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" id="appcenterLauncherButton" onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: true, pinnedApplicationIds: []})">
+            <span class="v-btn__content">
+              <i aria-hidden="true" class="v-icon notranslate appCenterLauncherButtonIcon icon-default-color fa fa-th theme--light" style="font-size: 20px;"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+	</div>
+</div>
+            </div>
+                  
+            <div class="ms-2 hidden-xs-only">
+                  <div id="topbarAdministrationLink">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+  <div class="VuetifyApp">
+    <div data-app="true" class="v-application v-application--is-ltr theme--light" id="platformSettings">
+      <div class="v-application--wrap">
+        <a href="/portal/administration" title="Access Platform Settings" target="_blank" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" aria-label="Enter the administration settings" aria-haspopup="true" aria-expanded="false">
+          <span class="v-btn__content">
+            <i aria-hidden="true" class="v-icon notranslate icon-default-color fas fa-cog theme--light" style="font-size: 20px;"></i>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+
+
+	</div>
+</div>
+            </div>
+                  
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="UISiteBody DWSite site-scroll-parent overflow-y-auto overflow-x-hidden" id="UISiteBody" scroll-control="true" style="max-height: calc(var(--100vh, 100vh) - 57px); margin-left: 70px;">
+	<div class="UIComponent UIComponentBlock">
+		<div class="VIEW-SITEBODY VIEW-BLOCK" id="SITEBODY-VIEW-BLOCK">
+      <div class="UIPortal" id="UIPortal">
+	<div class="UIComponentBlock">
+		<div class="VIEW-PORTAL VIEW-BLOCK">
+			<div id="UIPortal">
+				<div class="UIRowContainer">
+					<div class="UIPageBody" id="UIPageBody">
+	<div class="UIComponent UIComponentBlock">
+  	<div class="VIEW-PAGEBODY VIEW-BLOCK" id="PAGEBODY-VIEW-BLOCK">
+  		<div class="UIPage" id="UIPage">
+	<div class="UIComponentBlock">
+		<div class="VIEW-PAGE">
+			<div id="UIPage">
+				<div class="UIRowContainer">
+					
+        <link rel="preload" as="fetch" href="/portal/dw?maximizedPortletId=28&amp;showMaxWindow=true&amp;hideSharedLayout=true&amp;maximizedPortletMode=VIEW" crossorigin="use-credentials">
+        <link rel="preload" as="fetch" href="/portal/dw?maximizedPortletId=29&amp;showMaxWindow=true&amp;hideSharedLayout=true&amp;maximizedPortletMode=VIEW" crossorigin="use-credentials">
+        <link rel="preload" as="fetch" href="/portal/dw?maximizedPortletId=30&amp;showMaxWindow=true&amp;hideSharedLayout=true&amp;maximizedPortletMode=VIEW" crossorigin="use-credentials">
+        <link rel="preload" as="fetch" href="/portal/dw?maximizedPortletId=f45dedce-5f4e-4222-88d4-e1d12ab9f6ca&amp;showMaxWindow=true&amp;hideSharedLayout=true&amp;maximizedPortletMode=VIEW" crossorigin="use-credentials">
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application layout-sections-parent transparent v-application--is-ltr theme--light layout-page-parent" id="PageLayout" role="main" flat=""><div class="v-application--wrap"><div id="Container103" class="layout-page-parent no-border-radius layout-page-body"> <div class="layout-section"><!----> <div id="Container104" class="layout-section-content  d-flex flex-column d-md-grid grid-cols grid-cols-md-12 grid-cols-lg-12 grid-cols-xl-12 layout-mobile-columns layout-sticky-application"> <div id="Container105" class=" flex-cell grid-cell-colspan-md-8 grid-cell-colspan-lg-8 grid-cell-colspan-xl-8 grid-cell-rowspan-md-1 grid-cell-rowspan-lg-1 grid-cell-rowspan-xl-1"> <div id="UIPortlet-28" class="layout-application"><div class="PORTLET-FRAGMENT">
+		
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application peopleList application-body v-application--is-ltr theme--light" id="peopleListApplication" flat=""><div class="v-application--wrap"><header class="z-index-one px-0 v-sheet theme--light v-toolbar v-toolbar--flat" id="peopleListApplication" style="height: 64px;"><div class="v-toolbar__content" style="height: 64px;"><div id="applicationToolbar" class="d-flex flex-grow-1 align-center content-box-sizing position-relative"><div id="applicationToolbarLeft" class="flex-grow-1 text-start pa-0 col-6 text-truncate"><!----> <!----> <div class="showingPeopleText ms-1 d-none d-sm-flex">
+      Showing 2 results
+    </div> <div class="spacer"></div></div> <!----> <div id="applicationToolbarRight" class="d-flex flex-nowrap flex-grow-1 align-center justify-end text-truncate pa-0 col-6"><!----> <!----> <!----> <!----> <!----> <button type="button" class="px-0 ms-4 v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--small" id="applicationToolbarConeButton"><span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate fa fa-filter theme--light icon-default-color" style="font-size: 20px;"></i></span></button></div></div></div></header> <div class="v-card v-card--flat v-sheet theme--light" id="peopleListApplication"><div class="position-relative mx-4 overflow-hidden v-card v-card--flat v-sheet theme--light" style="height: 8px;"></div> <div id="peopleListBody" class="px-4 pb-4"><div class="row ma-n2 border-box-sizing"><div id="peopleCardItem13" class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-12 pa-2"><div class="flex"><a tabindex="0" href="/portal/dw/profile/admin.local" class="d-flex flex-column application-border-radius border-color socialUserCard v-card v-card--link v-sheet v-sheet--outlined theme--light" style="height: 254px;"><div class="overflow-hidden application-border-radius-top no-border-bottom-right-radius no-border-bottom-left-radius position-relative d-flex justify-center z-index-one v-card v-card--flat v-sheet theme--light" style="min-height: 50px; min-width: 100%; max-height: 50px; max-width: 100%;"><img src="/portal/rest/v1/social/users/default-image/banner?lastModified=1786558716672&amp;r=h3aMEO%2F8J2JEIYJfq8XaIrRoAXPyRgG%2FLIm%2Fr48NjJ4gGMfRRuEtSvV5Y9uiry2c&amp;byId=true" alt="" height="100%" width="auto" class="position-absolute" style="max-width: 1000%; min-width: 100%; max-height: 100%; min-height: 100%;"></div> <div class="d-flex mt-n9 pt-2px px-2 v-card v-card--flat v-sheet theme--light" style="min-height: 65px; min-width: 100%; max-height: 65px; max-width: 100%;"><div class="overflow-hidden d-flex border-radius-circle align-center justify-center z-index-two v-card v-card--flat v-sheet theme--light" style="min-height: 65px; min-width: 65px; max-height: 65px; max-width: 65px;"><img src="/portal/rest/v1/social/users/13/avatar?lastModified=1786543686000&amp;r=ei8f%2BYjelVvTFW17WcCTcV3f9ZuIp0xaE%2BAsUZCZalu%2BO3TQgWnXg1kFb5Qf0YEa&amp;byId=true&amp;size=65x65" alt="" height="100%" width="auto" class="overflow-hidden border-radius" style="max-width: 1000%; max-height: 100%;"></div> <div class="d-flex flex-grow-1 align-center flex-shrink-1 ps-1 pt-4"><div class="mt-4"><!----> <!----> <!----> <!----></div></div></div> <div title="admin local" class="font-weight-bold overflow-hidden text-truncate-2 justify-center px-2 mt-4 max-height-2lh">
+      admin local
+      <!----></div> <div class="userFieldsArea px-2"><!----> <!----> <!----></div> <div class="d-flex full-width position-absolute b-0 mb-1 px-1"><div class="me-auto"><button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" title="Organizational Chart"><span class="v-btn__content"><div class="d-flex align-center justify-center transparent v-card v-card--flat v-sheet theme--light" style="height: 25px; width: 25px;"><i aria-hidden="true" class="v-icon notranslate fas fa-sitemap theme--light" style="font-size: 20px;"></i></div></span></button></div> <div class="ms-auto d-flex"><span><span class="call-button call-button-mini call-button-popover--profile"></span></span><span><button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" aria-label="Open chat"><span class="v-btn__content"><i aria-hidden="true" title="Open chat" class="v-icon notranslate fas fa-comments theme--light" style="font-size: 20px;"></i></span></button></span><span><button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" aria-label="Send a Kudos"><span class="v-btn__content"><i aria-hidden="true" title="Send a Kudos" class="v-icon notranslate fas fa-award theme--light" style="font-size: 20px;"></i></span></button></span></div> <!----></div></a></div></div><div id="peopleCardItem1" class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-12 pa-2"><div class="flex"><a tabindex="0" href="/portal/dw/profile/root" class="d-flex flex-column application-border-radius border-color socialUserCard v-card v-card--link v-sheet v-sheet--outlined theme--light" style="height: 254px;"><div class="overflow-hidden application-border-radius-top no-border-bottom-right-radius no-border-bottom-left-radius position-relative d-flex justify-center z-index-one v-card v-card--flat v-sheet theme--light" style="min-height: 50px; min-width: 100%; max-height: 50px; max-width: 100%;"><img src="/portal/rest/v1/social/users/default-image/banner?lastModified=1786558716672&amp;r=h3aMEO%2F8J2JEIYJfq8XaIrRoAXPyRgG%2FLIm%2Fr48NjJ4gGMfRRuEtSvV5Y9uiry2c&amp;byId=true" alt="" height="100%" width="auto" class="position-absolute" style="max-width: 1000%; min-width: 100%; max-height: 100%; min-height: 100%;"></div> <div class="d-flex mt-n9 pt-2px px-2 v-card v-card--flat v-sheet theme--light" style="min-height: 65px; min-width: 100%; max-height: 65px; max-width: 100%;"><div class="overflow-hidden d-flex border-radius-circle align-center justify-center z-index-two v-card v-card--flat v-sheet theme--light" style="min-height: 65px; min-width: 65px; max-height: 65px; max-width: 65px;"><img src="/portal/rest/v1/social/users/1/avatar?lastModified=1786543693000&amp;r=ei8f%2BYjelVvTFW17WcCTccBLjI95IejM%2BIjjkqQYibvEO%2FP7GofngL6SMqz7P4Xx&amp;byId=true&amp;size=65x65" alt="" height="100%" width="auto" class="overflow-hidden border-radius" style="max-width: 1000%; max-height: 100%;"></div> <div class="d-flex flex-grow-1 align-center flex-shrink-1 ps-1 pt-4"><div class="mt-4"><!----> <!----> <!----> <!----></div></div></div> <div title="Root Root" class="font-weight-bold overflow-hidden text-truncate-2 justify-center px-2 mt-4 max-height-2lh">
+      Root Root
+      <!----></div> <div class="userFieldsArea px-2"><!----> <!----> <!----></div> <div class="d-flex full-width position-absolute b-0 mb-1 px-1"><div class="me-auto"><button type="button" class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default" title="Organizational Chart"><span class="v-btn__content"><div class="d-flex align-center justify-center transparent v-card v-card--flat v-sheet theme--light" style="height: 25px; width: 25px;"><i aria-hidden="true" class="v-icon notranslate fas fa-sitemap theme--light" style="font-size: 20px;"></i></div></span></button></div> <!----> <!----></div></a></div></div></div></div> <div id="peopleListFooter" class="v-card__actions pt-0 px-4 border-box-sizing"><!----></div></div> </div></div>
+</div>
+
+	</div></div> </div><div id="Container106" class=" flex-cell grid-cell-colspan-md-4 grid-cell-colspan-lg-4 grid-cell-colspan-xl-4 grid-cell-rowspan-md-1 grid-cell-rowspan-lg-1 grid-cell-rowspan-xl-1"> <div id="UIPortlet-29" class="layout-application"><div class="PORTLET-FRAGMENT">
+		<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="PeopleOverview"><div class="v-application--wrap"><div tabindex="" class="d-flex flex-column not-clickable v-card v-card--flat v-sheet theme--light application-body"><div class="d-flex flex-column flex-grow-1 pa-5"><div class="d-flex align-center widget-text-header mb-5"><div class="text-truncate">People Connections</div> <div class="spacer"></div> <!----></div> <!----> <div class="d-flex flex-column flex-grow-1"><div class="v-card v-card--flat v-sheet theme--light"><div><div class="d-flex align-center justify-center"><i aria-hidden="true" class="v-icon notranslate tertiary--text me-3 fas fa-user-plus theme--light" style="font-size: 24px;"></i> <div class="d-flex flex-nowrap">
+            Create your network
+            Connect with others
+          </div></div></div></div></div></div> <!----></div> </div></div>
+</div>
+
+
+	</div></div><div id="UIPortlet-30" class="layout-application"><div class="PORTLET-FRAGMENT">
+		
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application hiddenable-widget v-application--is-ltr theme--light" id="SuggestionsPeopleAndSpace"><div class="v-application--wrap"><div tabindex="" class="d-flex flex-column not-clickable v-card v-card--flat v-sheet theme--light suggestions-wrapper application-body"><div class="d-flex flex-column flex-grow-1 pa-5"><div class="d-flex align-center widget-text-header mb-5"><div class="text-truncate">Suggestions</div> <div class="spacer"></div> <!----></div> <!----> <div class="d-flex flex-column flex-grow-1"><div role="list" class="v-list suggestions-list people-list pa-0 v-sheet theme--light v-list--dense"><div tabindex="-1" role="listitem" class="suggestions-list-item pa-0 v-list-item theme--light"><div class="v-avatar v-list-item__avatar" style="height: 37px; min-width: 37px; width: 37px;"><div class="v-image v-responsive theme--light"><div class="v-responsive__sizer" style="padding-bottom: 100%;"></div><div class="v-image__image v-image__image--cover" style="background-image: url(&quot;http://192.168.1.59/portal/rest/v1/social/users/13/avatar?lastModified=1786543686000&amp;r=ei8f%2BYjelVvTFW17WcCTcV3f9ZuIp0xaE%2BAsUZCZalu%2BO3TQgWnXg1kFb5Qf0YEa&amp;byId=true&quot;); background-position: center center;"></div><div class="v-responsive__content" style="width: 100px;"></div></div></div> <div class="v-list-item__content pb-3"><div class="v-list-item__title suggestions-list-item-title"><a href="/portal/dw/profile/admin.local" class="text-color">
+        admin local
+      </a></div> <div class="v-list-item__subtitle suggestions-list-item-subtitle">
+      0 connections in common
+    </div></div> <div class="v-list-item__action suggestions-list-item-actions"><div class="transparent v-item-group theme--light v-btn-toggle"><a text="" icon="" small="" min-width="auto" class="px-0 suggestions-btn-action connexion-accept-btn"><i class="uiIconInviteUser"></i></a> <a text="" small="" min-width="auto" class="px-0 suggestions-btn-action connexion-refuse-btn"><i class="uiIconCloseCircled"></i></a></div></div></div></div> <!----> <!----></div></div> <!----></div></div></div>
+</div>
+
+	</div></div><div id="UIPortlet-352" class="layout-application"><div class="PORTLET-FRAGMENT">
+		
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="usersLeaderboard"><div class="v-application--wrap"><div class="pa-5 application-body v-card v-card--flat v-sheet theme--light" style="min-height: calc(100% - 40px);"><div class="d-flex UserGamificationHeader text-color"><div class="d-inline-block widget-text-header text-truncate">
+        Leaderboard
+      </div></div> <div><div class="d-flex"><div class="v-tabs flex-grow-1 flex-shrink-1 width-auto theme--light"><div role="tablist" class="v-item-group theme--light v-slide-group v-slide-group--has-affixes v-slide-group--is-overflowing v-tabs-bar primary--text" data-booted="true"><div class="v-slide-group__prev v-slide-group__prev--disabled"><!----></div><div class="v-slide-group__wrapper"><div class="v-slide-group__content v-tabs-bar__content"><div class="v-tabs-slider-wrapper" style="height: 2px; left: 0px; width: 106px;"><div class="v-tabs-slider secondary"></div></div><a tabindex="0" href="#week" aria-selected="true" role="tab" class="overflow-hidden px-2 v-tab v-tab--active" value="week"><span class="text-none">Week</span></a><a tabindex="0" href="#month" aria-selected="false" role="tab" class="overflow-hidden px-2 v-tab" value="month"><span class="text-none">Month</span></a><a tabindex="0" href="#quarter" aria-selected="false" role="tab" class="overflow-hidden px-2 v-tab" value="quarter"><span class="text-none">Quarter</span></a><a tabindex="0" href="#all" aria-selected="false" role="tab" class="overflow-hidden px-2 v-tab" value="all"><span class="text-none">All times</span></a> </div></div><div class="v-slide-group__next"><i aria-hidden="true" class="v-icon notranslate mdi mdi-chevron-right theme--light" style="transform-origin: center top 0px;"></i></div></div></div> <button type="button" class="ms-auto flex-grow-0 flex-shrink-0 v-btn v-btn--flat v-btn--icon v-btn--round v-btn--text theme--light v-size--small my-auto" style="height: auto; width: auto;"><span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate fa fa-sliders-h theme--light icon-default-color" style="font-size: 16px;"></i> <!----></span></button></div> <div class="v-window v-item-group theme--light v-tabs-items"><div class="v-window__container"><div class="v-window-item v-window-item--active" id="week"><!----> <div role="list" class="v-list v-sheet theme--light"><div tabindex="0" id="users-leaderboard-13" role="listitem" class="px-0 v-list-item v-list-item--dense v-list-item--link theme--light"><div class="me-3"><div class="v-avatar my-auto border-color" style="height: 32px; min-width: 32px; width: 32px;">
+      1
+    </div></div> <div class="v-avatar v-list-item__avatar me-4 my-auto" style="height: 32px; min-width: 32px; width: 32px;"><div class="v-image v-responsive theme--light"><div class="v-responsive__sizer" style="padding-bottom: 100%;"></div><div class="v-image__image v-image__image--cover" style="background-image: url(&quot;http://192.168.1.59/portal/rest/v1/social/users/13/avatar?lastModified=1786543686000&amp;r=ei8f%2BYjelVvTFW17WcCTcV3f9ZuIp0xaE%2BAsUZCZalu%2BO3TQgWnXg1kFb5Qf0YEa&amp;byId=true&quot;); background-position: center center;"></div><div class="v-responsive__content" style="width: 100px;"></div></div></div> <div class="v-list-item__content"><div class="v-list-item__title"><span class="text-body">
+        admin local
+      </span></div></div> <div class="v-list-item__action justify-end"><span class="primary--text font-weight-bold">50</span></div></div> <!----> </div></div><!----><!----><!----></div></div> <!----> </div></div> <!--function(e,n,r,i){return Pt(t,e,n,r,i,!0)}--></div></div>
+</div>
+
+	</div></div> </div> </div></div> </div></div></div>
+</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+  	</div>
+  </div>
+</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+		</div>
+	</div>
+</div>
+
+    </div>
+  </div>
+</div>
+</div>
+</div>	
+<div id="UIMaskWorkspace" style="display: none;">
+<div class="UIMaskWorkspace ">
+
+</div>
+</div>
+
+<div class="UIPopupWindow UIDragObject uiPopup" id="_1378285084" style="width: 550px; display: none;">
+  
+</div></div>
+<div id="body-end-container">
+<div id="d9313fce-df58-478b-bb84-d24bebf1b735">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="appShortcuts">
+    <div class="v-application--wrap">
+      <div class="container px-0 py-0">
+        <div class="layout transparent">
+          <script type="text/javascript">
+          
+          window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(['p', '+', 'k', 'b', 's','a'], shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: true, pinnedApplicationIds: []}, true, ['p', '+', 'k', 'b', 's','a'], shortcut))));
+          
+          </script>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+	</div>
+</div><div id="d41c70aa-7e34-4122-9457-47c64a90ec19">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		<script type="text/javascript" async="true" defer="defer">
+  require(['SHARED/popover']);
+</script>
+
+
+	</div>
+</div><div id="a5525a7f-ec80-41ea-9d9e-f75882ddef74">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		
+<script type="text/javascript">
+  window.require(['PORTLET/analytics/StatisticsCollection'], (stats) => {
+    stats.init.call(stats, [{"subModule":null,"operation":"click","name":"Unified search click","module":null,"parameters":{"ui":"toolbar","application":"SearchPortlet"},"domEventProperties":null,"domSelector":"#SearchApplication","domEvent":"mousedown","domProperties":null}]);
+  });
+</script>
+
+
+	</div>
+</div><div id="045ad627-6cc6-43a0-9db2-f1368f8fba7c">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		<div class="VuetifyApp">
+  <div data-app="true" class="v-application VuetifyApp v-application--is-ltr theme--light" id="KudosApp" color="transaprent" flat=""><div class="v-application--wrap"><!--function(e,n,r,i){return Pt(t,e,n,r,i,!0)}-->  </div></div>
+</div>
+
+
+	</div>
+</div><div id="897ae2ad-ff28-4c7d-80b4-d6b8a076c7b1">
+	<div class="PORTLET-FRAGMENT">
+		<div class="VuetifyApp">
+    <div role="dialog" class="v-dialog__container" id="TermsAndConditionsUpdaterApplication"><!----></div>
+</div>
+
+	</div>
+</div><div id="d17f159c-3eb4-4917-8fd7-28509368034a">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		<div class="VuetifyApp">
+  <div data-app="true" class="v-application v-application--is-ltr theme--light" id="attachment" entity-id="" entity-type="" default-folder="" space-id=""><div class="v-application--wrap"><div class="attachments-application border-box-sizing transparent"><div class="attachments-drawer"></div> </div></div></div>
+</div>
+
+	</div>
+</div><div id="ec3c650f-2023-44ef-88ef-957f10a3476c">
+	<div class="PORTLET-FRAGMENT no-layout-style">
+		<script type="text/javascript">
+  window.require(['PORTLET/onlyoffice/NewDocumentExtension']);
+</script>
+
+	</div>
+</div>
+</div>
+  <script type="text/javascript" id="jsManager">
+    window.require(["SHARED/base","SHARED/bodyScrollListener","SHARED/topbarLoading","SHARED/uiPopupMessages","SHARED/AttachmentPreviewListener","SHARED/DocumentsInfoDrawerListener","SHARED/commonVueComponents","PORTLET/layout/PageLayout","PORTLET/social/Sidebar","PORTLET/social/TopBarLogo","PORTLET/layout/SiteNavigation","PORTLET/social/TopBarMenu","PORTLET/social/Search","PORTLET/matrix/Matrix","PORTLET/social/TopBarNotification","PORTLET/app-center/UserPinnedApplications","PORTLET/social/PeopleList","PORTLET/social/PeopleOverview","PORTLET/social/SuggestionsPeopleAndSpace","PORTLET/gamification-portlets/UsersLeaderboard","SHARED/popover","SHARED/jquery","SHARED/vue","SHARED/vuetify","SHARED/eXoVueI18n","SHARED/extensionRegistry","PORTLET/analytics/StatisticsCollection","SHARED/kudos","PORTLET/notes/TermsAndConditionsUpdater","PORTLET/onlyoffice/NewDocumentExtension"],function(base,bodyScrollListener,topbarLoading,popupMsg,AttachmentPreviewListener,DocumentsInfoDrawerListener) {
+try {topbarLoading.init()} catch(unhandledError) { console.error(unhandledError); }try {Vue.prototype.$utils.includeExtensions('BaseExtension')} catch(unhandledError) { console.error(unhandledError); }try {popupMsg.init('_1378285084');} catch(unhandledError) { console.error(unhandledError); }try {typeof base !== 'undefined' && base?.Browser && base.Browser.onLoad();} catch(unhandledError) { console.error(unhandledError); }try {} catch(unhandledError) { console.error(unhandledError); }});
+  </script>
+
+</body></html>

@@ -1,8 +1,38 @@
 {
   "base": "http://192.168.1.59",
-  "login_ok": false,
-  "auth_method": null,
-  "me": null,
+  "login_ok": true,
+  "auth_method": "form:/portal/login",
+  "me": {
+    "id": "1",
+    "href": "http://192.168.1.59/portal/rest/v1/social/users/root",
+    "identity": "http://192.168.1.59/portal/rest/v1/social/identities/1",
+    "username": "root",
+    "userName": "root",
+    "firstname": "Root",
+    "lastname": "Root",
+    "fullname": "Root Root",
+    "email": "root@gatein.com",
+    "avatar": "/portal/rest/v1/social/users/1/avatar?lastModified=1786543693000&r=ei8f%2BYjelVvTFW17WcCTccBLjI95IejM%2BIjjkqQYibvEO%2FP7GofngL6SMqz7P4Xx&byId=true",
+    "banner": "/portal/rest/v1/social/users/default-image/banner?lastModified=1786630631410&r=h3aMEO%2F8J2JEIYJfq8XaIrRoAXPyRgG%2FLIm%2Fr48NjJ485IuDOYATN6nPmXNTKFvL&byId=true",
+    "isDefaultAvatar": true,
+    "isAdmin": true,
+    "isInternal": true,
+    "createdDate": "1786542979430",
+    "lastLoginTime": "1786631239890",
+    "deleted": false,
+    "enabled": true,
+    "external": "false",
+    "company": null,
+    "location": null,
+    "department": null,
+    "team": null,
+    "profession": null,
+    "country": null,
+    "city": null,
+    "primaryProperty": "",
+    "secondaryProperty": "",
+    "tertiaryProperty": ""
+  },
   "endpoints": {
     "/rest/v1/platform/info": {
       "status": 404,
@@ -10,24 +40,24 @@
       "sample": "There is no any resources matched to request path /v1/platform/info"
     },
     "/rest/v1/social/users": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 200,
+      "ctype": "application/json",
+      "sample": "{\"users\":[{\"id\":\"13\",\"href\":\"http://192.168.1.59/portal/rest/v1/social/users/admin.local\",\"identity\":\"http://192.168.1.59/portal/rest/v1/social/identities/13\",\"username\":\"admin.local\",\"userName\":\"admi"
     },
     "/rest/v1/social/users/me": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
-    },
-    "/rest/v1/social/spaces": {
       "status": 401,
       "ctype": "",
       "sample": ""
     },
+    "/rest/v1/social/spaces": {
+      "status": 200,
+      "ctype": "application/json",
+      "sample": "{\"spaces\":[],\"offset\":0,\"limit\":0}"
+    },
     "/rest/v1/social/activities": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 200,
+      "ctype": "application/json",
+      "sample": "{\"activities\":[{\"id\":\"12\",\"title\":\"Publicacao de teste c50df431 \\u2014 substituicao do Office 365\",\"hidden\":false,\"templateParams\":{},\"href\":\"http://192.168.1.59/portal/rest/v1/social/activities/12\",\""
     },
     "/rest/v1/social/spaceMemberships": {
       "status": 404,
@@ -35,9 +65,9 @@
       "sample": "There is no any resources matched to request path /v1/social/spaceMemberships"
     },
     "/rest/v1/social/identities": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 200,
+      "ctype": "application/json",
+      "sample": "{\"identities\":[{\"id\":\"13\",\"href\":\"http://192.168.1.59/portal/rest/v1/social/identities/13\",\"providerId\":\"organization\",\"globalId\":{\"localId\":\"admin.local\",\"domain\":\"organization\"},\"remoteId\":\"admin.lo"
     },
     "/rest/v1/notes": {
       "status": 404,
@@ -55,29 +85,29 @@
       "sample": "There is no any resources matched to request path /v1/tasks/projects"
     },
     "/rest/tasks/projects": {
-      "status": 403,
+      "status": 404,
       "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "sample": "Not able resolve method parameter [ MethodParameter: annotation: @javax.ws.rs.PathParam(\"id\"); type: long; generic-type: long; default-value: null; encoded: false ]"
     },
     "/rest/v1/agenda/events": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 400,
+      "ctype": "application/json",
+      "sample": "Start datetime is mandatory"
     },
     "/rest/v1/agenda/calendars": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 400,
+      "ctype": "application/json",
+      "sample": "Limit must be positive"
     },
     "/rest/v1/documents": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 400,
+      "ctype": "application/json",
+      "sample": "either_ownerId_or_folderId_is_mandatory"
     },
     "/rest/private/jcr": {
-      "status": 401,
-      "ctype": "text/html",
-      "sample": "<!doctype html><html lang=\"pt\"><head><title>HTTP Status 401 – Unauthorized</title><style type=\"text/css\">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76"
+      "status": 405,
+      "ctype": "text/plain",
+      "sample": "GET method is not allowed for resource /jcr"
     },
     "/rest/jcr": {
       "status": 405,
@@ -110,14 +140,14 @@
       "sample": "There is no any resources matched to request path /v1/onlyoffice/editor/status"
     },
     "/rest/v1/platform/branding": {
-      "status": 403,
-      "ctype": "text/plain",
-      "sample": "You do not have access rights to this resource, please contact your administrator. "
+      "status": 200,
+      "ctype": "application/json",
+      "sample": "{\"direction\":\"ltr\",\"lastUpdatedTime\":1786560458038,\"themeStyle\":{\"sideBarBackgroundColor\":\"#FFFFFFFF\",\"primaryColor\":\"#2424FF\",\"drawerTextHeaderFontWeight\":\"normal\",\"drawerTextFontStyle\":\"normal\",\"sid"
     },
     "/rest/private/v1/settings": {
-      "status": 401,
-      "ctype": "text/html",
-      "sample": "<!doctype html><html lang=\"pt\"><head><title>HTTP Status 401 – Unauthorized</title><style type=\"text/css\">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76"
+      "status": 405,
+      "ctype": "text/plain",
+      "sample": "GET method is not allowed for resource /v1/settings"
     }
   }
 }

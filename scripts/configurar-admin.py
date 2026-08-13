@@ -38,6 +38,9 @@ BASE = f"http://{do_env('EXO_PROXY_VHOST', '192.168.1.59')}"
 USUARIO = do_env("EXO_ADMIN_USER", "root")
 SENHA = do_env("EXO_ADMIN_PASS")
 INSPECIONAR = "--somente-inspecionar" in sys.argv
+# Conta nomeada criada pelo assistente, alem do super administrador `root`.
+# O responsavel indicou "user: saexo/root" — as duas contas, mesma senha.
+CONTA_NOMEADA = do_env("EXO_ADMIN_CONTA_NOMEADA", "saexo")
 
 if not SENHA:
     sys.exit("ERRO: EXO_ADMIN_PASS nao definido no .env")
@@ -75,49 +78,72 @@ def main() -> int:
             ctx.close(); nav.close()
             return 0
 
-        # --- preenche os campos de senha do assistente ---
-        senhas = [c for c in campos if c["type"] == "password"]
-        textos = [c for c in campos if c["type"] in ("text", "email")]
-        print(f"\ncampos de senha: {len(senhas)} | campos de texto: {len(textos)}")
-
-        for c in senhas:
-            sel = f"#{c['id']}" if c["id"] else f"input[name='{c['name']}']"
-            pg.fill(sel, SENHA)
-            print(f"  preenchido {sel} (senha)")
-
-        for c in textos:
-            alvo = (c["name"] or c["id"] or c["ph"]).lower()
-            valor = None
-            if "mail" in alvo:
-                valor = f"{USUARIO}@exo.local"
-            elif "first" in alvo or "nome" in alvo or "name" in alvo:
-                valor = "Administrador"
-            elif "last" in alvo or "sobrenome" in alvo:
-                valor = "PMO"
-            if valor:
-                sel = f"#{c['id']}" if c["id"] else f"input[name='{c['name']}']"
-                pg.fill(sel, valor)
-                print(f"  preenchido {sel} = {valor}")
+        # O assistente do eXo 7.2 tem DUAS partes num formulário só:
+        #   1. uma conta nomeada de administrador (username/nome/e-mail/senha);
+        #   2. a senha do super administrador `root`, que já existe.
+        # Preencher só uma delas deixa o assistente incompleto e ele reaparece.
+        # `#adminFirstName` NÃO entra aqui: é readOnly (verificado no DOM com
+        # `e.readOnly`), já vem preenchido com `root` e tentar escrever nele faz
+        # o Playwright esperar até estourar o tempo — foi o que impediu a
+        # primeira tentativa de concluir o assistente.
+        preenchimento = {
+            "#userNameAccount": CONTA_NOMEADA,
+            "#firstNameAccount": "Administrador",
+            "#lastNameAccount": "PMO",
+            "#emailAccount": f"{CONTA_NOMEADA}@exo.local",
+            "#userPasswordAccount": SENHA,
+            "#confirmUserPasswordAccount": SENHA,
+            "#adminPassword": SENHA,
+            "#confirmAdminPassword": SENHA,
+        }
+        for sel, valor in preenchimento.items():
+            try:
+                pg.fill(sel, valor, timeout=10_000)
+                oculto = "senha" if "assword" in sel.lower() else valor
+                print(f"  preenchido {sel} = {oculto}")
+            except Exception as e:  # noqa: BLE001
+                print(f"  AVISO: nao preencheu {sel}: {str(e)[:80]}")
 
         pg.screenshot(path=str(CAPTURAS / "admin-02-preenchido.png"))
 
-        enviado = False
-        for rotulo in ("Enviar", "Salvar", "Submit", "Save", "Confirmar", "OK"):
-            try:
-                b = pg.get_by_role("button", name=rotulo, exact=False)
-                if b.count():
-                    b.first.click(timeout=15_000)
-                    print(f"  clicado no botao '{rotulo}'")
-                    enviado = True
-                    break
-            except Exception:
-                continue
-        if not enviado:
-            print("  AVISO: nenhum botao de envio encontrado")
+        try:
+            pg.click("#continueButton", timeout=20_000)
+            print("  clicado em 'Enviar' (#continueButton)")
+        except Exception as e:  # noqa: BLE001
+            print(f"  AVISO: nao foi possivel enviar: {str(e)[:100]}")
 
-        pg.wait_for_load_state("networkidle", timeout=90_000)
+        try:
+            pg.wait_for_load_state("networkidle", timeout=90_000)
+        except Exception:
+            pass
         time.sleep(4)
-        pg.screenshot(path=str(CAPTURAS / "admin-03-final.png"))
+
+        erros = pg.evaluate("""() => [...document.querySelectorAll(
+            '.alert,.error,[class*=error],[class*=Error],[class*=alert]')]
+            .map(e => e.innerText.trim()).filter(t => t).slice(0, 6)""")
+        if erros:
+            print(f"  MENSAGENS DE VALIDACAO: {erros}")
+
+        # O assistente tem um segundo passo: a tela "Saudações!" com o botão
+        # "Iniciar". Sem clicar nele a configuração NÃO é persistida e o
+        # assistente reaparece no próximo acesso — comprovado na 1a tentativa.
+        pg.screenshot(path=str(CAPTURAS / "admin-03-saudacoes.png"))
+        try:
+            b = pg.get_by_role("button", name="Iniciar", exact=False)
+            if b.count():
+                b.first.click(timeout=20_000)
+                print("  clicado em 'Iniciar' (conclusao do assistente)")
+                try:
+                    pg.wait_for_load_state("networkidle", timeout=90_000)
+                except Exception:
+                    pass
+                time.sleep(5)
+            else:
+                print("  AVISO: botao 'Iniciar' nao encontrado")
+        except Exception as e:  # noqa: BLE001
+            print(f"  AVISO: falha ao concluir: {str(e)[:100]}")
+
+        pg.screenshot(path=str(CAPTURAS / "admin-04-final.png"))
         print(f"URL final: {pg.url}")
         ctx.close(); nav.close()
 

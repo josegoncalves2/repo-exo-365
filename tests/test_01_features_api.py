@@ -55,12 +55,16 @@ def t11_criar_usuario(c: ExoClient, rec: Recorder) -> dict | None:
     t0 = time.time()
     r = Result("T-11", "Criar usuario e autenticar com ele", "A-maquina")
     uname = f"teste{RUN_ID}"
-    pwd = "Prova@2026#eXo"
+    pwd = "Prova2026@eXo#1"
     payload = {"userName": uname, "password": pwd, "firstName": "Usuario",
-               "lastName": f"Teste {RUN_ID}", "email": f"{uname}@exo.local"}
+               "lastName": "Teste Automatizado", "email": f"{uname}@exo.local",
+               "enabled": True}
     steps = []
 
-    path, resp = try_paths(c, "post", ["/rest/v1/social/users",
+    path, resp = try_paths(c, "post", ["/rest/v1/users",
+                                       "/rest/management/users",
+                                       "/portal/rest/management/users",
+                                       "/rest/v1/social/users",
                                        "/portal/rest/v1/social/users"],
                            json=payload,
                            headers={"Content-Type": "application/json",

@@ -1,0 +1,148 @@
+{
+  "label": "T-01a13-funcionalidades-api",
+  "run_id": "20260812-152015",
+  "base": "http://192.168.1.59",
+  "started": 1786558831.9355175,
+  "duration_s": 4.3,
+  "total": 10,
+  "passed": 3,
+  "failed": 7,
+  "results": [
+    {
+      "tid": "T-11",
+      "name": "Criar usuario e autenticar com ele",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "nao foi possivel criar/autenticar 'teste20260812-152015'",
+      "proof": "whoami do novo usuario devolveu username=None",
+      "duration_s": 0.17,
+      "steps": [
+        "POST criacao -> rota=/rest/v1/social/users status=401",
+        "resposta: ",
+        "login do novo usuario: FALHOU"
+      ]
+    },
+    {
+      "tid": "T-01",
+      "name": "Criar espaco de trabalho e recupera-lo",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "espaco nao foi criado ou nao foi encontrado na listagem",
+      "proof": "displayName recuperado da API = None",
+      "duration_s": 0.09,
+      "steps": [
+        "POST espaco -> rota=/rest/v1/social/spaces status=400",
+        "id retornado: None",
+        "GET lista de espacos -> status=200; espaco localizado=False"
+      ]
+    },
+    {
+      "tid": "T-06",
+      "name": "Publicar atividade no feed e le-la de volta",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "atividade publicada e o texto conferiu byte a byte",
+      "proof": "esperado='Publicacao de teste 20260812-152015 — substituicao do Office 365'; obtido='Publicacao de teste 20260812-152015 — substituicao do Office 365'",
+      "duration_s": 0.46,
+      "steps": [
+        "POST atividade -> rota=/rest/v1/social/activities status=200",
+        "id da atividade: 2",
+        "GET atividade/2 -> status=200",
+        "texto lido de volta: 'Publicacao de teste 20260812-152015 — substituicao do Office 365'"
+      ]
+    },
+    {
+      "tid": "T-02",
+      "name": "Enviar documento e recupera-lo com checksum identico",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "nao foi possivel gravar/recuperar o documento por WebDAV/JCR",
+      "proof": "sha256 enviado=a418e90f23b1360d76b5137f6bab2caef0cf99c3937e3151f2c9f333d2738aa8; recuperado=None",
+      "duration_s": 0.04,
+      "steps": [
+        "arquivo: prova-20260812-152015.txt (993 bytes) sha256=a418e90f23b1360d...",
+        "PUT /rest/private/jcr/repository/collaboration/Users/r___/root/Private/prova-20260812-152015.txt -> HTTP 404",
+        "PUT /rest/jcr/repository/collaboration/Documents/prova-20260812-152015.txt -> HTTP 403",
+        "PUT /rest/private/jcr/repository/collaboration/Documents/prova-20260812-152015.txt -> HTTP 403",
+        "PUT /webdav/repository/collaboration/Documents/prova-20260812-152015.txt -> HTTP 405"
+      ]
+    },
+    {
+      "tid": "T-04",
+      "name": "Criar pagina de Notes (wiki) e le-la de volta",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "criacao/recuperacao de pagina de Notes nao confirmada",
+      "proof": "titulo esperado='Pagina Prova 20260812-152015'; obtido=None",
+      "duration_s": 0.01,
+      "steps": [
+        "POST nota -> rota=/rest/notes/note status=400",
+        "resposta: "
+      ]
+    },
+    {
+      "tid": "T-05",
+      "name": "Criar tarefa e recupera-la",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "criacao/recuperacao de tarefa nao confirmada",
+      "proof": "esperado='Tarefa Prova 20260812-152015'; obtido=None",
+      "duration_s": 0.01,
+      "steps": [
+        "POST tarefa -> rota=None status=None"
+      ]
+    },
+    {
+      "tid": "T-09",
+      "name": "Criar evento na Agenda e recupera-lo",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "criacao/recuperacao de evento nao confirmada",
+      "proof": "esperado='Reuniao Prova 20260812-152015'; obtido=None",
+      "duration_s": 0.03,
+      "steps": [
+        "GET calendarios -> status=200; payload={'size': 0, 'offset': 0, 'limit': 0, 'calendars': []}",
+        "POST evento -> rota=/rest/v1/agenda/events status=400",
+        "resposta: {\"field\":\"calendarOwner\",\"message\":\"agenda.calendarOwnerNotFound\",\"completeMessage\":\"calendarOwner:agenda.calendarOwnerNotFound\",\"declaringClass\":\"org.exoplatform.agenda.exception.AgendaExceptionType\""
+      ]
+    },
+    {
+      "tid": "T-12",
+      "name": "Administracao: ler grupos e alterar branding",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "APIs administrativas acessiveis (0 grupos)",
+      "proof": "grupos=0; branding_status=200",
+      "duration_s": 0.01,
+      "steps": [
+        "GET grupos -> status=404, 0 grupo(s)",
+        "GET branding -> status=200, companyName='PMETO - Workspace'"
+      ]
+    },
+    {
+      "tid": "T-07",
+      "name": "Busca unificada encontra conteudo recem-criado",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "conteudo indexado e recuperavel (ES: 1 hits)",
+      "proof": "busca_api=True; hits_elasticsearch=1",
+      "duration_s": 0.18,
+      "steps": [
+        "busca via API achou o termo na tentativa 1 (rota=/rest/v1/social/activities?q=20260812-152015)",
+        "consulta direta ao Elasticsearch: 1 ocorrencia(s) do termo"
+      ]
+    },
+    {
+      "tid": "T-10",
+      "name": "Fluxo de e-mail ponta a ponta (recuperacao de senha)",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "dependia do usuario de T-11, que nao foi criado",
+      "proof": "",
+      "duration_s": 0.0,
+      "steps": [
+        "caixa antes: 0 mensagem(ns)"
+      ]
+    }
+  ]
+}

@@ -29,7 +29,7 @@ EVIDENCE.mkdir(exist_ok=True)
 
 BASE = os.environ.get("EXO_BASE", "http://192.168.1.59")
 ADMIN_USER = os.environ.get("EXO_ADMIN_USER", "root")
-ADMIN_PASS = os.environ.get("EXO_ADMIN_PASS", "gtn")
+ADMIN_PASS = os.environ.get("EXO_ADMIN_PASS", "pmotiadm")
 MAILPIT = os.environ.get("MAILPIT_BASE", "http://192.168.1.59:8025")
 
 # Sufixo único por execução, para não colidir com dados de execuções anteriores

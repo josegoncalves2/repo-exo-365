@@ -1,0 +1,22 @@
+{
+  "label": "T-01a13-funcionalidades-api",
+  "run_id": "0ff8098c",
+  "base": "http://192.168.1.59",
+  "started": 1786627988.9802163,
+  "duration_s": 1.1,
+  "total": 1,
+  "passed": 0,
+  "failed": 1,
+  "results": [
+    {
+      "tid": "T-AUTH",
+      "name": "Autenticacao administrativa",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "login falhou para root",
+      "proof": "",
+      "duration_s": 0.0,
+      "steps": []
+    }
+  ]
+}

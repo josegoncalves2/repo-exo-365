@@ -1,0 +1,54 @@
+# Imagem derivada: traduz para pt-BR o menu "Meu Espaco" e corrige o bug de "Postar em {0}"
+# Estratégia: extrair .war -> modificar -> reempacotar com jar
+
+ARG EXO_BASE=exoplatform/exo-community:7.2.1
+FROM ${EXO_BASE}
+
+# === CORREÇÃO 1: Menu "Meu Espaco" (digital-workplace.war) ===
+RUN cd /tmp && \
+    jar xf /opt/exo/webapps/digital-workplace.war && \
+    mkdir -p WEB-INF/classes/locale/navigation/portal
+
+COPY --chown=exo:exo conf/i18n/myworkspace_pt_BR.properties \
+    /tmp/WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties
+
+RUN cd /tmp && \
+    jar cf /opt/exo/webapps/digital-workplace.war . && \
+    chown exo:exo /opt/exo/webapps/digital-workplace.war && \
+    rm -rf /tmp/WEB-INF /tmp/META-INF
+
+# === CORREÇÃO 1.5: Remover item "notes" que aponta para página inexistente ===
+RUN cd /tmp && \
+    jar xf /opt/exo/webapps/digital-workplace.war && \
+    mkdir -p WEB-INF/conf/digital-workplace/portal/myworkspace
+
+COPY --chown=exo:exo conf/portal-myworkspace-navigation.xml \
+    /tmp/WEB-INF/conf/digital-workplace/portal/myworkspace/navigation.xml
+
+RUN cd /tmp && \
+    sed -i '/<node>/{:a;N;/\/node>/!ba;/<name>notes<\/name>/d;}' WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml && \
+    sed -i '/<node>/{:a;N;/\/node>/!ba;/<name>notes<\/name>/d;}' WEB-INF/conf/digital-workplace/upgrades/portal/myworkspace/pages.xml && \
+    jar cf /opt/exo/webapps/digital-workplace.war . && \
+    chown exo:exo /opt/exo/webapps/digital-workplace.war && \
+    rm -rf /tmp/WEB-INF /tmp/META-INF
+
+# === CORREÇÃO 1.6: Remover "notes" de sites.war ===
+RUN cd /tmp && \
+    jar xf /opt/exo/webapps/sites.war && \
+    find WEB-INF/conf/sites -name "pages.xml" -o -name "navigation.xml" | xargs -I {} sed -i '/<node>/{:a;N;/\/node>/!ba;/<name>notes<\/name>/d;}' {} && \
+    jar cf /opt/exo/webapps/sites.war . && \
+    chown exo:exo /opt/exo/webapps/sites.war && \
+    rm -rf /tmp/WEB-INF /tmp/META-INF
+
+# === CORREÇÃO 2: "Postar em {0}" (social.war) ===
+RUN cd /tmp && \
+    jar xf /opt/exo/webapps/social.war && \
+    mkdir -p WEB-INF/classes/locale/portlet
+
+COPY --chown=exo:exo conf/i18n/Portlets_pt_BR.properties \
+    /tmp/WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties
+
+RUN cd /tmp && \
+    jar cf /opt/exo/webapps/social.war . && \
+    chown exo:exo /opt/exo/webapps/social.war && \
+    rm -rf /tmp/WEB-INF /tmp/META-INF

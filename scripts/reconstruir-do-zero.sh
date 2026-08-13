@@ -176,8 +176,15 @@ done
 # banco já migrado, o mesmo container reinicia sem nenhum deles.
 # Recriar o container aqui faz o log de produção nascer limpo, pelo mesmo
 # motivo que os bancos são pré-inicializados nos passos 4 e 5.
+# CUIDADO: NAO usar `docker compose up -d --force-recreate --no-deps exo`.
+# Testado: o Compose reavalia o projeto inteiro e RECRIA tambem os demais
+# containers, deixando-os em estado "Created" (parados) — o eXo entao subiu
+# sozinho, nao encontrou o mysql e abortou com
+#   "[ERROR] The mysql database mysql:3306 was not available within 300s".
+# Remover e recriar SO o container do eXo nao toca em nenhum outro.
 log "8b/8 — recriando o eXo para que o log de producao nasca limpo"
-docker compose up -d --force-recreate --no-deps exo >/dev/null 2>&1 \
+docker rm -f exo-app >/dev/null 2>&1
+docker compose up -d --no-deps exo >/dev/null 2>&1 \
   || falha "nao foi possivel recriar o eXo"
 for i in $(seq 1 90); do
   hs=$(docker inspect exo-app --format '{{.State.Health.Status}}' 2>/dev/null)

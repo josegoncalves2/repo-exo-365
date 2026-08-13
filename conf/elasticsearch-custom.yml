@@ -1,0 +1,2 @@
+# Deprecation fixes for ingest-attachment plugin
+ingest.attachment.remove_binary: true

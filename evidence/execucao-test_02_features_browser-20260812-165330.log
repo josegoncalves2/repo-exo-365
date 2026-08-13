@@ -1,0 +1,14 @@
+======================================================================
+T-01..T-13 — FUNCIONALIDADES (abordagem B: navegador real)
+======================================================================
+[PASSOU] T-11B (B-usuario) Administrador faz login pela interface — login pela interface concluido
+[PASSOU] T-02B (B-usuario) Area 'Documentos (OneDrive/SharePoint)' abre e renderiza para o usuario — area renderizou 120 caracteres
+[PASSOU] T-09B (B-usuario) Area 'Agenda (Outlook Calendar)' abre e renderiza para o usuario — area renderizou 196 caracteres
+[PASSOU] T-05B (B-usuario) Area 'Tarefas (Planner/To Do)' abre e renderiza para o usuario — area renderizou 91 caracteres
+[FALHOU] T-04B (B-usuario) Area 'Notes (OneNote)' abre e renderiza para o usuario — area NAO renderizou corretamente (HTTP 200)
+[FALHOU] T-06B (B-usuario) Area 'Feed social (Yammer)' abre e renderiza para o usuario — area NAO renderizou corretamente (HTTP 200)
+[FALHOU] T-01B (B-usuario) Area 'Espacos (Teams/SharePoint)' abre e renderiza para o usuario — area NAO renderizou corretamente (HTTP 200)
+[PASSOU] T-12B (B-usuario) Area 'Administracao' abre e renderiza para o usuario — area renderizou 467 caracteres
+[FALHOU] T-06B-post (B-usuario) Usuario publica no feed e a publicacao aparece — campo de publicacao nao encontrado na interface
+
+== T-01a13-funcionalidades-navegador: 5 passaram, 4 falharam -> evidence/resultado-T-01a13-funcionalidades-navegador-20260812-165330.json

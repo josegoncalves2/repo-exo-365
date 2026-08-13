@@ -13,6 +13,7 @@ Nenhum teste aqui se contenta com "HTTP 200": todos verificam conteúdo/efeito.
 from __future__ import annotations
 
 import json
+import re
 import smtplib
 import subprocess
 import sys
@@ -35,8 +36,10 @@ SHOTS = EVIDENCE / "capturas"
 SHOTS.mkdir(exist_ok=True)
 
 
-def sh(cmd: list[str], timeout: int = 60) -> tuple[int, str]:
-    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+def sh(cmd: list[str], timeout: int = 60,
+       entrada: str | None = None) -> tuple[int, str]:
+    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                       input=entrada)
     return p.returncode, (p.stdout + p.stderr).strip()
 
 
@@ -65,7 +68,7 @@ def a_versions(rec: Recorder) -> None:
     r = Result("T-00.2", "Versoes das imagens sao as fixadas (sem :latest oculto)",
                "A-maquina")
     expected = {
-        "exo-app": "exoplatform/exo-community:7.2.1",
+        "exo-app": "exo-pmo:7.2.1",
         "exo-mysql": "mysql:8.4.9",
         "exo-es": "elasticsearch:8.18.8",
         "onlyoffice": "onlyoffice/documentserver:9.4",
@@ -113,11 +116,17 @@ def a_mysql(rec: Recorder) -> None:
             break
 
     # prova de escrita: cria tabela, insere, le de volta, remove
-    probe = (f"USE {db}; DROP TABLE IF EXISTS _probe_{RUN_ID}; "
-             f"CREATE TABLE _probe_{RUN_ID}(id INT PRIMARY KEY, v VARCHAR(64)); "
-             f"INSERT INTO _probe_{RUN_ID} VALUES (1,'gravacao-ok-{RUN_ID}'); "
-             f"SELECT v FROM _probe_{RUN_ID} WHERE id=1; "
-             f"DROP TABLE _probe_{RUN_ID};")
+    # O RUN_ID e' um carimbo de data com HIFEN (ex.: 20260812-151032). Usado
+    # cru no nome da tabela, produz `_probe_20260812-151032`, que NAO e' um
+    # identificador SQL valido sem crase — o MySQL recusa e o teste reprovava
+    # acusando "escrita/leitura FALHOU", como se o BANCO estivesse quebrado.
+    # Era defeito do teste: o banco grava normalmente.
+    tab = "_probe_" + re.sub(r"[^0-9A-Za-z_]", "_", RUN_ID)
+    probe = (f"USE {db}; DROP TABLE IF EXISTS `{tab}`; "
+             f"CREATE TABLE `{tab}`(id INT PRIMARY KEY, v VARCHAR(64)); "
+             f"INSERT INTO `{tab}` VALUES (1,'gravacao-ok-{RUN_ID}'); "
+             f"SELECT v FROM `{tab}` WHERE id=1; "
+             f"DROP TABLE `{tab}`;")
     rc2, out2 = sh(["docker", "exec", "exo-mysql", "mysql", "-uroot",
                     f"-p{pw}", "-N", "-B", "-e", probe])
     wrote = f"gravacao-ok-{RUN_ID}" in out2
@@ -215,11 +224,24 @@ def a_smtp(rec: Recorder) -> None:
         msg["To"] = "auditoria@exo.local"
         msg["Subject"] = f"Teste de infraestrutura {marker}"
         msg.set_content(f"Corpo da mensagem contendo o marcador {marker}.")
-        # porta 1025 do mailpit, alcancavel a partir do host
-        with smtplib.SMTP("192.168.1.59", 1025, timeout=30) as s:
-            s.ehlo()
-            s.send_message(msg)
-        steps.append("SMTP: EHLO + MAIL FROM + DATA aceitos")
+
+        # O envio parte de DENTRO da rede do Docker, contra `mailpit:1025` —
+        # exatamente o caminho que o eXo usa. Conectar do host em
+        # 192.168.1.59:1025 falhava com `[Errno 111] Connection refused`, e o
+        # motivo NAO era o SMTP estar quebrado: o Mailpit publica apenas a
+        # 8025 (interface web); a porta SMTP nao e' exposta ao host, por
+        # desenho. O teste e' que media o caminho errado.
+        rc_env, out_env = sh(
+            ["docker", "exec", "-i", "exo-app", "curl", "-s", "--show-error",
+             "--url", "smtp://mailpit:1025",
+             "--mail-from", "noreply@exo.local",
+             "--mail-rcpt", "auditoria@exo.local",
+             "-T", "-"],
+            timeout=60, entrada=msg.as_string())
+        if rc_env != 0:
+            raise RuntimeError(f"curl SMTP falhou (rc={rc_env}): {out_env[:160]}")
+        steps.append("SMTP: MAIL FROM + RCPT TO + DATA aceitos por mailpit:1025 "
+                     "(a partir da rede interna, como o eXo faz)")
     except Exception as e:  # noqa: BLE001
         steps.append(f"SMTP ERRO: {e}")
         r.steps = steps
