@@ -13,12 +13,12 @@
     "fullname": "Root Root",
     "email": "root@gatein.com",
     "avatar": "/portal/rest/v1/social/users/1/avatar?lastModified=1786543693000&r=ei8f%2BYjelVvTFW17WcCTccBLjI95IejM%2BIjjkqQYibvEO%2FP7GofngL6SMqz7P4Xx&byId=true",
-    "banner": "/portal/rest/v1/social/users/default-image/banner?lastModified=1786630631410&r=h3aMEO%2F8J2JEIYJfq8XaIrRoAXPyRgG%2FLIm%2Fr48NjJ485IuDOYATN6nPmXNTKFvL&byId=true",
+    "banner": "/portal/rest/v1/social/users/default-image/banner?lastModified=1786641539332&r=h3aMEO%2F8J2JEIYJfq8XaIrRoAXPyRgG%2FLIm%2Fr48NjJ4SS1imEvf0bip6maU6tQGe&byId=true",
     "isDefaultAvatar": true,
     "isAdmin": true,
     "isInternal": true,
     "createdDate": "1786542979430",
-    "lastLoginTime": "1786631239890",
+    "lastLoginTime": "1786641571297",
     "deleted": false,
     "enabled": true,
     "external": "false",
@@ -142,7 +142,7 @@
     "/rest/v1/platform/branding": {
       "status": 200,
       "ctype": "application/json",
-      "sample": "{\"direction\":\"ltr\",\"lastUpdatedTime\":1786560458038,\"themeStyle\":{\"sideBarBackgroundColor\":\"#FFFFFFFF\",\"primaryColor\":\"#2424FF\",\"drawerTextHeaderFontWeight\":\"normal\",\"drawerTextFontStyle\":\"normal\",\"sid"
+      "sample": "{\"direction\":\"ltr\",\"siteName\":\"eXo Platform\",\"supportedLanguages\":{\"de\":\"German / Deutsch\",\"no\":\"Norwegian / norsk\",\"fi\":\"Finnish / suomi\",\"ru\":\"Russian / русский\",\"fil\":\"Filipino / Filipino\",\"lt\":\"Li"
     },
     "/rest/private/v1/settings": {
       "status": 405,

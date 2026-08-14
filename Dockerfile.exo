@@ -1,54 +1,129 @@
-# Imagem derivada: traduz para pt-BR o menu "Meu Espaco" e corrige o bug de "Postar em {0}"
-# Estratégia: extrair .war -> modificar -> reempacotar com jar
+# ===================================================================
+# Imagem derivada do eXo Platform Community 7.2.1
+#
+# Aplica TRES correcoes que precisam viver DENTRO dos .war, e nao em
+# bind mount do compose. A razao esta registrada em AUDIT [075]:
+#
+#   /opt/exo/webapps contem ARQUIVOS .war, nao diretorios. Montar
+#   qualquer coisa em /opt/exo/webapps/<app>/... faz o Docker CRIAR
+#   o diretorio /opt/exo/webapps/<app>/ (dono root:root) antes do
+#   Tomcat subir. O Tomcat entao encontra um diretorio de webapp ja
+#   existente, nao consegue apaga-lo (e ponto de montagem, EBUSY),
+#   NAO desempacota o .war e implanta o diretorio vazio como se fosse
+#   a aplicacao. A webapp fica destruida.
+#   Foi exatamente isso que quebrou o portal: digital-workplace ficou
+#   com WEB-INF/classes/locale/navigation/portal e mais NADA, e o
+#   digital-workplace e' quem fornece o site myworkspace, sua navegacao
+#   e suas paginas -> NullPointerException em PortalURLContext._render()
+#   e paginas em branco (HTTP 200, Content-Length 0).
+#
+# Por isso as correcoes sao injetadas no .war em tempo de build, com
+# `jar uf` (update-in-place), a partir de diretorios de estagio
+# ISOLADOS por webapp.
+#
+# NAO usar `jar cf <war> .` em /tmp: `cf` CRIA o arquivo do zero a
+# partir do diretorio inteiro. Um Dockerfile anterior fazia isso e
+# empacotava dentro do social.war os restos do digital-workplace que
+# haviam ficado em /tmp, corrompendo os dois. `uf` acrescenta/substitui
+# apenas as entradas listadas e preserva o resto do arquivo.
+#
+# ATENCAO ao subir de versao: os tres arquivos injetados foram
+# conferidos contra a 7.2.1. Reconferir contra a nova imagem antes de
+# trocar a tag, senao esta camada sobrescreve arquivos novos por antigos.
+# ===================================================================
 
-ARG EXO_BASE=exoplatform/exo-community:7.2.1
+# Fixada por DIGEST, e nao so pela tag. Em 2026-08-12 uma sessao anterior
+# construiu localmente por cima da propria tag `exoplatform/exo-community:7.2.1`
+# (`docker build -t exoplatform/exo-community:7.2.1`), fazendo a "imagem
+# oficial" do host deixar de ser oficial — e todo build derivado herdava a
+# contaminacao sem deixar rastro. Com o digest, um base adulterado nao casa
+# e o build falha em vez de propagar o defeito em silencio.
+ARG EXO_BASE=exoplatform/exo-community@sha256:0649f52a94fe3f0c30a2b3519ee4f78fb4b045f4e8b4a091d5da9ec68a316f74
 FROM ${EXO_BASE}
 
-# === CORREÇÃO 1: Menu "Meu Espaco" (digital-workplace.war) ===
-RUN cd /tmp && \
-    jar xf /opt/exo/webapps/digital-workplace.war && \
-    mkdir -p WEB-INF/classes/locale/navigation/portal
+USER root
 
-COPY --chown=exo:exo conf/i18n/myworkspace_pt_BR.properties \
-    /tmp/WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties
+# --- Arquivos de correcao, em diretorios de estagio separados por webapp ---
 
-RUN cd /tmp && \
-    jar cf /opt/exo/webapps/digital-workplace.war . && \
-    chown exo:exo /opt/exo/webapps/digital-workplace.war && \
-    rm -rf /tmp/WEB-INF /tmp/META-INF
+# 1) digital-workplace.war — bundles de navegacao do site "myworkspace".
+#    Acrescenta a chave portal.myworkspace.notes, AUSENTE em todos os
+#    bundles da imagem oficial embora o navigation.xml a referencie, e
+#    traduz o menu para pt-BR (o pt_BR da imagem esta em ingles).
+COPY conf/i18n/myworkspace_pt_BR.properties \
+     /build/digital-workplace/WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties
+COPY conf/i18n/myworkspace_en.properties \
+     /build/digital-workplace/WEB-INF/classes/locale/navigation/portal/myworkspace_en.properties
 
-# === CORREÇÃO 1.5: Remover item "notes" que aponta para página inexistente ===
-RUN cd /tmp && \
-    jar xf /opt/exo/webapps/digital-workplace.war && \
-    mkdir -p WEB-INF/conf/digital-workplace/portal/myworkspace
+# 2) social.war — corrige activity.composer.link, que na imagem oficial
+#    traz um placeholder {0} que o codigo nunca preenche ("Postar em {0}").
+COPY conf/i18n/Portlets_pt_BR.properties \
+     /build/social/WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties
 
-COPY --chown=exo:exo conf/portal-myworkspace-navigation.xml \
-    /tmp/WEB-INF/conf/digital-workplace/portal/myworkspace/navigation.xml
+# 3) webdav.war — web.xml com OPTIONS explicitamente COBERTO por um
+#    security-constraint sem <auth-constraint>. Mesmo comportamento de
+#    antes (preflight CORS passa sem autenticacao), sem o ERROR que o
+#    Tomcat registra a cada implantacao:
+#      "For security constraints with URL pattern [/*] the HTTP methods
+#       [OPTIONS] are uncovered."
+COPY conf/webdav-web.xml /build/webdav/WEB-INF/web.xml
 
-RUN cd /tmp && \
-    sed -i '/<node>/{:a;N;/\/node>/!ba;/<name>notes<\/name>/d;}' WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml && \
-    sed -i '/<node>/{:a;N;/\/node>/!ba;/<name>notes<\/name>/d;}' WEB-INF/conf/digital-workplace/upgrades/portal/myworkspace/pages.xml && \
-    jar cf /opt/exo/webapps/digital-workplace.war . && \
-    chown exo:exo /opt/exo/webapps/digital-workplace.war && \
-    rm -rf /tmp/WEB-INF /tmp/META-INF
+# 4) setenv.sh — remove a ultima linha de JDK_JAVA_OPTIONS, ` -noverify`.
+#    A propria JVM reclama dela em TODA inicializacao, antes mesmo do Tomcat:
+#      OpenJDK 64-Bit Server VM warning: Options -Xverify:none and -noverify
+#      were deprecated in JDK 13 and will likely be removed in a future release.
+#    Nao e' aviso de terceiro que se possa apenas justificar: a opcao esta numa
+#    linha de shell dentro de uma imagem que ESTE projeto ja constroi, e a
+#    propria mensagem diz que ela sera REMOVIDA numa versao futura do JDK — ou
+#    seja, mante-la e' divida tecnica com data marcada. Tirar a opcao devolve a
+#    JVM ao padrao (verificacao de bytecode LIGADA), que e' o comportamento
+#    seguro; `-noverify` a desliga, e desligar verificacao de bytecode nao e'
+#    algo que se queira num servidor de producao.
+#    O sed abaixo e' ancorado no fim da linha e o RUN seguinte CONFERE que a
+#    opcao sumiu e que o arquivo nao encolheu de forma inesperada.
+RUN set -eux; \
+    cp /opt/exo/bin/setenv.sh /tmp/setenv.sh.orig; \
+    sed -i 's/[[:space:]]*-noverify"$/"/' /opt/exo/bin/setenv.sh; \
+    ! grep -q 'noverify' /opt/exo/bin/setenv.sh; \
+    test "$(wc -l < /opt/exo/bin/setenv.sh)" -eq "$(wc -l < /tmp/setenv.sh.orig)"; \
+    grep -q 'export JDK_JAVA_OPTIONS' /opt/exo/bin/setenv.sh; \
+    rm -f /tmp/setenv.sh.orig; \
+    echo "OK: -noverify removido de setenv.sh"
 
-# === CORREÇÃO 1.6: Remover "notes" de sites.war ===
-RUN cd /tmp && \
-    jar xf /opt/exo/webapps/sites.war && \
-    find WEB-INF/conf/sites -name "pages.xml" -o -name "navigation.xml" | xargs -I {} sed -i '/<node>/{:a;N;/\/node>/!ba;/<name>notes<\/name>/d;}' {} && \
-    jar cf /opt/exo/webapps/sites.war . && \
-    chown exo:exo /opt/exo/webapps/sites.war && \
-    rm -rf /tmp/WEB-INF /tmp/META-INF
+# --- Injecao + verificacao no MESMO passo ---
+# A verificacao roda aqui dentro de proposito: se um caminho mudar numa
+# versao futura da imagem, o BUILD falha, em vez de produzir uma imagem
+# silenciosamente sem a correcao.
+RUN set -eux; \
+    for app in digital-workplace social webdav; do \
+      jar uf "/opt/exo/webapps/${app}.war" -C "/build/${app}" .; \
+      chown exo:exo "/opt/exo/webapps/${app}.war"; \
+    done; \
+    # 1. a chave que faltava tem de existir no war
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties \
+      | grep -q '^portal.myworkspace.notes=Notas$'; \
+    # 2. o navigation.xml ORIGINAL tem de continuar intacto, com o no notes
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/conf/digital-workplace/portal/myworkspace/navigation.xml \
+      | grep -q '<name>notes</name>'; \
+    # 3. o war nao pode ter sido esvaziado nem inchado com o conteudo de
+    #    outro war (foi o que o `jar cf .` do Dockerfile anterior fazia).
+    #    Contagens MEDIDAS na 7.2.1 oficial, ja com as injecoes acima:
+    #    digital-workplace 328, social 1882, webdav 51.
+    test "$(unzip -l /opt/exo/webapps/digital-workplace.war | tail -1 | awk '{print $2}')" -ge 326; \
+    test "$(unzip -l /opt/exo/webapps/digital-workplace.war | tail -1 | awk '{print $2}')" -le 340; \
+    # 4. social.war intacto e com a traducao corrigida
+    unzip -p /opt/exo/webapps/social.war \
+      WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties \
+      | grep -q '^activity\.composer\.link=Escreva uma publica'; \
+    test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -ge 1881; \
+    test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -le 1900; \
+    # 5. webdav.war com OPTIONS coberto, e ainda inteiro
+    unzip -p /opt/exo/webapps/webdav.war WEB-INF/web.xml \
+      | grep -q 'options-preflight'; \
+    test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -ge 51; \
+    test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -le 60; \
+    rm -rf /build; \
+    echo "OK: correcoes injetadas e verificadas nos 3 war"
 
-# === CORREÇÃO 2: "Postar em {0}" (social.war) ===
-RUN cd /tmp && \
-    jar xf /opt/exo/webapps/social.war && \
-    mkdir -p WEB-INF/classes/locale/portlet
-
-COPY --chown=exo:exo conf/i18n/Portlets_pt_BR.properties \
-    /tmp/WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties
-
-RUN cd /tmp && \
-    jar cf /opt/exo/webapps/social.war . && \
-    chown exo:exo /opt/exo/webapps/social.war && \
-    rm -rf /tmp/WEB-INF /tmp/META-INF
+USER exo

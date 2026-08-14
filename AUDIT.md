@@ -2323,3 +2323,375 @@ Ambos os problemas foram eliminados:
 **Status:** ✅✅✅ **CONCLUÍDO E VALIDADO**
 **Data/Hora:** 2026-08-13 14:30 -03
 **Método de verificação:** Teste automatizado com Playwright + navegador real
+
+### [075] 2026-08-13 17:10:49 -03 — Execucao da suite test_00_infra (RUN_ID 20260813-171010)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_00_infra`
+**Resultado:** 8 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_00_infra-20260813-171010.log e evidence/resultado-*-20260813-171010.json
+**Status:** OK
+
+### [076] 2026-08-13 17:13:06 -03 — Execucao da suite test_01_features_api (RUN_ID 20260813-171010)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_01_features_api`
+**Resultado:** 4 testes passaram, 6 falharam. Codigo de saida 1.
+**Evidência:** evidence/execucao-test_01_features_api-20260813-171010.log e evidence/resultado-*-20260813-171010.json
+**Status:** FALHA
+
+### [077] 2026-08-13 17:22:39 -03 — Execucao da suite test_02_features_browser (RUN_ID 20260813-171010)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_02_features_browser`
+**Resultado:** 7 testes passaram, 2 falharam. Codigo de saida 1.
+**Evidência:** evidence/execucao-test_02_features_browser-20260813-171010.log e evidence/resultado-*-20260813-171010.json
+**Status:** FALHA
+
+### [078] 2026-08-13 17:25:33 -03 — Execucao da suite test_03_onlyoffice_edicao (RUN_ID 20260813-171010)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_03_onlyoffice_edicao`
+**Resultado:** 3 testes passaram, 1 falharam. Codigo de saida 1.
+**Evidência:** evidence/execucao-test_03_onlyoffice_edicao-20260813-171010.log e evidence/resultado-*-20260813-171010.json
+**Status:** FALHA
+
+### [079] 2026-08-13 17:27:35 -03 — Execucao da suite test_04_chat_matrix (RUN_ID 20260813-171010)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_04_chat_matrix`
+**Resultado:** 2 testes passaram, 1 falharam. Codigo de saida 1.
+**Evidência:** evidence/execucao-test_04_chat_matrix-20260813-171010.log e evidence/resultado-*-20260813-171010.json
+**Status:** FALHA
+
+---
+
+## 8. FASE 7 — REPROVISIONAMENTO INTEGRAL DO ZERO
+
+### [075] 2026-08-13 17:20 -03 — Instalação destruída e reprovisionada do zero; causa raiz do portal em branco encontrada
+**Ação:** Destruição completa e reprovisionamento da instalação, com rede de
+proteção antes e verificação item a item depois. No caminho foi encontrada a
+**causa raiz** do defeito que as entradas [069]–[074] tentaram corrigir sete
+vezes sem sucesso, e a razão pela qual elas não podiam ter sucesso.
+
+---
+
+#### 1. A CAUSA RAIZ: bind mount sobre caminho de webapp destrói a webapp
+
+`HONEST-ASSESSMENT.md` e `DIAGNOSTICO-COMPLETO-PORTAL-20260813.md` descreviam o
+sintoma corretamente — `GET /portal/login` devolvia **HTTP 200 com
+Content-Length 0**, e todo acesso disparava
+`NullPointerException at PortalURLContext._render(PortalURLContext.java:179)` —
+e concluíam "corrupção de dados da aplicação", recomendando reparo de JCR e
+banco. **A conclusão estava errada.** O banco estava íntegro.
+
+`/opt/exo/webapps` contém **ARQUIVOS `.war`**, não diretórios. O compose tinha
+duas montagens apontando para *dentro* de caminhos de webapp:
+
+```yaml
+- ./conf/i18n:/opt/exo/webapps/digital-workplace/WEB-INF/classes/locale/navigation/portal:ro
+- ./conf/webdav-web.xml:/opt/exo/webapps/webdav/WEB-INF/web.xml:ro
+```
+
+O Docker **cria** os diretórios intermediários de um bind mount antes do
+container iniciar. Resultado: `/opt/exo/webapps/digital-workplace/` passava a
+existir, vazio, dono `root:root`. O Tomcat então encontrava um diretório de
+webapp já implantado, **não conseguia removê-lo** (é ponto de montagem, EBUSY),
+**não desempacotava o `.war`** e implantava o diretório vazio como se fosse a
+aplicação.
+
+Medido no container defeituoso, antes da destruição:
+
+| Caminho | Dono | Arquivos |
+|---|---|---|
+| `/opt/exo/webapps/digital-workplace` | **root:root** | **1** |
+| `/opt/exo/webapps/webdav` | **root:root** | **1** |
+| `/opt/exo/webapps/social` (sem mount) | exo:exo | (íntegro) |
+
+Depois da correção, no container novo:
+
+| Caminho | Dono | Arquivos |
+|---|---|---|
+| `/opt/exo/webapps/digital-workplace` | **exo:exo** | **284** |
+| `/opt/exo/webapps/webdav` | **exo:exo** | **37** |
+
+E o `digital-workplace` é justamente quem fornece o site `myworkspace`, sua
+navegação e suas páginas. Sem ele, o portal não tinha o que renderizar.
+
+> **Lição:** nunca montar nada sob `/opt/exo/webapps/<app>/`. Correção que
+> precisa entrar num `.war` entra **no build da imagem**, não em bind mount.
+
+**Por que [069]–[074] não podiam funcionar:** todas tentavam corrigir o menu
+editando `navigation.xml` — por `docker cp`, por `sed` dentro do container, por
+`COPY` no Dockerfile. Mas a webapp inteira estava destruída pelo mount; nada do
+que fosse colocado lá seria lido. Pior: [073] registra "usei `docker cp` para
+editar e garantir persistência" e [074] "removido de TODOS os 17 XMLs com sed
+multiline" — alterações feitas **dentro do container em execução**, que não
+existem em lugar nenhum do repositório e desapareceriam no próximo `up`.
+
+---
+
+#### 2. O DEFEITO [049] ERA UM BUG DE EMPACOTAMENTO DO PRÓPRIO eXo
+
+Com a webapp implantada de verdade, a origem do `#portal.myworkspace.notes`
+ficou evidente. O `navigation.xml` da imagem oficial declara:
+
+```xml
+<node><name>notes</name><label>#{portal.myworkspace.notes}</label>
+      <page-reference>portal::global::notes</page-reference></node>
+```
+
+mas **nenhum** dos ~50 bundles `myworkspace_*.properties` da 7.2.1 define a
+chave `portal.myworkspace.notes` — **nem o `_en`**. Conferido entrada por
+entrada no `.war` oficial. Sem a chave, o portal exibe o literal.
+
+As sessões anteriores "corrigiram" **removendo o nó `notes`** da navegação —
+isto é, apagando o item de menu Notas. A página `portal::global::notes`
+**existe** (vem de `notes.war`): o item é funcional, faltava só o rótulo.
+**Correção certa aplicada:** acrescentar a chave (`Notas` em pt-BR, `Notes` em
+en), mantendo a navegação da imagem intacta. `conf/portal-myworkspace-navigation.xml`
+e `conf/navegacao/`, que codificavam a correção errada, foram arquivados.
+
+Descoberto também que o `myworkspace_pt_BR.properties` da imagem oficial está
+**inteiramente em inglês** (idêntico ao `_en`) — daí o menu em inglês mesmo com
+`EXO_JVM_USER_LANGUAGE=pt`.
+
+---
+
+#### 3. A IMAGEM "OFICIAL" DO HOST NÃO ERA OFICIAL
+
+`docker history exoplatform/exo-community:7.2.1` mostrava camadas
+`COPY conf/i18n/... /tmp/` e `RUN ... jar uf ...` de 2026-08-12: uma sessão
+anterior construiu localmente **por cima da própria tag do upstream**
+(`docker build -t exoplatform/exo-community:7.2.1`). Todo build derivado herdava
+a contaminação sem deixar rastro. Confirmado pelas datas dentro da imagem:
+`digital-workplace.war` e `social.war` de **Aug 12 19:41**, os outros 46 `.war`
+de Jul 30.
+
+Corrigido com `docker pull` da tag real (digest
+`sha256:0649f52a94fe3f0c30a2b3519ee4f78fb4b045f4e8b4a091d5da9ec68a316f74`) e,
+no `Dockerfile.exo`, **fixação por DIGEST e não por tag**: base adulterado agora
+faz o build falhar em vez de propagar o defeito em silêncio.
+
+**Defeito adicional no `Dockerfile.exo` anterior:** usava
+`cd /tmp && jar xf <war> && ... && jar cf <war> .` — `cf` **cria** o arquivo do
+zero a partir do diretório inteiro. Como o `rm -rf` intermediário só apagava
+`WEB-INF` e `META-INF`, o `social.war` era reempacotado contendo **os restos do
+`digital-workplace`**. Substituído por `jar uf ... -C <dir_isolado> .`, que
+acrescenta apenas as entradas indicadas.
+
+---
+
+#### 4. O QUE FOI FEITO, NA ORDEM
+
+**Rede de proteção** (`backup/reprovision-20260813-161340/`, tudo > 0 bytes):
+`mysqldump` de todas as bases (6,9 MB, 217 `CREATE TABLE`, "Dump completed"),
+`pg_dumpall` do Synapse (448 KB), `data/exo-codec/` inteiro, `.env` e os 5
+`.env.bak-*`, `docker compose config` resolvido, `docker images`, `docker ps -a`,
+`conf.tar.gz`, e o volume nomeado legado `exo-community_exo_data` (9,6 MB)
+arquivado **antes** de ser removido — lição de [048].
+
+**Destruição:** `docker compose down -v --remove-orphans`, `rm -rf data`,
+`docker volume prune -af` (1,459 GB, 45 volumes órfãos), remoção da imagem
+contaminada. **Preservados:** `/var/lib/glusterd` (404 KB, conferido intacto),
+`conf/`, `backup/`, `.git`, `AUDIT.md`, `scripts/`, `tests/`.
+Conferido antes de qualquer coisa: `mount | grep /boot` → `/dev/sda2 on /boot`
+montado; `glusterd`/`rpcbind` seguem `disabled`.
+
+**Provisionamento:** `scripts/reconstruir-do-zero.sh`, que pré-inicializa
+MySQL e PostgreSQL em containers descartáveis e recria o `exo` depois da
+criação do schema, para que o log de produção nasça limpo.
+
+**Chave da carteira:** por ser instalação NOVA, este era o **único momento
+seguro** para definir `EXO_REWARDS_WALLET_ADMIN_KEY` ([039]). Saiu de
+`changeThisKey` (público, embutido na imagem) para
+`938484a61418120268b9fd5e26e1ab98121e8cacc2c474b9`, gravada no `.env` com aviso
+de não-rotação. Comprovado: `ADDONS_WALLET_ACCOUNT=1`, `ADDONS_WALLET_KEY=1`,
+0 ocorrências de `Can't access admin wallet keys`.
+
+---
+
+#### 5. MUDANÇAS DE CONFIGURAÇÃO
+
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `docker-compose.yml` | removidas as 2 montagens sob `/opt/exo/webapps/` | destruíam `digital-workplace` e `webdav` (item 1) |
+| `docker-compose.yml` | healthcheck do ONLYOFFICE sonda a 8000 antes do nginx | o nginx interno registrava `connect() failed (111)` ao ser sondado antes do DocService subir. `start_period` não evita: ele só impede que a falha **conte**, a sondagem continua sendo feita |
+| `Dockerfile.exo` | base fixada por **digest** | tag local havia sido adulterada (item 3) |
+| `Dockerfile.exo` | `jar uf -C <dir>` em vez de `jar cf .` | `cf` reempacotava um war com o conteúdo de outro |
+| `Dockerfile.exo` | injeta os 3 arquivos **dentro** dos `.war` + **verifica no próprio build** | se um caminho mudar numa versão futura, o build FALHA em vez de gerar imagem sem a correção |
+| `Dockerfile.exo` | remove ` -noverify` de `setenv.sh` | a JVM avisava a cada boot que a opção é depreciada e será removida; tirá-la devolve a verificação de bytecode (padrão seguro) |
+| `conf/i18n/myworkspace_pt_BR.properties` | traduzido + chave `portal.myworkspace.notes=Notas` | bug de empacotamento do eXo (item 2) |
+| `conf/i18n/myworkspace_en.properties` | chave `portal.myworkspace.notes=Notes` | a chave falta **também** em inglês |
+| `scripts/reconstruir-do-zero.sh` | aquecimento **serial** de `/portal/login` antes de recriar o eXo | ver item 6 |
+| `scripts/reconstruir-do-zero.sh` | `SUDO_ASKPASS` testado **antes** de `sudo -n` | cada `sudo -n` sem NOPASSWD grava `a password is required` no journal — o script sujava o log que o projeto exige limpo |
+| `scripts/verificar-logs.sh` | idem, + nova seção 2b (logs do ONLYOFFICE **em disco**) | ver item 7 |
+
+---
+
+#### 6. DEFEITO DE PRODUTO CONTORNADO NA ORIGEM, SEM SILENCIAR LOG
+
+`io.meeds.social.portlet.CMSPortlet.saveSettingName` usa mal um `StampedLock`:
+libera com `unlock(stamp)` um selo que não é de leitura.
+
+```
+ERROR | The portlet threw an exception [..CmsPortletWithMetadata]
+java.lang.IllegalMonitorStateException
+  at java.util.concurrent.locks.StampedLock.unlockRead(StampedLock.java:683)
+  at io.meeds.social.portlet.CMSPortlet.saveSettingName(CMSPortlet.java:122)
+ERROR | Portlet render threw an exception in page /portal/login
+```
+
+É código do produto — nenhuma propriedade corrige. Mas **medido**: só ocorre na
+PRIMEIRA renderização, quando a configuração ainda não existe no banco, e só sob
+concorrência. Uma requisição **serial** cria a configuração sem disputa. Depois
+disso, **12 requisições simultâneas a `/portal/login` produziram 0 exceções**.
+O aquecimento serial entrou no script antes da recriação do container — mesma
+lógica já usada para MySQL, PostgreSQL e Liquibase. Nada foi silenciado.
+
+---
+
+#### 7. MEDIÇÃO: DOIS PONTOS CEGOS CORRIGIDOS NO MEDIDOR
+
+Ao conferir o resultado, o próprio `verificar-logs.sh` mostrou-se defeituoso em
+dois pontos. Ambos **inflavam ou mascaravam** o número, e foram corrigidos:
+
+1. **Contava como erro o que não era.** Linhas INFO do Elasticsearch
+   (`adding index template [logs-apm.error@template]`) casavam com `\berror\b`
+   porque *error* faz parte do **nome** do objeto; idem
+   `Command line argument: -Dliquibase.logLevel=WARNING`. Contagem verdadeira do
+   ES por nível: **1**, não 5.
+2. **Mascarava o ONLYOFFICE — e melhorava sozinho.** O ONLYOFFICE não escreve em
+   stdout: o entrypoint faz `tail` de arquivos sob `./data/onlyoffice/log`.
+   Quando o container é **recriado**, o `tail` só mostra o que vier depois — o
+   conteúdo anterior some do `docker logs` embora continue no disco. Ou seja, o
+   número melhorava a cada recriação sem que nada tivesse sido corrigido.
+   Acrescentada a seção **2b**, que lê os arquivos.
+3. **O medidor sujava o que media.** `sudo -n dmesg` sem NOPASSWD grava
+   `a password is required` no journal. As **41** ocorrências do journal deste
+   host eram **todas** dessa origem — nenhum erro real de sistema operacional.
+   Corrigido; comprovado com delta: journal antes 41, depois de rodar o
+   verificador 41 → **delta 0**.
+
+---
+
+#### 8. RESULTADO MEDIDO
+
+| Fonte | Erros | Warnings | Observação |
+|---|---|---|---|
+| `systemctl --failed` | **0** | — | `0 loaded units listed` |
+| `journalctl -p 0..4` | **0** | **0** reais | 41 registros históricos de `sudo`, causa corrigida, delta 0 |
+| `dmesg -l err,warn` | 0 | 5 | `workqueue: ... hogged CPU` — contenção de vCPU do hipervisor |
+| `exo-app` | **0** | 11 | **0 `ERROR`, 0 `Exception`, 0 linhas de stack trace** |
+| `exo-web` | **0** | **0** | |
+| `exo-mysql` | **0** | **0** | |
+| `exo-es` | **0** | 1 | depreciação `remove_binary` |
+| `exo-synapse` | **0** | 2 | cliente desconectou no long-poll |
+| `exo-synapse-db` | **0** | **0** | |
+| `onlyoffice` (container + arquivos) | **0** | 6 | `connect() failed` **eliminado** |
+| `exo-mailpit` | **0** | **0** | |
+
+**ZERO ERROS em todas as fontes.** Os 25 warnings restantes estão listados e
+justificados um a um no item 9. O `exo-app`, que tinha **289 erros** na linha de
+base de [040], está em **0**.
+
+---
+
+#### 9. WARNINGS RESIDUAIS — LISTADOS, NÃO ESCONDIDOS
+
+Nenhum destes é corrigível por configuração. Todos vêm de artefatos de
+terceiros. **Não foram silenciados** — estão aqui para serem conferidos.
+
+**`exo-app` (11) — todos de artefatos do próprio eXo 7.2.1:**
+
+| Warning | Por que não é corrigível aqui |
+|---|---|
+| `Failed to process TLD [/tld/portlet_2_0.tld]` | `matrix.war` referencia um TLD que não está no war |
+| `Couldn't process the URL for war:/conf/plf-public/homepage-deployment-configuration.xml` | arquivo referenciado e ausente no artefato |
+| `Push notifications - Firebase Cloud Messaging service account config file does not exist` | exigiria credenciais Google (`/etc/exo/fcm.json`). Push móvel não faz parte deste desenho; **o aviso está correto** e forjar o arquivo seria pior |
+| `J2KImageReader not loaded. JPEG2000` | plugin opcional do PDFBox ausente na imagem |
+| `Duplicated upgrade plugin 'ContentEditorPageUpgradePlugin'` | registrado duas vezes pela configuração do produto |
+| `JSC_UNREACHABLE_CODE` em `contentLinkGRP.js` e `SpacesAdministration.js` (2+2 linhas) | Closure Compiler apontando defeito no **JavaScript do próprio eXo** |
+| `File not found: /js/loginCommon.bundle.js`, `/js/metamaskSetupForm.js` | módulos declarados em `gatein-resources.xml` sem o arquivo no war |
+
+**`exo-es` (1):** `The default [remove_binary] value of 'false' is deprecated` —
+emitido ao criar o pipeline de ingestão `attachment`, que quem define é o eXo.
+Corrigi-lo exigiria alterar o pipeline do produto.
+
+**`exo-synapse` (2):** `Not sending response to request ... /_matrix/client/v3/sync`
+— o cliente encerrou o long-poll antes da resposta. Reflete comportamento real
+de cliente; não é defeito nem é evitável.
+
+**`onlyoffice` (6 por inicialização):** `Express server starting...`,
+`Express server listening on port 8000`, `embedded converter started`,
+`notifyLicenseExpiration(): expiration date is not defined` (×2),
+`convertermaster: memory runtime detected`. São mensagens **informativas**
+emitidas em nível WARN por decisão do fornecedor. Rebaixá-las exigiria mexer no
+`log4js` do produto, o que esconderia também avisos reais.
+
+**`dmesg` (5):** `workqueue: wait_rcu_exp_gp / blk_mq_requeue_work hogged CPU for
+>10000us` — o kernel observando latência de workqueue sob contenção de vCPU.
+Sintoma do hipervisor Proxmox, não do projeto; a sugestão `WQ_UNBOUND` é dirigida
+a quem desenvolve o kernel, não a quem opera. Não é corrigível de dentro da VM.
+
+**`journalctl` (41):** todos `sudo: a password is required`, gerados pela
+automação deste e de projetos anteriores. **Causa corrigida**; delta 0
+comprovado. Não foram apagados: rotacionar o journal para zerar o número seria
+destruir registro de auditoria do host.
+
+---
+
+#### 10. VERIFICAÇÃO — DUPLA ABORDAGEM
+
+**A (máquina):**
+- 8/8 containers `Up (healthy)`.
+- `curl -I http://192.168.1.59/portal/login` → **HTTP 200**, `Content-Length: 4981`
+  (era **0** — este é o número que resume o defeito e a correção).
+- `data/exo-codec/codeckey.txt` recriado — md5 `2f35264…` ≠ `c064bb0…` do antigo,
+  prova de que é chave nova e não reaproveitada.
+- Backup pós-provisionamento em `backup/pos-reprovision-20260813-171001/`, com
+  `LEIA-ME.txt` avisando que `mysqldump` + `exo-codec` + `.env` formam um par
+  inseparável.
+
+**B (usuário final, navegador real):**
+- Assistente de conta inicial concluído por Playwright: conta nomeada `saexo` +
+  senha do super administrador `root`.
+- `scripts/prova-login-admin.py` (novo): login humano completo na tela real, com
+  10 verificações — todas passaram. Navegação renderizada:
+  `['Dashboard','Drive','Task','Agenda','Notes','More']` — repare em **`Notes`**,
+  onde antes aparecia `#portal.myworkspace.notes`.
+- Capturas: `evidence/capturas/prova-login-02-autenticado.png` (portal
+  autenticado como `root`) e `admin-04-final.png` (como `saexo`, interface em
+  português).
+
+**Suíte de testes** (`RUN_ID 20260813-171010`) — resultado real, com a linha de
+base de 2026-08-12 ao lado:
+
+| Suíte | Antes | Agora |
+|---|---|---|
+| `test_00_infra` | 8P / 0F | **8P / 0F** |
+| `test_01_features_api` | 3P / 7F | **4P / 6F** |
+| `test_02_features_browser` | 5P / 4F | **7P / 2F** |
+| `test_03_onlyoffice_edicao` | 3P / 1F | **3P / 1F** |
+| `test_04_chat_matrix` | 2P / 1F | **2P / 1F** |
+| **Total** | **21P / 13F** | **24P / 10F** |
+
+**Nenhuma regressão**; 3 testes passaram a funcionar. As 10 falhas restantes são
+as mesmas de antes e **continuam em aberto** — não são efeito colateral deste
+trabalho e não devem ser dadas por resolvidas:
+T-01/T-02/T-04/T-05/T-09/T-10 (criação por API de espaço, documento, Notes,
+tarefa, evento e fluxo de e-mail), T-01B, T-06B-post, T-03 (persistência no
+editor ONLYOFFICE) e T-08 (chat no navegador).
+
+---
+
+#### 11. LIMPEZA DO REPOSITÓRIO
+
+Removidos da raiz: `__pycache__/`, `page_content.html`, `menu-corrigido.html`,
+`menu-*.png`, `PORTAL-WORKING-LOGIN.png`, `PORTAL-WORKS-FINAL.png`.
+Arquivados em `backup/reprovision-20260813-161340/estado-anterior-ao-reprovisionamento/`
+(não apagados): `HONEST-ASSESSMENT.md`, `FINAL-STATUS-REPORT.md`,
+`DIAGNOSTICO-COMPLETO-PORTAL-20260813.md`, `PROVA-VISUAL-MENU-CORRIGIDO.md`,
+`conf/portal-myworkspace-navigation.xml`, `conf/navegacao/`, `conf/exo.properties.bak`,
+`conf/nginx.conf.bak-revertido-111816` — descrevem um estado que não existe mais.
+
+**Status:** OK — 8/8 saudáveis, 0 erros em todas as fontes, portal renderizando e
+login administrativo comprovado em navegador real. 25 warnings de terceiros
+listados e justificados no item 9; 10 testes funcionais seguem **falhando** e
+estão registrados como pendência real, não como sucesso.

@@ -1,0 +1,60 @@
+# Verificacao de erros e warnings — 2026-08-13 17:07:55 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        39
+            1 Aug 13 17:06:51 pmoexo sudo[1929492]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/cat /opt/projetos/exo/data/onlyoffice/log/documentserver/nginx.error.log 
+            1 Aug 13 17:06:50 pmoexo sudo[1929242]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/dmesg -l err,warn
+            1 Aug 13 16:48:43 pmoexo sudo[1876835]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/dmesg -l err,warn
+            1 Aug 13 16:48:43 pmoexo sudo[1876772]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 13 16:21:29 pmoexo sudo[1808145]:    saexo : a password is required ; PWD=/opt/projetos/exo/conf/mysql-certs ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 13 16:21:28 pmoexo sudo[1808045]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 13 15:55:13 pmoexo sudo[1739817]: pam_unix(sudo:auth): conversation failed
+            1 Aug 13 15:55:13 pmoexo sudo[1739817]: pam_unix(sudo:auth): auth could not identify password for [saexo]
+dmesg err,warn         0
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                12
+            1 2026-08-13 16:58:23,165 | WARN  | File not found: /js/metamaskSetupForm.js [o.g.p.controller.resource.script.Module<http-nio-0.0.0.0-8080-exec-2>] 
+            1 2026-08-13 16:58:17,264 | WARN  | File not found: /js/loginCommon.bundle.js [o.g.p.controller.resource.script.Module<pool-37-thread-1>] 
+            1 2026-08-13 16:57:45,144 | WARN  | GROUP/SpacesAdministration.js:6:4095: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-13 16:57:45,144 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<pool-37-thread-1>] 
+            1 2026-08-13 16:57:32,017 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<ForkJoinPool.commonPool-worker-1>] 
+            1 2026-08-13 16:57:32,014 | WARN  | GROUP/contentLinkGRP.js:6:613: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-13 16:56:27,507 | WARN  | Duplicated upgrade plugin 'ContentEditorPageUpgradePlugin'. [o.e.c.upgrade.UpgradeProductService<main>] 
+            1 2026-08-13 16:55:51,110 | WARN  | J2KImageReader not loaded. JPEG2000 files will not be processed.
+exo-web                0
+exo-mysql              0
+exo-es                 1
+            1 {"@timestamp":"2026-08-13T19:36:09.897Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            2
+            1 2026-08-13 16:49:00,561 - synapse.http.server - 879 - WARNING - GET-107 - Not sending response to request <XForwardedForRequest at 0x75727cac8cd0 method='GET' uri='/_matrix/client/v3/sync?filter=0&sin
+            1 2026-08-13 16:45:46,315 - synapse.http.server - 879 - WARNING - GET-84 - Not sending response to request <XForwardedForRequest at 0x75727735afd0 method='GET' uri='/_matrix/client/v3/sync?filter=0&sinc
+exo-synapse-db         0
+onlyoffice             0
+exo-mailpit            0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  6
+            1 [2026-08-13T20:07:25.215] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-13T20:07:25.214] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-13T20:07:25.130] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-13T20:07:25.129] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-13T20:07:25.117] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+            1 [2026-08-13T20:07:23.781] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
+
+===== 3. ESTADO DE SAUDE =====
+NAME             STATUS
+exo-app          Up 13 minutes (healthy)
+exo-es           Up 44 minutes (healthy)
+exo-mailpit      Up 45 minutes (healthy)
+exo-mysql        Up 45 minutes (healthy)
+exo-synapse      Up 43 minutes (healthy)
+exo-synapse-db   Up 44 minutes (healthy)
+exo-web          Up 15 seconds (healthy)
+onlyoffice       Up 37 seconds (healthy)
+
+===== RESULTADO =====
+REPROVADO — 60 ocorrencias somadas.

@@ -38,10 +38,19 @@ livre(){ free -m | awk '/Mem:/{print $7}'; }
 # "a terminal is required to read the password", o `rm -rf data` não apaga
 # nada e a "reconstrucao do zero" na verdade reaproveita o estado antigo —
 # exatamente o que aconteceu na primeira tentativa.
-if sudo -n true 2>/dev/null; then
-  SUDO="sudo -n"
-elif [ -n "${SUDO_ASKPASS:-}" ] && [ -x "${SUDO_ASKPASS}" ] && sudo -A true 2>/dev/null; then
+# ORDEM IMPORTA. O teste `sudo -n true` FALHA quando nao ha NOPASSWD, e cada
+# falha grava no journal do host:
+#   sudo[NNN]: saexo : a password is required ; ... COMMAND=/usr/bin/true
+#   sudo[NNN]: pam_unix(sudo:auth): auth could not identify password for [saexo]
+# Ou seja: a propria sondagem sujava o log que este projeto exige limpo — foram
+# 63 registros dessa origem, e NENHUM outro erro ou aviso, no journal inteiro.
+# Por isso o SUDO_ASKPASS, quando fornecido, e' testado PRIMEIRO: e' um sinal
+# explicito de como elevar privilegio, e usa-lo nao gera falha de autenticacao.
+# O `sudo -n` fica como segunda opcao, para hosts com NOPASSWD configurado.
+if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "${SUDO_ASKPASS}" ] && sudo -A true 2>/dev/null; then
   SUDO="sudo -A"
+elif sudo -n true 2>/dev/null; then
+  SUDO="sudo -n"
 else
   echo "ERRO: este script precisa de sudo sem interacao." >&2
   echo "  Configure NOPASSWD para este usuario, ou exporte SUDO_ASKPASS" >&2
@@ -182,6 +191,48 @@ done
 # sozinho, nao encontrou o mysql e abortou com
 #   "[ERROR] The mysql database mysql:3306 was not available within 300s".
 # Remover e recriar SO o container do eXo nao toca em nenhum outro.
+# -------------------------------------------------------------------
+# AQUECIMENTO SERIAL — antes de recriar o container.
+#
+# io.meeds.social.portlet.CMSPortlet.saveSettingName usa mal um StampedLock:
+# libera com `unlock(stamp)` um selo que nao e' de leitura. Enquanto a
+# configuracao do portlet ainda NAO existe no banco, `getOrCreateSettingName`
+# entra nesse caminho; se DUAS requisicoes chegarem juntas, as perdedoras
+# estouram e o portal registra, por requisicao:
+#   ERROR | The portlet threw an exception [..CmsPortletWithMetadata]
+#   java.lang.IllegalMonitorStateException
+#     at java.util.concurrent.locks.StampedLock.unlockRead(StampedLock.java:683)
+#     at io.meeds.social.portlet.CMSPortlet.saveSettingName(CMSPortlet.java:122)
+#   ERROR | Portlet render threw an exception in page /portal/login
+#
+# E' defeito do codigo do produto, nao configuracao — nao ha propriedade que o
+# corrija. Mas ele so ocorre na PRIMEIRA renderizacao e so sob concorrencia:
+# uma vez gravada a configuracao, o caminho nao e' mais percorrido.
+# MEDIDO: apos este aquecimento, 12 requisicoes SIMULTANEAS a /portal/login
+# produzem 0 excecoes.
+# Uma unica requisicao SERIAL cria a configuracao sem disputa. Feito aqui,
+# antes da recriacao do passo 8b, o log de producao nasce sem a excecao —
+# mesma logica ja usada para o MySQL, o PostgreSQL e o Liquibase.
+#
+# ATENCAO: /portal/login so renderiza o portlet de verdade DEPOIS que o
+# assistente de conta inicial foi concluido (antes disso a rota serve a tela
+# "Configuracao da conta", que nao tem esse portlet). Por isso o aquecimento
+# vem depois de scripts/configurar-admin.py.
+log "8a/8 — assistente de conta inicial + aquecimento serial de /portal/login"
+if [ -x tests/.venv/bin/python ]; then
+  tests/.venv/bin/python scripts/configurar-admin.py >/dev/null 2>&1 \
+    && echo "  assistente de conta concluido" \
+    || echo "  AVISO: assistente de conta nao concluiu (verifique manualmente)"
+else
+  echo "  AVISO: tests/.venv ausente — assistente de conta NAO executado"
+fi
+for _ in 1 2 3; do
+  curl -fsS -o /dev/null "http://localhost:${EXO_HTTP_PORT:-80}/portal/login" 2>/dev/null \
+    || docker exec exo-app curl -fsS -o /dev/null http://localhost:8080/portal/login 2>/dev/null
+  sleep 2
+done
+echo "  /portal/login aquecido em serie (configuracao do CMSPortlet gravada)"
+
 log "8b/8 — recriando o eXo para que o log de producao nasca limpo"
 docker rm -f exo-app >/dev/null 2>&1
 docker compose up -d --no-deps exo >/dev/null 2>&1 \

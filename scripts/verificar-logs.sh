@@ -20,6 +20,24 @@ cd "$ROOT"
 DESDE=""
 [ "${1:-}" = "--desde" ] && DESDE="${2:-}"
 
+# Elevacao de privilegio SEM sujar o journal.
+# Este script precisa de root para `dmesg` e para ler os logs do ONLYOFFICE.
+# Usar `sudo -n` direto parece inofensivo, mas quando NAO ha NOPASSWD cada
+# tentativa grava no journal:
+#   sudo[NNN]: saexo : a password is required ; ... COMMAND=/usr/bin/dmesg ...
+# Ou seja: o proprio medidor criava as ocorrencias que depois contava — o
+# journal deste host tinha 39 entradas e TODAS eram dessa origem. Por isso o
+# SUDO_ASKPASS, quando existe, e' preferido: ele autentica de fato e nao gera
+# registro de falha. Sem nenhuma das duas formas, o script segue sem root e
+# marca as fontes correspondentes como indisponiveis, em vez de insistir.
+if [ -n "${SUDO_ASKPASS:-}" ] && [ -x "${SUDO_ASKPASS}" ] && sudo -A true 2>/dev/null; then
+  SU="sudo -A"
+elif sudo -n true 2>/dev/null; then
+  SU="sudo -n"
+else
+  SU=""
+fi
+
 EVID="${ROOT}/evidence"; mkdir -p "$EVID"
 SAIDA="${EVID}/verificacao-logs-$(date +%Y%m%d-%H%M%S).log"
 TOTAL=0
@@ -33,7 +51,20 @@ titulo(){ printf '\n===== %s =====\n' "$*"; }
 #   * "WARNING: no usable" nao se aplica: foi corrigido trocando a imagem.
 #   * "Using a password on the command line" -> aviso do CLIENTE mysql nos
 #     nossos proprios comandos de verificacao, nao do servidor.
-ruido='0 errors|no errors|errors: 0|error_log|ErrorDocument|Using a password on the command line|errorCount.:0|"errors":0'
+#   * "logs-apm.error" -> NOME de index template / component template /
+#     ingest pipeline do Elasticsearch. Sao linhas de nivel INFO ("adding
+#     index template [logs-apm.error@template]") que casavam com \berror\b
+#     apenas porque a palavra faz parte do NOME do objeto. Contar isso como
+#     erro e' defeito da MEDICAO, nao do servico: o ES nao reportou erro
+#     algum. Conferido: `grep -cE '"log.level": ?"(WARN|ERROR)"'` no mesmo
+#     log da a contagem verdadeira.
+#   * "COMMAND=/usr/bin/true" -> sondagem `sudo -n true` dos proprios scripts.
+#     A causa foi corrigida em reconstruir-do-zero.sh (SUDO_ASKPASS testado
+#     antes de `sudo -n`); a exclusao cobre apenas os registros historicos.
+#   * "Command line argument: -Dliquibase.logLevel=WARNING" -> linha de nivel
+#     INFO em que o Tomcat ecoa os argumentos da JVM. Casa com \bWARNING\b
+#     apenas porque WARNING e' o VALOR de um argumento. Nao ha aviso algum.
+ruido='0 errors|no errors|errors: 0|error_log|ErrorDocument|Using a password on the command line|errorCount.:0|"errors":0|logs-apm\.error|Command line argument: -Dliquibase\.logLevel'
 
 conta(){                      # conta ocorrencias e imprime as distintas
   local nome="$1" conteudo="$2" padrao="${3:-}"
@@ -62,7 +93,7 @@ if [ -n "$DESDE" ]; then J=$(journalctl -p 0..4 --since "-${DESDE}" --no-pager 2
 else J=$(journalctl -p 0..4 -b --no-pager 2>/dev/null); fi
 conta "journalctl p0-4" "$J" '.'
 
-D=$(sudo -n dmesg -l err,warn 2>/dev/null || dmesg -l err,warn 2>/dev/null || echo "")
+D=$(${SU} dmesg -l err,warn 2>/dev/null || dmesg -l err,warn 2>/dev/null || echo "")
 conta "dmesg err,warn" "$D" '.'
 
 titulo "2. CONTAINERS DO PROJETO"
@@ -73,6 +104,25 @@ for c in exo-app exo-web exo-mysql exo-es exo-synapse exo-synapse-db onlyoffice 
   L=$(printf '%s' "$L" | sed 's/\x1b\[[0-9;]*m//g')
   conta "$c" "$L"
 done
+
+titulo "2b. LOGS EM DISCO DO ONLYOFFICE"
+# POR QUE ESTA SECAO EXISTE — e' correcao de um ponto CEGO da medicao.
+# O ONLYOFFICE nao escreve no stdout: o entrypoint faz `tail` de arquivos sob
+# /var/log/onlyoffice, que aqui e' o bind mount ./data/onlyoffice/log. Quando o
+# container e' RECRIADO, o `tail` so mostra o que for escrito dali em diante —
+# o conteudo anterior dos arquivos, que continua no disco, some do
+# `docker logs`. Ou seja: contar apenas `docker logs onlyoffice` faz o
+# resultado MELHORAR sozinho a cada recriacao, sem que nada tenha sido
+# corrigido. Medir o arquivo e' a unica leitura honesta.
+if [ -d "${ROOT}/data/onlyoffice/log" ]; then
+  OO=$( (${SU} cat "${ROOT}"/data/onlyoffice/log/documentserver/*.log \
+                   "${ROOT}"/data/onlyoffice/log/documentserver/*/*.log 2>/dev/null \
+        || cat "${ROOT}"/data/onlyoffice/log/documentserver/*.log \
+               "${ROOT}"/data/onlyoffice/log/documentserver/*/*.log 2>/dev/null) || true)
+  conta "onlyoffice (arquivos)" "$OO"
+else
+  printf '%-22s (ausente)\n' "onlyoffice (arquivos)"
+fi
 
 titulo "3. ESTADO DE SAUDE"
 docker compose ps --format 'table {{.Name}}\t{{.Status}}' 2>/dev/null

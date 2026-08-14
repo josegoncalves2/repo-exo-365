@@ -68,6 +68,7 @@ services:
       - "${EXO_HTTP_PORT:-80}:80"
     volumes:
       - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf/static:/usr/share/nginx/html:ro
     networks:
       default:
         aliases:
@@ -184,16 +185,21 @@ services:
       - ./data/exo-codec:/etc/exo/codec:rw
       - ./data/exo-logs:/var/log/exo
       - ./conf/exo.properties:/etc/exo/exo.properties:ro
-      # web.xml do webapp `webdav` com OPTIONS explicitamente COBERTO por um
-      # security-constraint sem auth-constraint. Sem isto o Tomcat registra,
-      # a cada implantação, em nível ERROR:
-      #   "For security constraints with URL pattern [/*] the HTTP methods
-      #    [OPTIONS] are uncovered."
-      # ATENÇÃO ao atualizar a imagem do eXo: este arquivo foi extraído da
-      # 7.2.1 (sha256 do original: 0b334867639888ea…). Se o upstream mudar o
-      # web.xml, reextrair e reaplicar o patch — senão a versão montada aqui
-      # sobrescreve a nova com uma antiga.
-      - ./conf/webdav-web.xml:/opt/exo/webapps/webdav/WEB-INF/web.xml:ro
+      # NUNCA montar nada sob /opt/exo/webapps/<app>/ — ver AUDIT [075].
+      # /opt/exo/webapps contém ARQUIVOS .war, não diretórios. Um bind mount
+      # em /opt/exo/webapps/<app>/qualquer/coisa faz o Docker criar o
+      # diretório /opt/exo/webapps/<app>/ (root:root) antes do Tomcat subir;
+      # o Tomcat encontra um diretório de webapp já existente, não consegue
+      # removê-lo (é ponto de montagem), NÃO desempacota o .war e implanta o
+      # diretório praticamente vazio como se fosse a aplicação.
+      # Duas montagens assim existiam aqui e destruíam duas webapps:
+      #   ./conf/i18n      -> .../digital-workplace/WEB-INF/classes/locale/...
+      #   ./conf/webdav-web.xml -> .../webdav/WEB-INF/web.xml
+      # Como digital-workplace é quem fornece o site myworkspace, sua
+      # navegação e suas páginas, o portal inteiro passou a responder
+      # HTTP 200 com corpo VAZIO, com NullPointerException em
+      # PortalURLContext._render(). Os três arquivos passaram a ser
+      # injetados DENTRO dos .war em tempo de build — ver Dockerfile.exo.
     depends_on:
       mysql:
         condition: service_healthy
@@ -335,7 +341,28 @@ services:
       - ./data/onlyoffice/cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
     mem_limit: ${MEM_LIMIT_ONLYOFFICE}
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost/healthcheck | grep -q true"]
+      # O teste passa PRIMEIRO direto no DocService (porta 8000) e só depois
+      # pelo nginx interno (porta 80). A ordem não é estética:
+      #   o nginx do ONLYOFFICE sobe em segundos, o DocService leva ~1 min.
+      #   Sondar /healthcheck pelo nginx nesse intervalo faz o próprio nginx
+      #   registrar, no log do container:
+      #     [error] connect() failed (111: Connection refused) while connecting
+      #             to upstream, request: "GET /healthcheck HTTP/1.1"
+      #   `start_period` não evita isso: ele só impede que a falha CONTE
+      #   contra a saúde do container — a sondagem continua sendo executada,
+      #   e o erro continua sendo gravado.
+      # Verificar antes se há upstream vivo elimina a causa (pedir ao proxy
+      # algo que ele ainda não tem como servir), e não o sintoma. O teste
+      # segue sendo real: só reporta saudável quando /healthcheck responde
+      # `true` através do nginx, que é o caminho que o eXo de fato usa.
+      # NOTA sobre a 1a sonda: é `curl -sS` SEM `-f`, de propósito. O que se
+      # quer saber dela é só "há alguém escutando na 8000", e a raiz do
+      # DocService responde 404 (não tem rota "/"). Com `-f` o curl trata 404
+      # como falha e o container nunca ficaria saudável — testado. Sem `-f`,
+      # o comando só falha quando a conexão é RECUSADA (curl exit 7), que é
+      # exatamente a condição que se quer detectar. A verificação de verdade
+      # é a 2a, através do nginx, e essa continua com `-f`.
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8000/ && curl -fsS http://localhost/healthcheck | grep -q true"]
       interval: 30s
       timeout: 10s
       retries: 20
