@@ -42,6 +42,18 @@ EVID="${ROOT}/evidence"; mkdir -p "$EVID"
 SAIDA="${EVID}/verificacao-logs-$(date +%Y%m%d-%H%M%S).log"
 TOTAL=0
 
+# POR QUE O TOTAL TRAFEGA POR ARQUIVO — correcao de um defeito do PROPRIO PORTAO.
+# O relatorio e' produzido por um bloco `{ ... } | tee "$SAIDA"`, e todo comando
+# de um pipeline roda em SUBSHELL. Logo, os incrementos de TOTAL feitos por
+# conta() aconteciam numa copia do processo: ao fim do pipeline, o TOTAL do shell
+# PAI continuava 0. O `[ "$TOTAL" -eq 0 ] || exit 1` da ultima linha lia esse 0 e
+# o script SEMPRE devolvia codigo 0 — mesmo imprimindo "REPROVADO — 344
+# ocorrencias". Ou seja: o portao de qualidade nunca reprovava, e qualquer
+# automacao que dependesse do codigo de saida tinha uma aprovacao falsa.
+# O total passa a ser gravado neste arquivo DENTRO do subshell e relido pelo pai.
+TOTAL_FILE="$(mktemp "${TMPDIR:-/tmp}/verificar-logs-total.XXXXXX")"
+trap 'rm -f "$TOTAL_FILE"' EXIT INT TERM
+
 titulo(){ printf '\n===== %s =====\n' "$*"; }
 
 # Filtro comum de falsos positivos.
@@ -124,16 +136,55 @@ else
   printf '%-22s (ausente)\n' "onlyoffice (arquivos)"
 fi
 
+titulo "2c. LOG EM DISCO DO EXO-APP"
+# POR QUE ESTA SECAO EXISTE — e' o MESMO ponto cego que a secao 2b corrigiu para
+# o ONLYOFFICE, e que estava aberto no servico mais importante da pilha.
+# O exo-app escreve seu log de plataforma em ./data/exo-logs (bind mount), e nao
+# apenas no stdout. Como o `docker logs` so mostra o que o container produziu
+# DESDE a sua criacao, medir apenas por ele faz o resultado "MELHORAR sozinho" a
+# cada recriacao ou restart, sem que nada tenha sido corrigido. Medido em
+# 2026-08-18: o `docker logs exo-app` (janela de 4h desde o restart das 09:28)
+# acusava 123 ocorrencias, enquanto o platform.log do MESMO dia tinha 54 ERROR e
+# 660 WARN. Ou seja, a leitura por container subnotificava o proprio dia.
+#
+# LIMITE DE ESCOPO (decisao do projeto, registrada aqui para nao ficar implicita):
+#   * Auditamos APENAS o arquivo CORRENTE (platform.log). Os arquivos rotativos
+#     de dias encerrados (platform-AAAAMMDD-N.log.zip) NAO entram na contagem:
+#     dias ja fechados nao podem mais ser corrigidos, e inclui-los tornaria o
+#     portao impossivel de zerar sem APAGAR log — isto e, incentivaria destruir
+#     prova para passar na medicao.
+#   * Os access.*.log do Tomcat NAO entram: sao log de ACESSO HTTP (~380 MB) e
+#     casariam com \berror\b/\bwarn\b por conta da URL requisitada
+#     (ex.: GET /portal/rest/.../error), nao por haver falha alguma. Contar isso
+#     seria medir o texto das requisicoes, nao a saude do servico.
+if [ -f "${ROOT}/data/exo-logs/platform.log" ]; then
+  EA=$( (cat "${ROOT}/data/exo-logs/platform.log" 2>/dev/null \
+        || ${SU} cat "${ROOT}/data/exo-logs/platform.log" 2>/dev/null) || true)
+  EA=$(printf '%s' "$EA" | sed 's/\x1b\[[0-9;]*m//g')
+  conta "exo-app (platform.log)" "$EA"
+else
+  printf '%-22s (ausente)\n' "exo-app (platform.log)"
+fi
+
 titulo "3. ESTADO DE SAUDE"
 docker compose ps --format 'table {{.Name}}\t{{.Status}}' 2>/dev/null
 
 titulo "RESULTADO"
+printf '%s\n' "$TOTAL" > "$TOTAL_FILE"
 if [ "$TOTAL" -eq 0 ]; then
   echo "APROVADO — 0 erros e 0 warnings em todas as fontes."
 else
   echo "REPROVADO — ${TOTAL} ocorrencias somadas."
 fi
 } 2>&1 | tee "$SAIDA"
+
+# Reler o total apurado dentro do subshell. Se o arquivo nao existir ou vier
+# vazio, o relatorio nao chegou ao fim: tratar como REPROVADO (fail-closed), e
+# nunca como aprovado por omissao.
+TOTAL="$(cat "$TOTAL_FILE" 2>/dev/null || true)"
+case "$TOTAL" in
+  ''|*[!0-9]*) echo "ERRO: total nao apurado — relatorio incompleto." >&2; TOTAL=-1 ;;
+esac
 
 echo
 echo "Evidencia: ${SAIDA#$ROOT/}"

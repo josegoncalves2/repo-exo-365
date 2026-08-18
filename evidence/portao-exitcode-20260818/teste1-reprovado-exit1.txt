@@ -1,0 +1,84 @@
+# Verificacao de erros e warnings — 2026-08-18 14:19:11 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        42
+            1 Aug 18 13:16:51 pmoexo sudo[2961775]:    saexo : a password is required ; PWD=/opt/projetos ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 13 17:07:55 pmoexo sudo[1932819]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/cat /opt/projetos/exo/data/onlyoffice/log/documentserver/nginx.error.log 
+            1 Aug 13 17:07:55 pmoexo sudo[1932579]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/dmesg -l err,warn
+            1 Aug 13 17:06:51 pmoexo sudo[1929492]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/cat /opt/projetos/exo/data/onlyoffice/log/documentserver/nginx.error.log 
+            1 Aug 13 17:06:50 pmoexo sudo[1929242]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/dmesg -l err,warn
+            1 Aug 13 16:48:43 pmoexo sudo[1876835]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/dmesg -l err,warn
+            1 Aug 13 16:48:43 pmoexo sudo[1876772]:    saexo : a password is required ; PWD=/opt/projetos/exo ; USER=root ; COMMAND=/usr/bin/true
+            1 Aug 13 16:21:29 pmoexo sudo[1808145]:    saexo : a password is required ; PWD=/opt/projetos/exo/conf/mysql-certs ; USER=root ; COMMAND=/usr/bin/true
+dmesg err,warn         5
+            1 [86375.580113] workqueue: blk_mq_requeue_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+            1 [79344.812554] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+            1 [256404.597081] workqueue: psi_avgs_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+            1 [166525.836518] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 64 times, consider switching to WQ_UNBOUND
+            1 [161077.701509] workqueue: blk_mq_requeue_work hogged CPU for >10000us 8 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                138
+            3 2026-08-18 10:33:44,577 | ERROR | null [portal:UIPortlet<http-nio-0.0.0.0-8080-exec-9>] 
+            3 2026-08-18 10:33:44,573 | ERROR | null [portal:UIPortlet<http-nio-0.0.0.0-8080-exec-25>] 
+            3 2026-08-18 10:33:44,570 | ERROR | null [portal:UIPortlet<http-nio-0.0.0.0-8080-exec-2>] 
+            3 2026-08-18 10:33:44,462 | WARN  | Can't load JS resource for portlet null [portal:UIPortalApplication<http-nio-0.0.0.0-8080-exec-7>] 
+            3 2026-08-18 10:33:44,461 | ERROR | null [portal:UIPortlet<http-nio-0.0.0.0-8080-exec-7>] 
+            2 2026-08-18 10:33:44,256 | WARN  | Can't load JS resource for portlet null [portal:UIPortalApplication<http-nio-0.0.0.0-8080-exec-27>] 
+            2 2026-08-18 10:25:34,267 | ERROR | Cannot invoke "String.lastIndexOf(String)" because "applicationState" is null [portal:UIPortlet<http-nio-0.0.0.0-8080-exec-4>] 
+            2 2026-08-18 10:25:34,267 | ERROR | Cannot invoke "String.lastIndexOf(String)" because "applicationState" is null [portal:UIPortlet<http-nio-0.0.0.0-8080-exec-29>] 
+exo-web                72
+            1 2026/08/18 17:17:52 [warn] 32#32: *247949 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000011, client: 192.168.1.254, server: , request: "PUT /layout/rest/sit
+            1 2026/08/18 17:15:04 [warn] 32#32: *247319 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000010, client: 192.168.1.254, server: , request: "POST /portal/upload?
+            1 2026/08/18 17:14:31 [warn] 33#33: *247659 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000009, client: 192.168.1.254, server: , request: "POST /portal/upload?
+            1 2026/08/18 17:12:31 [warn] 32#32: *247319 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000008, client: 192.168.1.254, server: , request: "POST /portal/upload?
+            1 2026/08/18 17:10:21 [warn] 32#32: *247467 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000007, client: 192.168.1.254, server: , request: "POST /portal/upload?
+            1 2026/08/18 13:24:51 [warn] 32#32: *235182 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000006, client: 192.168.1.254, server: , request: "POST /portal/upload?
+            1 2026/08/18 13:24:43 [warn] 32#32: *235182 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000005, client: 192.168.1.254, server: , request: "POST /portal/upload?
+            1 2026/08/18 13:18:16 [warn] 32#32: *235182 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000004, client: 192.168.1.254, server: , request: "POST /portal/upload?
+exo-mysql              0
+exo-es                 2
+            1 {"@timestamp":"2026-08-18T12:15:06.770Z", "log.level": "WARN", "message":"health check of [/usr/share/elasticsearch/data] took [6206ms] which is above the warn threshold of [5s]", "ecs.version": "1.2.
+            1 {"@timestamp":"2026-08-13T19:36:09.897Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            96
+            1 2026-08-18 14:09:57,796 - synapse.http.server - 879 - WARNING - GET-24261 - Not sending response to request <XForwardedForRequest at 0x75727c951e50 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 14:06:27,607 - synapse.http.server - 879 - WARNING - GET-24198 - Not sending response to request <XForwardedForRequest at 0x75727cac9950 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 14:05:57,568 - synapse.http.server - 879 - WARNING - GET-24180 - Not sending response to request <XForwardedForRequest at 0x75727cac9310 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 13:55:56,767 - synapse.http.server - 879 - WARNING - GET-24021 - Not sending response to request <XForwardedForRequest at 0x75727cac9950 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 13:52:26,322 - synapse.http.server - 879 - WARNING - GET-23964 - Not sending response to request <XForwardedForRequest at 0x75727c951bd0 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 13:51:25,600 - synapse.http.server - 879 - WARNING - GET-23949 - Not sending response to request <XForwardedForRequest at 0x75727cac9950 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 13:50:55,582 - synapse.http.server - 879 - WARNING - GET-23935 - Not sending response to request <XForwardedForRequest at 0x75727c9d0550 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+            1 2026-08-18 13:31:21,859 - synapse.http.server - 879 - WARNING - GET-23631 - Not sending response to request <XForwardedForRequest at 0x75727c951bd0 method='GET' uri='/_matrix/client/v3/sync?filter=0&s
+exo-synapse-db         0
+onlyoffice             17
+            1 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            1 [2026-08-17T20:11:06.554] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-16T20:11:06.551] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-15T20:11:06.551] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-14T20:11:06.886] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-13T20:11:06.605] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-13T20:11:06.604] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-13T20:11:06.552] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+exo-mailpit            0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  0
+
+===== 3. ESTADO DE SAUDE =====
+NAME             STATUS
+exo-app          Up 5 hours (healthy)
+exo-es           Up 4 days (healthy)
+exo-mailpit      Up 4 days (healthy)
+exo-mysql        Up 4 days (healthy)
+exo-synapse      Up 4 days (healthy)
+exo-synapse-db   Up 4 days (healthy)
+exo-web          Up 4 days (healthy)
+onlyoffice       Up 4 days (healthy)
+
+===== RESULTADO =====
+REPROVADO — 372 ocorrencias somadas.
+
+Evidencia: evidence/verificacao-logs-20260818-141911.log

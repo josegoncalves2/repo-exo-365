@@ -1,0 +1,27 @@
+# Verificacao de erros e warnings — 2026-08-18 14:22:22 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+journalctl p0-4        0
+dmesg err,warn         0
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                0
+exo-web                0
+exo-mysql              0
+exo-es                 0
+exo-synapse            0
+exo-synapse-db         0
+onlyoffice             0
+exo-mailpit            0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  (ausente)
+
+===== 3. ESTADO DE SAUDE =====
+
+===== RESULTADO =====
+APROVADO — 0 erros e 0 warnings em todas as fontes.
+
+Evidencia: evidence/verificacao-logs-20260818-142222.log

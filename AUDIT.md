@@ -2776,3 +2776,10 @@ skin do eXo aceitou a regra sem reclamar. 8/8 containers saudáveis.
 dashboard-depois.png).
 
 **Status:** OK
+
+### [081] 2026-08-18 14:23:06 -03 — Correcao do codigo de saida do portao de qualidade (verificar-logs.sh)
+**Ação:** O portao imprimia REPROVADO e devolvia codigo 0, tornando vacua qualquer prova de conformidade baseada no exit code. Causa: TOTAL era incrementado por conta() DENTRO do subshell do pipeline '{ ... } | tee $SAIDA', enquanto o teste final '[ $TOTAL -eq 0 ] || exit 1' executava no shell PAI, onde TOTAL permanecia 0. Correcao: o total apurado passa a ser gravado em arquivo temporario dentro do subshell e relido pelo pai, com guarda fail-closed (total ausente ou nao numerico reprova, nunca aprova por omissao). O regex de ruido, a logica de contagem e as fontes auditadas NAO foram alterados.
+**Comando/Arquivo:** `scripts/verificar-logs.sh`
+**Resultado:** Teste 1 (ambiente real): EXIT=1 com REPROVADO — 372 ocorrencias. Teste 2 (copia com as fontes neutralizadas, logica de contagem intacta): EXIT=0 com APROVADO — 0 erros e 0 warnings. Guarda fail-closed verificada em 4 entradas (vazia e nao-numerica reprovam; 0 aprova; 7 reprova). Diff confirma regex ruido identico antes/depois.
+**Evidência:** evidence/portao-exitcode-20260818/ (diff-verificar-logs.patch, teste1-reprovado-exit1.txt, teste2-aprovado-exit0.txt, resumo.txt)
+**Status:** OK

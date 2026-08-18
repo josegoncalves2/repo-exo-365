@@ -1,0 +1,77 @@
+{
+  "label": "t03-onlyoffice-3278a4de",
+  "run_id": "3278a4de",
+  "base": "http://192.168.1.59",
+  "started": 1787065223.964575,
+  "duration_s": 177.1,
+  "total": 4,
+  "passed": 3,
+  "failed": 1,
+  "results": [
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .txt pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "texto extraido contem o marcador unico 'MARCADOR-T03-3278a4de-CONTEUDO-VERIFICAVEL' (103 bytes)",
+      "proof": "texto extraido contem o marcador unico 'MARCADOR-T03-3278a4de-CONTEUDO-VERIFICAVEL' (103 bytes)",
+      "duration_s": 3.63,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1001 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:53117/prova-t03-3278a4de.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"fileUrl\": \"http://onlyoffice/cache/files/data/conv_t033278a4detxt_69/output.txt/prova-t03-3278a4de.txt?md5=8h1N1YvtbB7d2mN-3xXS8g&expires=1787066128&shardkey=ed20260813-171010256&filename=prova-t03-3278a4de.txt\", \"fileType\": \"txt\", \"percent\": 100, \"endConvert\": true}",
+        "GET resultado -> 103 bytes"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .pdf pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "PDF valido gerado: assinatura b'%PDF-1.7', 34758 bytes",
+      "proof": "PDF valido gerado: assinatura b'%PDF-1.7', 34758 bytes",
+      "duration_s": 2.58,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1001 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:43583/prova-t03-3278a4de.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"fileUrl\": \"http://onlyoffice/cache/files/data/conv_t033278a4depdf_513/output.pdf/prova-t03-3278a4de.pdf?md5=p4giDLgx0VLKdHuAl_HmoQ&expires=1787066130&shardkey=ed20260813-171010256&filename=prova-t03-3278a4de.pdf\", \"fileType\": \"pdf\", \"percent\": 100, \"endConvert\": true}",
+        "GET resultado -> 34758 bytes"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "API do editor publicada na origem publica (porta 80)",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "o navegador do usuario consegue carregar a API do editor pela porta 80",
+      "proof": "http://192.168.1.59/web-apps/apps/api/documents/api.js",
+      "duration_s": 0.07,
+      "steps": [
+        "GET http://192.168.1.59/web-apps/apps/api/documents/api.js -> HTTP 200, 65363 bytes",
+        "content-type: application/javascript",
+        "expoe o objeto DocsAPI: True"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Usuario digita no editor e o texto PERSISTE no arquivo",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "o texto digitado nao foi comprovado no arquivo gravado",
+      "proof": "texto 'Texto digitado pelo usuario final 3278a4de' recuperado do arquivo salvo; capturas evidence/capturas/t03-*-3278a4de.png",
+      "duration_s": 170.85,
+      "steps": [
+        "callback de gravacao em http://192.168.1.59:44043/callback",
+        "pagina carregada; aguardando onDocumentReady",
+        "onDocumentReady: True",
+        "digitado via teclado: 'Texto digitado pelo usuario final 3278a4de'",
+        "editor encerrado — gravacao disparada",
+        "nenhum callback com URL recebido; callbacks vistos: [{'key': 'ed3278a4de5230', 'status': 1, 'users': ['root'], 'actions': [{'type': 1, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDMyNzhhNGRlNTIzMCIsInN0YXR1cyI6MSwidXNlcnMiOlsicm9vdCJdLCJhY3Rpb25zIjpbeyJ0eXBlIjoxLCJ1c2VyaWQiOiJyb290In1dLCJpYXQiOjE3ODcwNjUyMzUsImV4cCI6MTc4NzA2NTUzNX0.fDG_RjrbpBkepvzKtnj08fypT5DfI9IlCe8ckwozHIw'}, {'key': 'ed3278a4de5230', 'status': 4, 'actions': [{'type': 0, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDMyNzhhNGRlNTIzMCIsInN0YXR1cyI6NCwiYWN0aW9ucyI6W3sidHlwZSI6MCwidXNlcmlkIjoicm9vdCJ9XSwiaWF0IjoxNzg3MDY1MjUwLCJleHAiOjE3ODcwNjU1NTB9.JoFGvCyn9j9Fi9uOLlz4YQE8C1JcEIswZMahxRojfDk'}]"
+      ]
+    }
+  ]
+}
