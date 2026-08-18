@@ -1,7 +1,7 @@
 # ===================================================================
 # Imagem derivada do eXo Platform Community 7.2.1
 #
-# Aplica TRES correcoes que precisam viver DENTRO dos .war, e nao em
+# Aplica QUATRO correcoes que precisam viver DENTRO dos .war, e nao em
 # bind mount do compose. A razao esta registrada em AUDIT [075]:
 #
 #   /opt/exo/webapps contem ARQUIVOS .war, nao diretorios. Montar
@@ -27,9 +27,12 @@
 # haviam ficado em /tmp, corrompendo os dois. `uf` acrescenta/substitui
 # apenas as entradas listadas e preserva o resto do arquivo.
 #
-# ATENCAO ao subir de versao: os tres arquivos injetados foram
-# conferidos contra a 7.2.1. Reconferir contra a nova imagem antes de
-# trocar a tag, senao esta camada sobrescreve arquivos novos por antigos.
+# ATENCAO ao subir de versao: os arquivos injetados foram conferidos
+# contra a 7.2.1. Reconferir contra a nova imagem antes de trocar a tag,
+# senao esta camada sobrescreve arquivos novos por antigos. O apendice de
+# css e' a excecao: ele e' CONCATENADO ao css oficial extraido da propria
+# imagem, entao acompanha a versao sozinho — mas o seletor que ele corrige
+# depende do markup do portlet de agenda e precisa ser reconferido.
 # ===================================================================
 
 # Fixada por DIGEST, e nao so pela tag. Em 2026-08-12 uma sessao anterior
@@ -67,7 +70,17 @@ COPY conf/i18n/Portlets_pt_BR.properties \
 #       [OPTIONS] are uncovered."
 COPY conf/webdav-web.xml /build/webdav/WEB-INF/web.xml
 
-# 4) setenv.sh — remove a ultima linha de JDK_JAVA_OPTIONS, ` -noverify`.
+# 4) digital-workplace.war — folha de estilo do portal (<portal-skin>,
+#    prioridade 11). Corrige o icone "flutuante" do widget Agenda no
+#    dashboard: o involucro do botao "Add Event" tem flex-grow:1 e come
+#    todo o espaco livre da coluna, anulando o justify-center do pai e
+#    jogando o icone para o topo do cartao. O porque completo esta no
+#    proprio arquivo .css. O conteudo NAO substitui o css oficial: e'
+#    ACRESCENTADO ao final dele no passo seguinte, para que uma versao
+#    futura da imagem traga o css dela intacto.
+COPY conf/css/agenda-widget-fix.css /build/css/agenda-widget-fix.css
+
+# 5) setenv.sh — remove a ultima linha de JDK_JAVA_OPTIONS, ` -noverify`.
 #    A propria JVM reclama dela em TODA inicializacao, antes mesmo do Tomcat:
 #      OpenJDK 64-Bit Server VM warning: Options -Xverify:none and -noverify
 #      were deprecated in JDK 13 and will likely be removed in a future release.
@@ -89,6 +102,24 @@ RUN set -eux; \
     rm -f /tmp/setenv.sh.orig; \
     echo "OK: -noverify removido de setenv.sh"
 
+# --- Monta o digital-workplace.css: oficial + nosso apendice ---
+# Extrai o css DA PROPRIA IMAGEM e concatena o apendice, em vez de trazer
+# um css completo do repositorio. Assim, se a 7.x seguinte mudar o css
+# oficial, a mudanca dela e' preservada e so' o apendice e' reaplicado.
+RUN set -eux; \
+    mkdir -p /build/digital-workplace/skin/css; \
+    unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css \
+      > /build/digital-workplace/skin/css/digital-workplace.css; \
+    # o css oficial da 7.2.1 tem 10496 bytes; se vier vazio ou minusculo,
+    # o caminho dentro do war mudou e o build tem de falhar, nao seguir.
+    test "$(wc -c < /build/digital-workplace/skin/css/digital-workplace.css)" -ge 9000; \
+    # base ja contaminada por um build anterior -> nao acrescentar duas vezes
+    ! grep -q 'agenda-widget-fix' /build/digital-workplace/skin/css/digital-workplace.css; \
+    cat /build/css/agenda-widget-fix.css \
+      >> /build/digital-workplace/skin/css/digital-workplace.css; \
+    grep -q 'agenda-widget-fix' /build/digital-workplace/skin/css/digital-workplace.css; \
+    echo "OK: apendice de css acrescentado ao digital-workplace.css oficial"
+
 # --- Injecao + verificacao no MESMO passo ---
 # A verificacao roda aqui dentro de proposito: se um caminho mudar numa
 # versao futura da imagem, o BUILD falha, em vez de produzir uma imagem
@@ -106,6 +137,13 @@ RUN set -eux; \
     unzip -p /opt/exo/webapps/digital-workplace.war \
       WEB-INF/conf/digital-workplace/portal/myworkspace/navigation.xml \
       | grep -q '<name>notes</name>'; \
+    # 2b. a regra de css tem de estar no war, e o css oficial tem de continuar
+    #     inteiro (o apendice so' pode ter CRESCIDO o arquivo).
+    unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css \
+      | grep -q 'agenda-widget-fix'; \
+    unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css \
+      | grep -q 'flex-grow: 0 !important'; \
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css | wc -c)" -gt 10496; \
     # 3. o war nao pode ter sido esvaziado nem inchado com o conteudo de
     #    outro war (foi o que o `jar cf .` do Dockerfile anterior fazia).
     #    Contagens MEDIDAS na 7.2.1 oficial, ja com as injecoes acima:

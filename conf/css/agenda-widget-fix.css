@@ -1,0 +1,40 @@
+
+/* ===================================================================
+ * agenda-widget-fix — corrige o icone "flutuante" do widget Agenda
+ * no dashboard (site myworkspace), estado vazio.
+ *
+ * SINTOMA: no cartao Agenda o icone de calendario fica colado no topo
+ * do corpo do cartao, separado do botao "Add Event" por um vao grande,
+ * enquanto o cartao vizinho (Tasks) centraliza icone + botao como um
+ * bloco unico. O conjunto parece solto/flutuando.
+ *
+ * CAUSA: o estado vazio do portlet e' uma coluna flex
+ *   .d-flex.flex-column.justify-center.align-center.fill-height.z-index-one
+ * com dois filhos: o <i class="v-icon fa-calendar"> e um invólucro
+ *   .d-flex.flex-grow-1.mt-3.align-center.justify-center
+ * que carrega o botao. Esse invólucro tem flex-grow:1 e ABSORVE todo o
+ * espaco livre da coluna (medido: 257px de 337px). Com espaco livre
+ * zerado, o justify-content:center do pai vira NO-OP: o icone e'
+ * empurrado para o topo (y=225, exatamente na borda do padding) e o
+ * botao fica centralizado sozinho dentro do bloco inflado (y=416).
+ * Nao ha nada de errado com o icone em si — o defeito e' a distribuicao
+ * do espaco na coluna.
+ *
+ * CORRECAO: tirar o crescimento do invólucro. Sem flex-grow, sobra
+ * espaco livre na coluna e o justify-content:center do pai volta a
+ * funcionar, centralizando icone + botao como um grupo, igual ao Tasks.
+ * Medido depois da correcao: icone y=225 -> 336; grupo 336..452,
+ * centro 394, contra centro 393,5 da area util. Botao intocado (416).
+ *
+ * !important e' obrigatorio: as classes utilitarias do Vuetify
+ * (.flex-grow-1 { flex-grow: 1 !important }) ja vem com !important.
+ *
+ * ESCOPO: o seletor casa com 1 unico elemento em todo o portal —
+ * conferido em /portal/myworkspace (1), /portal/myworkspace/dashboard/agenda (0),
+ * /portal/myworkspace/dashboard/tasks (0) e /portal/dw/spaces (0). Este
+ * arquivo entra no digital-workplace.css, que e' <portal-skin> e carrega
+ * em TODA pagina, por isso o escopo estreito importa.
+ * =================================================================== */
+.agenda-application .fill-height.z-index-one.flex-column > .flex-grow-1 {
+  flex-grow: 0 !important;
+}

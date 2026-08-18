@@ -2695,3 +2695,84 @@ Arquivados em `backup/reprovision-20260813-161340/estado-anterior-ao-reprovision
 login administrativo comprovado em navegador real. 25 warnings de terceiros
 listados e justificados no item 9; 10 testes funcionais seguem **falhando** e
 estão registrados como pendência real, não como sucesso.
+
+---
+
+### [080] 2026-08-18 09:34 -03 — Ícone "flutuante" do widget Agenda no dashboard (CSS)
+
+**Sintoma relatado:** no cartão **Agenda** do dashboard (`/portal/myworkspace`) o
+ícone de calendário fica colado no topo do corpo do cartão, separado do botão
+"Add Event" por um vão grande, enquanto o cartão vizinho (Tasks) centraliza
+ícone + botão como um bloco único. O conjunto parece solto.
+
+**Diagnóstico (medido no navegador, não presumido):** o estado vazio do portlet é
+uma coluna flex
+
+```
+div.d-flex.flex-column.justify-center.align-center.fill-height.z-index-one   (padding 20px)
+ ├── i.v-icon.mb-2.fas.fa-calendar
+ └── div.d-flex.flex-grow-1.mt-3.align-center.justify-center   →  <button> Add Event
+```
+
+O invólucro do botão tem `flex-grow:1` e **absorve todo o espaço livre da coluna**
+(medido: 257px de 337px úteis). Com espaço livre zerado, o `justify-content:center`
+do pai vira **no-op**: o ícone é empurrado para o topo (y=225, exatamente na borda
+do padding) e o botão fica centralizado sozinho dentro do bloco inflado (y=416).
+Não há defeito no ícone — o defeito é a distribuição de espaço na coluna.
+Comparativo medido no cartão Tasks, que está correto: ícone y=307, num corpo
+225..562 (centro 393,5).
+
+**Correção:** `conf/css/agenda-widget-fix.css`, uma regra:
+
+```css
+.agenda-application .fill-height.z-index-one.flex-column > .flex-grow-1 {
+  flex-grow: 0 !important;
+}
+```
+
+`!important` é obrigatório porque as utilitárias do Vuetify já vêm com `!important`
+(`.flex-grow-1 { flex-grow: 1 !important }`).
+
+**Escopo conferido antes de aplicar** — o seletor casa com **1 único elemento em
+todo o portal**: `/portal/myworkspace` → 1; `/portal/myworkspace/dashboard/agenda`
+→ 0; `/portal/myworkspace/dashboard/tasks` → 0; `/portal/dw/spaces` → 0. Isso
+importa porque o arquivo entra no `digital-workplace.css`, que é `<portal-skin>`
+(prioridade 11) e carrega em **toda** página.
+
+**Como foi entregue:** mesmo padrão das correções [075] — injeção no `.war` em
+tempo de build, nunca bind mount sobre `/opt/exo/webapps/<app>/`. O `Dockerfile.exo`
+ganhou um passo que **extrai o `skin/css/digital-workplace.css` da própria imagem
+oficial e CONCATENA** o apêndice, em vez de trazer um css completo do repositório:
+assim, se a 7.x seguinte mudar o css oficial, a mudança dela é preservada e só o
+apêndice é reaplicado. Guardas no build: css oficial ≥ 9000 bytes (se o caminho
+mudar, o build falha em vez de seguir), e `! grep agenda-widget-fix` antes de
+concatenar (base já contaminada não acumula o apêndice duas vezes). Verificação
+no RUN final: a regra tem de estar no war e o arquivo tem de ter **crescido**
+(10496 → 12680 bytes, exatamente +2184 do apêndice; 326 entradas no war, inalterado).
+
+**Comando/Arquivo:** `conf/css/agenda-widget-fix.css` (novo), `Dockerfile.exo`
+(passo de css + verificação), `docker build -f Dockerfile.exo -t exo-pmo:7.2.1-css .`,
+`docker tag exo-pmo:7.2.1-css exo-pmo:7.2.1`, `docker compose up -d exo`.
+Imagem anterior preservada em `exo-pmo:7.2.1-rollback-20260818` (`ee61bd2a13ea`).
+
+**Resultado medido no navegador, depois do restart:**
+
+| | antes | depois |
+|---|---|---|
+| `flex-grow` do invólucro | 1 | **0** |
+| altura do invólucro | 257px | **36px** |
+| topo do ícone | y=225 (colado no topo) | **y=336** |
+| topo do botão | y=416 | y=416 (intocado) |
+
+Grupo ícone+botão passa a ocupar 336..452, centro 394, contra centro 393,5 da área
+útil — centralizado, igual ao cartão Tasks.
+
+**Boot:** `exo-app` saudável em 3m41s. **0 ERROR** no log. 13 WARN, todos os de
+sempre do upstream (TLD do portlet, Firebase ausente, J2KImageReader, closure
+compiler etc.) — nenhum novo, nenhum relativo a skin/CSS, ou seja o processador de
+skin do eXo aceitou a regra sem reclamar. 8/8 containers saudáveis.
+
+**Evidência:** `evidence/agenda-css-20260818/` (agenda-antes.png, agenda-depois.png,
+dashboard-depois.png).
+
+**Status:** OK
