@@ -30,3 +30,8 @@ conf/mysql-certs/
 
 # Backups locais (dumps de banco, tarballs de dados, cópias de config)
 backup/
+
+# Certificado TLS do Jitsi ([101]). Contem CHAVE PRIVADA (jitsi-key.pem).
+# E' emitido pela CA interna do projeto e deve ser gerado por instalacao,
+# nunca versionado — pelo mesmo motivo que conf/mysql-certs/.
+conf/jitsi-certs/

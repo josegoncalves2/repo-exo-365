@@ -66,9 +66,16 @@ services:
     container_name: exo-web
     ports:
       - "${EXO_HTTP_PORT:-80}:80"
+      # HTTPS do Jitsi ([099]). Porta separada e NÃO 443 para não colidir com
+      # uma futura terminação TLS do portal. O TLS é obrigatório aqui porque
+      # getUserMedia() (câmera/microfone) só funciona em contexto seguro.
+      - "${JITSI_HTTPS_PORT:-8443}:8443"
     volumes:
       - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./conf/static:/usr/share/nginx/html:ro
+      # Certificado emitido pela CA interna do projeto ('PMO eXo Root CA',
+      # a mesma do MySQL), válido até 2036, com SAN IP:192.168.1.59.
+      - ./conf/jitsi-certs:/etc/nginx/jitsi-certs:ro
     networks:
       default:
         aliases:
@@ -449,6 +456,192 @@ services:
       timeout: 10s
       retries: 20
       start_period: 60s
+    logging: *default-logging
+
+  # ----------------------------------------------------------------
+  # JITSI MEET — videoconferência auto-hospedada  (AUDIT [099])
+  # ----------------------------------------------------------------
+  # POR QUE ESTES 4 CONTAINERS EXISTEM
+  # O eXo Community 7.2.1 entrega o framework de videoconferência
+  # (webconferencing.war) e UM conector: External Visio. Esse conector não
+  # tem servidor de mídia — ele só faz window.open() numa URL de reunião
+  # (external-visio/js/webconferencing-externalvisio.js). Sem SFU, o botão
+  # de chamada não tem para onde apontar e a videoconferência não existe.
+  # O Jitsi é auto-hospedado AQUI para que nenhuma chamada dependa de
+  # terceiros (nada vai para meet.jit.si).
+  #
+  # A divisão em 4 processos é do próprio Jitsi, não uma escolha nossa:
+  #   prosody = servidor XMPP (sinalização)
+  #   jicofo  = focus, aloca participantes em pontes
+  #   jvb     = a ponte de mídia (SFU) — é quem carrega o RTP
+  #   web     = a interface Jitsi Meet (nginx + arquivos estáticos)
+  #
+  # Assim como os demais, NENHUM declara `restart:` — a subida é ordenada
+  # por scripts/subir-ordenado.sh (ver comentário no topo deste arquivo).
+
+  jitsi-prosody:
+    image: ${JITSI_IMAGE_PROSODY}
+    container_name: exo-jitsi-prosody
+    environment:
+      # Estes nomes de domínio são INTERNOS do Jitsi (XMPP), não são DNS
+      # público — não precisam resolver fora da rede exo_net.
+      XMPP_DOMAIN: ${JITSI_XMPP_DOMAIN}
+      XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN}
+      XMPP_MUC_DOMAIN: muc.${JITSI_XMPP_DOMAIN}
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN}
+      JICOFO_COMPONENT_SECRET: ${JICOFO_COMPONENT_SECRET}
+      JICOFO_AUTH_USER: focus
+      JICOFO_AUTH_PASSWORD: ${JICOFO_AUTH_PASSWORD}
+      JVB_AUTH_USER: jvb
+      JVB_AUTH_PASSWORD: ${JVB_AUTH_PASSWORD}
+      # Sala aberta a quem tem o link: não há autenticação XMPP de usuário.
+      # O controle de acesso efetivo é o do eXo — o link da sala só é
+      # oferecido a quem já está autenticado no portal.
+      ENABLE_AUTH: 0
+      ENABLE_GUESTS: 1
+      TZ: ${TZ}
+    volumes:
+      - ./data/jitsi/prosody:/config
+    networks:
+      default:
+        aliases:
+          - xmpp.meet.jitsi
+    mem_limit: ${MEM_LIMIT_JITSI_PROSODY}
+    healthcheck:
+      # NÃO usar 'prosodyctl status' aqui: nesta imagem o prosody roda sob
+      # supervisão do s6 e o pidfile que o prosodyctl consulta não é escrito,
+      # então ele responde "Prosody is not running" com o serviço NO AR
+      # (medido: processo lua vivo e BOSH respondendo). O teste abaixo é
+      # funcional — exercita o módulo HTTP do próprio prosody, que é o que
+      # o cliente Jitsi realmente usa para sinalização.
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://localhost:5280/http-bind || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    logging: *default-logging
+
+  jitsi-jicofo:
+    image: ${JITSI_IMAGE_JICOFO}
+    container_name: exo-jitsi-jicofo
+    environment:
+      XMPP_DOMAIN: ${JITSI_XMPP_DOMAIN}
+      XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN}
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN}
+      XMPP_MUC_DOMAIN: muc.${JITSI_XMPP_DOMAIN}
+      XMPP_SERVER: xmpp.meet.jitsi
+      JICOFO_COMPONENT_SECRET: ${JICOFO_COMPONENT_SECRET}
+      JICOFO_AUTH_USER: focus
+      JICOFO_AUTH_PASSWORD: ${JICOFO_AUTH_PASSWORD}
+      # O padrão da imagem pede 3 GB de heap, que NÃO cabe nesta VM.
+      # Ver o orçamento de memória comentado no .env.
+      JICOFO_MAX_MEMORY: ${JICOFO_MAX_MEMORY}
+      ENABLE_AUTH: 0
+      TZ: ${TZ}
+    volumes:
+      - ./data/jitsi/jicofo:/config
+    depends_on:
+      jitsi-prosody:
+        condition: service_healthy
+    mem_limit: ${MEM_LIMIT_JICOFO}
+    healthcheck:
+      # /about/health NAO EXISTE nesta versao do jicofo (medido: 404; os
+      # endpoints reais sao /about/version, /stats, /metrics e /debug). Usar
+      # /about/health deixaria o container eternamente "health: starting"
+      # com o servico PERFEITO — foi o que ocorreu na primeira subida.
+      #
+      # O teste abaixo não é um "ping de vida": operational_bridge_count só é
+      # >= 1 quando o jicofo está no ar, autenticado no prosody E enxergando
+      # uma ponte de mídia (JVB) operacional. Ou seja, ele reprova exatamente
+      # nos casos em que a videoconferência não funcionaria.
+      test: ["CMD-SHELL", "curl -fsS --max-time 5 http://localhost:8888/stats | grep -qE '\"operational_bridge_count\":[[:space:]]*[1-9]' || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+    logging: *default-logging
+
+  jitsi-jvb:
+    image: ${JITSI_IMAGE_JVB}
+    container_name: exo-jitsi-jvb
+    ports:
+      # UDP 10000 é a MÍDIA (RTP/ICE). Precisa chegar DIRETO ao navegador:
+      # não passa pelo nginx, não é HTTP e não pode ser proxiado.
+      - "${JITSI_JVB_PORT}:${JITSI_JVB_PORT}/udp"
+    environment:
+      XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN}
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN}
+      XMPP_SERVER: xmpp.meet.jitsi
+      JVB_AUTH_USER: jvb
+      JVB_AUTH_PASSWORD: ${JVB_AUTH_PASSWORD}
+      JVB_PORT: ${JITSI_JVB_PORT}
+      # SEM ISTO A CHAMADA CONECTA E FICA SEM VÍDEO: dentro do container o
+      # JVB só enxerga o IP da rede docker (172.x) e anunciaria esse
+      # candidato ICE ao navegador, que não tem rota para ele. O endereço
+      # anunciado precisa ser o IP real da VM.
+      JVB_ADVERTISE_IPS: ${JITSI_JVB_ADVERTISE_IP}
+      # DEPENDENCIA EXTERNA ELIMINADA ([099]): por padrão a imagem do JVB
+      # aponta o STUN para "meet-jit-si-turnrelay.jitsi.net:443" — ou seja,
+      # servidores da Jitsi pública. Isso contraria o requisito de não
+      # depender de provedor externo e vazaria metadados de rede para fora.
+      # Aqui o STUN não faz falta: cliente e ponte estão na MESMA rede local,
+      # e o candidato ICE correto já é anunciado por JVB_ADVERTISE_IPS.
+      # Medido depois de desligar: mídia continua fluindo (audio+video).
+      # Se um dia houver participantes fora da LAN, a saída é subir um
+      # coturn PRÓPRIO nesta stack — nunca reativar o STUN público.
+      JVB_DISABLE_STUN: 1
+      JVB_MAX_MEMORY: ${JVB_MAX_MEMORY}
+      TZ: ${TZ}
+    volumes:
+      - ./data/jitsi/jvb:/config
+    depends_on:
+      jitsi-prosody:
+        condition: service_healthy
+    mem_limit: ${MEM_LIMIT_JVB}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/about/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 45s
+    logging: *default-logging
+
+  jitsi-web:
+    image: ${JITSI_IMAGE_WEB}
+    container_name: exo-jitsi-web
+    environment:
+      # TLS é terminado pelo nginx do projeto (exo-web), que já tem o
+      # certificado da CA interna. Aqui o Jitsi serve HTTP puro na rede
+      # interna e NÃO tenta emitir certificado próprio nem redirecionar
+      # para https — os dois quebrariam o proxy.
+      DISABLE_HTTPS: 1
+      ENABLE_HTTP_REDIRECT: 0
+      # PUBLIC_URL precisa ser a URL que o NAVEGADOR usa. Se ficar errado,
+      # o cliente monta o websocket de sinalização no host errado e a sala
+      # nunca entra ("connecting..." eterno).
+      PUBLIC_URL: ${JITSI_PUBLIC_URL}
+      XMPP_DOMAIN: ${JITSI_XMPP_DOMAIN}
+      XMPP_AUTH_DOMAIN: auth.${JITSI_XMPP_DOMAIN}
+      XMPP_MUC_DOMAIN: muc.${JITSI_XMPP_DOMAIN}
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN}
+      XMPP_BOSH_URL_BASE: http://xmpp.meet.jitsi:5280
+      ENABLE_AUTH: 0
+      ENABLE_GUESTS: 1
+      TZ: ${TZ}
+    volumes:
+      - ./data/jitsi/web:/config
+    depends_on:
+      jitsi-prosody:
+        condition: service_healthy
+      jitsi-jicofo:
+        condition: service_healthy
+    mem_limit: ${MEM_LIMIT_JITSI_WEB}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/ -o /dev/null || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
     logging: *default-logging
 
 networks:

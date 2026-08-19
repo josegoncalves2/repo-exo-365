@@ -72,3 +72,12 @@ exo.audit.enabled=true
 # Ele e escrito automaticamente por scripts/setup-matrix.sh, que le os
 # valores do .env. Nao preencher a mao.
 # -------------------------------------------------------------------
+
+# --- Videoconferencia (Web Conferencing + External Visio) — AUDIT [101] ---
+# Torna EXPLICITA a ativacao do provedor, que a imagem traz como padrao
+# implicito (${webconferencing.externalVisio.active:true} em
+# external-visio/WEB-INF/conf/externalvisio/configuration.xml). Assim uma
+# futura mudanca do default do fabricante nao desliga a videoconferencia
+# silenciosamente. Quem serve a chamada e' o Jitsi auto-hospedado desta
+# stack (servicos jitsi-* do docker-compose.yml), em https://<host>:8443.
+webconferencing.externalVisio.active=true

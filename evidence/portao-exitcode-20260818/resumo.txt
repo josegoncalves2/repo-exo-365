@@ -1,4 +1,0 @@
-TESTE 1 (ambiente real):        EXIT=1  REPROVADO — 372 ocorrencias
-TESTE 2 (fontes neutralizadas): EXIT=0  APROVADO — 0 erros e 0 warnings
-GUARDA fail-closed: entrada vazia -> exit 1 ; 'abc' -> exit 1 ; '0' -> exit 0 ; '7' -> exit 1
-regex 'ruido': IDENTICO antes/depois (nenhuma ocorrencia escondida)

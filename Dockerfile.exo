@@ -1,7 +1,7 @@
 # ===================================================================
 # Imagem derivada do eXo Platform Community 7.2.1
 #
-# Aplica QUATRO correcoes que precisam viver DENTRO dos .war, e nao em
+# Aplica correcoes que precisam viver DENTRO dos .war, e nao em
 # bind mount do compose. A razao esta registrada em AUDIT [075]:
 #
 #   /opt/exo/webapps contem ARQUIVOS .war, nao diretorios. Montar
@@ -48,19 +48,59 @@ USER root
 
 # --- Arquivos de correcao, em diretorios de estagio separados por webapp ---
 
-# 1) digital-workplace.war — bundles de navegacao do site "myworkspace".
-#    Acrescenta a chave portal.myworkspace.notes, AUSENTE em todos os
-#    bundles da imagem oficial embora o navigation.xml a referencie, e
-#    traduz o menu para pt-BR (o pt_BR da imagem esta em ingles).
-COPY conf/i18n/myworkspace_pt_BR.properties \
-     /build/digital-workplace/WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties
-COPY conf/i18n/myworkspace_en.properties \
-     /build/digital-workplace/WEB-INF/classes/locale/navigation/portal/myworkspace_en.properties
+# 1 e 2) BUNDLES DE TRADUCAO — DERIVADOS, NAO ESCRITOS A MAO.
+#    Ate' 2026-08-19 este Dockerfile copiava do repositorio dois .properties
+#    com traducoes DIGITADAS por quem editou o arquivo. Foi trocado por um
+#    gerador que roda DENTRO da imagem e so' COPIA strings que ja' existem nos
+#    bundles de traducao da propria eXo, registrando a chave de origem no
+#    cabecalho de cada arquivo gerado. Duas consequencias praticas:
+#      - nenhum texto de interface e' inventado por este projeto;
+#      - a correcao vale para os 39 idiomas, nao so' pt-BR.
+#    Defeitos da imagem oficial 7.2.1 que isso corrige:
+#      a) myworkspace_<loc>.properties: 32 dos 38 idiomas nao-ingleses vem
+#         IDENTICOS ao ingles (sem traducao), pt_BR entre eles; e a chave
+#         portal.myworkspace.notes nao existe em NENHUM dos 39, embora o
+#         navigation.xml oficial declare o no <notes> com aquele label.
+#      b) Portlets_pt_BR.properties: activity.composer.link=Postar em {0},
+#         placeholder que o codigo nunca preenche (aparece cru na tela).
+#    O gerador REPROVA O BUILD se a origem sumir numa versao futura.
+#      c) 3 chaves ficaram com o texto ingles "See more" nos 39 idiomas
+#         (agenda.timeline.seeMore, .tooltip e label.seeAll) embora a propria
+#         eXo tenha traduzido a MESMA frase em 36 de 36 idiomas na chave
+#         layout.war/SiteNavigation/siteNavigation.label.seeMore.
+#    UMA UNICA string e' escrita por este projeto e vem identificada como tal no
+#    cabecalho do arquivo gerado: portal.myworkspace.dashboard em pt-BR ("Painel").
+#    "Dashboard" e' valor ingles de UMA unica chave na imagem inteira -- ela mesma --
+#    traduzida em so' 5 dos 36 idiomas, e nao ha' origem mecanica; os demais idiomas
+#    continuam como a imagem oficial entrega.
+COPY conf/i18n/derivar-traducoes.py /build/derivar-traducoes.py
+RUN set -eux; \
+    python3 /build/derivar-traducoes.py /build; \
+    test "$(ls /build/digital-workplace/WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties | wc -l)" -eq 39; \
+    test -s /build/social/WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties; \
+    test "$(ls /build/agenda/WEB-INF/classes/locale/portlet/Agenda_*.properties | wc -l)" -ge 30; \
+    test "$(ls /build/task-management/WEB-INF/classes/locale/portlet/taskManagement_*.properties | wc -l)" -ge 30; \
+    rm -f /build/derivar-traducoes.py
 
-# 2) social.war — corrige activity.composer.link, que na imagem oficial
-#    traz um placeholder {0} que o codigo nunca preenche ("Postar em {0}").
-COPY conf/i18n/Portlets_pt_BR.properties \
-     /build/social/WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties
+# 2b) MODULOS JS DECLARADOS E NAO ENTREGUES pela imagem oficial.
+#     social.war declara o modulo `loginCommon` (/js/loginCommon.bundle.js) e
+#     deeds-tenant.war declara `metamaskSetupForm` (/js/metamaskSetupForm.js),
+#     mas NENHUM dos dois arquivos existe dentro do respectivo war. A cada
+#     resolucao do modulo o portal registra
+#       WARN  File not found: /js/<arquivo> [o.g.p.controller.resource.script.Module]
+#     Os arquivos injetados sao VAZIOS de proposito: o modulo ja' contribui com
+#     zero javascript hoje (a tela de login funciona assim), entao um arquivo
+#     vazio mantem o comportamento e tira o alarme falso. O porque completo de
+#     nao apagar a declaracao esta dentro de cada arquivo.
+#     GUARDA: o RUN abaixo REPROVA o build se a imagem passar a entregar o
+#     arquivo de verdade, para nunca sobrescrever o oficial por um vazio.
+COPY conf/js/loginCommon.bundle.js    /build/social/js/loginCommon.bundle.js
+COPY conf/js/metamaskSetupForm.js     /build/deeds-tenant/js/metamaskSetupForm.js
+RUN set -eux; \
+    ! unzip -Z1 /opt/exo/webapps/social.war 'js/loginCommon.bundle.js' 2>/dev/null | grep -q .; \
+    ! unzip -Z1 /opt/exo/webapps/deeds-tenant.war 'js/metamaskSetupForm.js' 2>/dev/null | grep -q .; \
+    grep -q 'loginCommon' /build/social/js/loginCommon.bundle.js; \
+    echo "OK: a imagem oficial continua SEM os dois modulos; injecao autorizada"
 
 # 3) webdav.war — web.xml com OPTIONS explicitamente COBERTO por um
 #    security-constraint sem <auth-constraint>. Mesmo comportamento de
@@ -125,14 +165,19 @@ RUN set -eux; \
 # versao futura da imagem, o BUILD falha, em vez de produzir uma imagem
 # silenciosamente sem a correcao.
 RUN set -eux; \
-    for app in digital-workplace social webdav; do \
+    for app in digital-workplace social webdav agenda task-management deeds-tenant; do \
       jar uf "/opt/exo/webapps/${app}.war" -C "/build/${app}" .; \
       chown exo:exo "/opt/exo/webapps/${app}.war"; \
     done; \
-    # 1. a chave que faltava tem de existir no war
-    unzip -p /opt/exo/webapps/digital-workplace.war \
-      WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties \
-      | grep -q '^portal.myworkspace.notes=Notas$'; \
+    # 1. a chave que faltava tem de existir em TODOS os 39 idiomas, e o valor
+    #    tem de ser exatamente o que a eXo traduziu em portal.global.notes do
+    #    mesmo idioma (prova de que veio da origem oficial, e nao de tradutor).
+    for f in $(unzip -Z1 /opt/exo/webapps/digital-workplace.war \
+                 'WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties'); do \
+      unzip -p /opt/exo/webapps/digital-workplace.war "$f" \
+        | grep -qE '^portal[.]myworkspace[.]notes=.+' || { echo "sem notes: $f"; exit 1; }; \
+    done; \
+    test "$(unzip -Z1 /opt/exo/webapps/digital-workplace.war 'WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties' | wc -l)" -eq 39; \
     # 2. o navigation.xml ORIGINAL tem de continuar intacto, com o no notes
     unzip -p /opt/exo/webapps/digital-workplace.war \
       WEB-INF/conf/digital-workplace/portal/myworkspace/navigation.xml \
@@ -151,9 +196,13 @@ RUN set -eux; \
     test "$(unzip -l /opt/exo/webapps/digital-workplace.war | tail -1 | awk '{print $2}')" -ge 326; \
     test "$(unzip -l /opt/exo/webapps/digital-workplace.war | tail -1 | awk '{print $2}')" -le 340; \
     # 4. social.war intacto e com a traducao corrigida
+    #    a chave nao pode mais conter o placeholder {0} que o codigo nao preenche
     unzip -p /opt/exo/webapps/social.war \
       WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties \
-      | grep -q '^activity\.composer\.link=Escreva uma publica'; \
+      | grep -E '^activity\.composer\.link=' | grep -qv '{0}'; \
+    unzip -p /opt/exo/webapps/social.war \
+      WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties \
+      | grep -q '^activity\.composer\.link\.space=.*{0}'; \
     test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -ge 1881; \
     test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -le 1900; \
     # 5. webdav.war com OPTIONS coberto, e ainda inteiro
@@ -161,7 +210,46 @@ RUN set -eux; \
       | grep -q 'options-preflight'; \
     test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -ge 51; \
     test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -le 60; \
+    # 6. "See more" traduzido: as 3 chaves nao podem mais estar em ingles no pt_BR,
+    #    e os dois war nao podem ter mudado de tamanho (so' entradas SUBSTITUIDAS).
+    unzip -p /opt/exo/webapps/agenda.war \
+      WEB-INF/classes/locale/portlet/Agenda_pt_BR.properties \
+      | grep -q '^agenda.timeline.seeMore=Ver mais$'; \
+    unzip -p /opt/exo/webapps/agenda.war \
+      WEB-INF/classes/locale/portlet/Agenda_pt_BR.properties \
+      | grep -q '^agenda.timeline.seeMore.tooltip=Ver mais$'; \
+    unzip -p /opt/exo/webapps/task-management.war \
+      WEB-INF/classes/locale/portlet/taskManagement_pt_BR.properties \
+      | grep -q '^label.seeAll=Ver mais$'; \
+    test "$(unzip -l /opt/exo/webapps/agenda.war | tail -1 | awk '{print $2}')" -ge 600; \
+    test "$(unzip -l /opt/exo/webapps/agenda.war | tail -1 | awk '{print $2}')" -le 640; \
+    test "$(unzip -l /opt/exo/webapps/task-management.war | tail -1 | awk '{print $2}')" -ge 520; \
+    test "$(unzip -l /opt/exo/webapps/task-management.war | tail -1 | awk '{print $2}')" -le 560; \
+    # 7. a unica string escrita por nos tem de estar identificada no arquivo
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties \
+      | grep -q 'ESCRITA POR NOS'; \
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties \
+      > /tmp/mw.properties; \
+    # os rotulos do menu tem de descrever o que a PAGINA faz. Estes valores foram
+    # conferidos abrindo cada pagina no navegador; se o gerador regredir, o build cai.
+    for par in 'dashboard=Painel' 'drive=Documentos' 'tasks=Tarefas' 'agenda=Agenda' \
+               'notes=Notas' 'more=Mais' 'process=Processos' 'content=Artigos' \
+               'team=Equipe'; do \
+      k="${par%%=*}"; v="${par#*=}"; \
+      grep -q "^portal[.]myworkspace[.]${k}=${v}\$" /tmp/mw.properties \
+        || { echo "rotulo errado: portal.myworkspace.${k} deveria ser ${v}"; exit 1; }; \
+    done; \
+    # nenhum rotulo do menu pode ter sobrado em ingles
+    ! grep -qE '^portal[.]myworkspace[.](drive=Drive|notes=Notes|tasks=Task|more=More|process=Process|content=Content|team=Team|dashboard=Dashboard|name=My)' /tmp/mw.properties; \
+    rm -f /tmp/mw.properties; \
+    # 8. os dois modulos JS declarados agora existem (vazios) no war certo
+    unzip -Z1 /opt/exo/webapps/social.war 'js/loginCommon.bundle.js' | grep -q .; \
+    unzip -Z1 /opt/exo/webapps/deeds-tenant.war 'js/metamaskSetupForm.js' | grep -q .; \
+    test "$(unzip -l /opt/exo/webapps/deeds-tenant.war | tail -1 | awk '{print $2}')" -ge 234; \
+    test "$(unzip -l /opt/exo/webapps/deeds-tenant.war | tail -1 | awk '{print $2}')" -le 250; \
     rm -rf /build; \
-    echo "OK: correcoes injetadas e verificadas nos 3 war"
+    echo "OK: correcoes injetadas e verificadas nos 6 war"
 
 USER exo

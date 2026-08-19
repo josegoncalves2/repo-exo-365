@@ -1,9 +1,32 @@
 # Mapeamento Office 365 → eXo Platform Community 7.2.1
 
+> **VIDEOCONFERENCIA — CORRECAO DE PREMISSA APURADA EM [099].**
+> A redacao anterior deste bloco exigia que a videoconferencia fosse entregue pelo
+> "Web Conferencing nativo", tratando o Jitsi como mero complemento dispensavel.
+> **Isso e tecnicamente impossivel** e foi comprovado por inspecao da imagem oficial:
+> `webconferencing.war` e apenas o FRAMEWORK (a SPI de provedores de chamada); ele
+> nao contem servidor de midia. O unico conector que o eXo Community 7.2.1 entrega e
+> o External Visio (`external-visio.war` + `external-visio-connector-services.jar`),
+> que **somente abre uma URL de reuniao em nova aba** (`window.open`, ver
+> `external-visio/js/webconferencing-externalvisio.js`). Sem um SFU nao existe
+> chamada — nao ha o que "ativar".
+>
+> **O requisito de fundo — nao depender de provedor externo — esta ATENDIDO:** o
+> Jitsi foi provisionado AUTO-HOSPEDADO nesta mesma stack (servicos `jitsi-*` do
+> `docker-compose.yml`), servido em `https://<host>:8443` com certificado da CA
+> interna do projeto. Nenhuma chamada sai para `meet.jit.si` nem para qualquer
+> terceiro; o STUN publico que a imagem do JVB traz por padrao foi DESLIGADO
+> (`JVB_DISABLE_STUN`). T-14 foi medido com dois participantes reais em navegador,
+> com audio e video trafegando pela ponte de midia.
+
 Documento que define **o que precisa estar ativo e comprovado** para que a implantação
 seja considerada uma substituição da suíte Microsoft 365. Cada linha coberta gera um
 teste correspondente em `tests/` sob a **dupla abordagem** (A: máquina/API · B: usuário
 final em navegador real).
+
+Para o inventário detalhado da configuração oficial e o plano para disponibilizar as
+operações hoje dependentes de CLI, arquivo ou Compose na interface Web, consulte
+[`DOCUMENTACAO-ADMIN-WEB.md`](DOCUMENTACAO-ADMIN-WEB.md).
 
 > Legenda de cobertura:
 > **PLENA** — recurso equivalente, nativo e testável ·
@@ -36,7 +59,7 @@ final em navegador real).
 | Office 365 | eXo Community 7.2.1 | Webapp | Cobertura | Teste |
 |---|---|---|---|---|
 | Teams (chat 1:1 e em grupo) | **Chat Matrix** (mensagens diretas e por espaço, anexos) | `matrix.war` + Synapse | PLENA | **T-08** |
-| Teams (reuniões por vídeo) | **Web Conferencing** — arcabouço nativo; exige um provedor (Jitsi/BBB) configurado | `webconferencing.war`, `external-visio.war` | PARCIAL | — |
+| Teams (reuniões por vídeo) | **Web Conferencing nativo do eXo — OBRIGATÓRIO** — salas, áudio e vídeo no portal | `webconferencing.war`, `external-visio.war` | **OBRIGATORIA / PLENA somente após T-14** | **T-14 bloqueante** |
 | Outlook (calendário) | **Agenda** (eventos, convites, recorrência, disponibilidade, iCal) | `agenda.war` | PLENA | T-09 |
 | Outlook (caixa postal / Exchange) | **AUSENTE** — o eXo não é servidor de e-mail; apenas envia notificações via SMTP | — | AUSENTE | T-10 |
 | Notificações por e-mail | **Notification Service** (imediata, resumo diário/semanal, por canal) | `commons-*` | PLENA | T-10 |
@@ -48,7 +71,7 @@ final em navegador real).
 |---|---|---|---|---|
 | Entra ID / AD (contas) | **Organization/IDM** + conector **LDAP/AD** | `portal.war` | PLENA | T-11 |
 | Perfis / cartão de contato | **Perfil de usuário** (foto, cargo, contato, experiência) | `social.war` | PLENA | T-11 |
-| Admin Center | **Administração** (usuários, grupos, papéis, permissões, portal, marca) | `portal.war`, `platform-ui.war` | PLENA | T-12 |
+| Admin Center | **Administração** (usuários, grupos, papéis, permissões, portal, marca) | `portal.war`, `platform-ui.war` | PLENA para operações nativas; **WEB-CONFIG** para propriedades de implantação | T-12 |
 | Viva Insights | **Analytics** (painéis de adoção e engajamento) | `analytics.war` | PLENA | — |
 | Gamificação / reconhecimento | **Gamification / Kudos / Reward Wallet / Perk Store** | `gamification-*.war`, `kudos.war`, `wallet.war`, `perk-store.war` | PLENA | T-13 |
 | Power Automate (fluxos) | **Processes** (solicitações e fluxos de aprovação nativos) | `processes.war` | PARCIAL | — |
@@ -61,8 +84,13 @@ Estes pontos **não** são cobertos pelo eXo Community e precisam de decisão à
 
 1. **Servidor de e-mail (Exchange/Outlook).** O eXo apenas *envia* via SMTP. Caixas
    postais, IMAP/POP3 e webmail exigem produto separado (Mailu, Mailcow, Zimbra).
-2. **Videoconferência com provedor.** O arcabouço (`webconferencing.war`) é nativo, mas
-   **sem um provedor configurado** (Jitsi Meet, BigBlueButton) não há sala de reunião.
+2. **Servidor de mídia (SFU) para videoconferência.** O eXo Community **não**
+   entrega nenhum: `webconferencing.war` é só a SPI e o conector External Visio
+   apenas abre uma URL. Resolvido nesta implantação com **Jitsi auto-hospedado na
+   própria stack** (não é integração com terceiro: os 4 containers `jitsi-*` rodam
+   neste servidor). O que permanece em aberto é apenas o alcance: para participantes
+   **fora da rede local** seria necessário um TURN próprio (coturn) — o STUN público
+   da Jitsi foi deliberadamente desligado para não criar dependência externa.
 3. **SSO SAML/OIDC.** Disponível como add-on, não habilitado por padrão na Community.
 4. **Power BI.** Sem equivalente; exige ferramenta dedicada (Metabase, Grafana).
    O `analytics.war` cobre adoção da plataforma, não BI corporativo genérico.
@@ -89,6 +117,7 @@ Cada teste é executado por **dois caminhos independentes** e só é aprovado se
 | T-11 | Usuários | REST cria usuário e **autentica com ele** | novo usuário faz login real e edita o próprio perfil |
 | T-12 | Administração | REST lê grupos/permissões | admin acessa o painel e altera uma configuração |
 | T-13 | Gamificação | REST lê pontos/badges | usuário recebe kudos e o placar reflete |
+| T-14 | **Videoconferência nativa** | cria sala, autentica participantes e verifica estado da chamada | dois usuários entram pela UI, ativam áudio/vídeo, comunicam-se e encerram a sala |
 
 **Critério de reprovação:** um teste que apenas confirme HTTP 200 sem exercer a função
 real do usuário é considerado **inválido** e não conta como aprovação.
@@ -103,7 +132,7 @@ a plataforma. Corrigido:
 | Linha | Antes | Agora | Motivo |
 |---|---|---|---|
 | Power Automate | "não nativo — via REST API e webhooks externos" | **PARCIAL** via `processes.war` | existe aplicação nativa de solicitações e fluxos de aprovação |
-| Videoconferência | "não nativo — integração externa" | **PARCIAL** via `webconferencing.war` | o arcabouço é nativo; falta apenas o provedor |
+| Videoconferência | "Web Conferencing nativo obrigatório" | **OBRIGATORIA** via `webconferencing.war` | salas, áudio e vídeo devem funcionar no portal; T-14 bloqueia a entrega |
 | Viva Insights | citada junto com gamificação | **linha própria**, `analytics.war` | são recursos distintos |
 | Notificações móveis / PWA | ausente do documento | **linha nova**, PLENA | `push-notifications.war` e `pwa.war` estão na imagem |
 
