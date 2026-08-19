@@ -1,0 +1,210 @@
+# Reconstruido em 2026-08-19 a partir de `docker history --no-trunc exo-pmo:7.2.1`
+# (a imagem que ja estava rodando). O Dockerfile.exo original foi apagado do
+# repositorio nos commits 9c8efd7/b2a76ca; este arquivo reproduz layer a layer
+# o que aquele historico documenta, sem depender do git antigo. Toda asserção
+# abaixo veio literalmente do `CREATED BY` de cada layer da imagem em producao.
+#
+# Base oficial: https://hub.docker.com/r/exoplatform/exo-community
+FROM exoplatform/exo-community:7.2.1
+
+USER root
+
+# ---------------------------------------------------------------------------
+# 1) Traducoes derivadas dos proprios bundles oficiais da eXo (39 idiomas).
+#    Ver conf/i18n/derivar-traducoes.py para a logica completa.
+# ---------------------------------------------------------------------------
+COPY conf/i18n/derivar-traducoes.py /build/derivar-traducoes.py
+
+RUN set -eux; \
+    python3 /build/derivar-traducoes.py /build; \
+    test "$(ls /build/digital-workplace/WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties | wc -l)" -eq 39; \
+    test -s /build/social/WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties; \
+    test "$(ls /build/agenda/WEB-INF/classes/locale/portlet/Agenda_*.properties | wc -l)" -ge 30; \
+    test "$(ls /build/task-management/WEB-INF/classes/locale/portlet/taskManagement_*.properties | wc -l)" -ge 30; \
+    rm -f /build/derivar-traducoes.py
+
+# ---------------------------------------------------------------------------
+# 2) Modulos JS ausentes na imagem oficial (login social / metamask do addon
+#    deeds-tenant). Verificado ANTES que a imagem oficial realmente nao os
+#    tem -- senao a injecao estaria duplicando algo que a eXo ja' resolveu.
+# ---------------------------------------------------------------------------
+COPY conf/js/loginCommon.bundle.js /build/social/js/loginCommon.bundle.js
+COPY conf/js/metamaskSetupForm.js /build/deeds-tenant/js/metamaskSetupForm.js
+
+RUN set -eux; \
+    ! unzip -Z1 /opt/exo/webapps/social.war 'js/loginCommon.bundle.js' 2>/dev/null | grep -q .; \
+    ! unzip -Z1 /opt/exo/webapps/deeds-tenant.war 'js/metamaskSetupForm.js' 2>/dev/null | grep -q .; \
+    grep -q 'loginCommon' /build/social/js/loginCommon.bundle.js; \
+    echo "OK: a imagem oficial continua SEM os dois modulos; injecao autorizada"
+
+# ---------------------------------------------------------------------------
+# 3) webdav-web.xml (CORS/options-preflight) e fragmento de CSS do agenda.
+# ---------------------------------------------------------------------------
+COPY conf/webdav-web.xml /build/webdav/WEB-INF/web.xml
+COPY conf/css/agenda-widget-fix.css /build/css/agenda-widget-fix.css
+
+# ---------------------------------------------------------------------------
+# 4) Remove -noverify do setenv.sh (necessario para os patches de classe
+#    funcionarem sob JVM com verificacao de bytecode normal).
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    cp /opt/exo/bin/setenv.sh /tmp/setenv.sh.orig; \
+    sed -i 's/[[:space:]]*-noverify"$/"/' /opt/exo/bin/setenv.sh; \
+    ! grep -q 'noverify' /opt/exo/bin/setenv.sh; \
+    test "$(wc -l < /opt/exo/bin/setenv.sh)" -eq "$(wc -l < /tmp/setenv.sh.orig)"; \
+    grep -q 'export JDK_JAVA_OPTIONS' /opt/exo/bin/setenv.sh; \
+    rm -f /tmp/setenv.sh.orig; \
+    echo "OK: -noverify removido de setenv.sh"
+
+# ---------------------------------------------------------------------------
+# 5) Acrescenta (nao substitui) o fix de CSS do widget de Agenda ao css
+#    oficial do digital-workplace -- extrai, verifica, acrescenta, verifica.
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    mkdir -p /build/digital-workplace/skin/css; \
+    unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css \
+      > /build/digital-workplace/skin/css/digital-workplace.css; \
+    test "$(wc -c < /build/digital-workplace/skin/css/digital-workplace.css)" -ge 9000; \
+    ! grep -q 'agenda-widget-fix' /build/digital-workplace/skin/css/digital-workplace.css; \
+    cat /build/css/agenda-widget-fix.css \
+      >> /build/digital-workplace/skin/css/digital-workplace.css; \
+    grep -q 'agenda-widget-fix' /build/digital-workplace/skin/css/digital-workplace.css; \
+    echo "OK: apendice de css acrescentado ao digital-workplace.css oficial"
+
+# ---------------------------------------------------------------------------
+# 6) NOVO (2026-08-19): duas strings em ingles hardcoded em JSP, achadas em
+#    auditoria manual da UI em pt-BR -- nao vem de bundle de traducao, entao
+#    derivar-traducoes.py nao alcanca. Mesmo padrao de outras JSPs da propria
+#    plataforma (ResourceBundleService + getResourceBundle(...).getString()),
+#    so' que aqui o literal cru nunca tinha sido trocado pela variavel ja'
+#    calculada (platformSettings.jsp) ou por uma chave nova de mesmo padrao
+#    (siteNavigation.jsp, chave siteNavigation.button.tooltip.label, que ja'
+#    existe traduzida em todos os idiomas — layout.war/SiteNavigation_*.properties).
+#      - layout.war  WEB-INF/jsp/siteNavigation.jsp        title="Site navigation"
+#      - social.war  WEB-INF/jsp/portlet/platformSettings.jsp  aria-label="Enter the administration settings"
+#    Verificado ANTES (o literal em ingles precisa estar na imagem oficial,
+#    senao o patch e' redundante ou a eXo ja' corrigiu upstream) e DEPOIS do
+#    merge (o literal precisa ter sumido e a chamada ao bundle estar la').
+# ---------------------------------------------------------------------------
+COPY conf/jsp/siteNavigation.jsp /build/layout/WEB-INF/jsp/siteNavigation.jsp
+COPY conf/jsp/portlet/platformSettings.jsp /build/social/WEB-INF/jsp/portlet/platformSettings.jsp
+
+RUN set -eux; \
+    unzip -p /opt/exo/webapps/layout.war WEB-INF/jsp/siteNavigation.jsp \
+      | grep -q 'title="Site navigation"'; \
+    unzip -p /opt/exo/webapps/social.war WEB-INF/jsp/portlet/platformSettings.jsp \
+      | grep -q 'aria-label="Enter the administration settings"'; \
+    grep -q 'siteNavigation.button.tooltip.label' /build/layout/WEB-INF/jsp/siteNavigation.jsp; \
+    ! grep -q 'title="Site navigation"' /build/layout/WEB-INF/jsp/siteNavigation.jsp; \
+    grep -c 'aria-label="<%=tooltip%>"' /build/social/WEB-INF/jsp/portlet/platformSettings.jsp | grep -q '^1$'; \
+    ! grep -q 'aria-label="Enter the administration settings"' /build/social/WEB-INF/jsp/portlet/platformSettings.jsp; \
+    echo "OK: strings hardcoded confirmadas na imagem oficial; patch conferido antes do merge"
+
+# ---------------------------------------------------------------------------
+# 7) Funde tudo que esta' em /build/<app>/ dentro do .war correspondente
+#    (jar uf so' adiciona/sobrescreve entradas, nao recria o war do zero) e
+#    reconfere CADA correcao diretamente de dentro do war ja' modificado.
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    for app in digital-workplace social webdav agenda task-management deeds-tenant layout; do \
+      jar uf "/opt/exo/webapps/${app}.war" -C "/build/${app}" .; \
+      chown exo:exo "/opt/exo/webapps/${app}.war"; \
+    done; \
+    for f in $(unzip -Z1 /opt/exo/webapps/digital-workplace.war \
+                'WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties'); do \
+      unzip -p /opt/exo/webapps/digital-workplace.war "$f" \
+        | grep -qE '^portal[.]myworkspace[.]notes=.+' || { echo "sem notes: $f"; exit 1; }; \
+    done; \
+    test "$(unzip -Z1 /opt/exo/webapps/digital-workplace.war \
+             'WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties' | wc -l)" -eq 39; \
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/conf/digital-workplace/portal/myworkspace/navigation.xml \
+      | grep -q '<name>notes</name>'; \
+    unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css \
+      | grep -q 'agenda-widget-fix'; \
+    unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css \
+      | grep -q 'flex-grow: 0 !important'; \
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war skin/css/digital-workplace.css | wc -c)" -gt 10496; \
+    test "$(unzip -l /opt/exo/webapps/digital-workplace.war | tail -1 | awk '{print $2}')" -ge 326; \
+    test "$(unzip -l /opt/exo/webapps/digital-workplace.war | tail -1 | awk '{print $2}')" -le 340; \
+    unzip -p /opt/exo/webapps/social.war WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties \
+      | grep -E '^activity\.composer\.link=' | grep -qv '{0}'; \
+    unzip -p /opt/exo/webapps/social.war WEB-INF/classes/locale/portlet/Portlets_pt_BR.properties \
+      | grep -q '^activity\.composer\.link\.space=.*{0}'; \
+    test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -ge 1881; \
+    test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -le 1900; \
+    unzip -p /opt/exo/webapps/webdav.war WEB-INF/web.xml | grep -q 'options-preflight'; \
+    test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -ge 51; \
+    test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -le 60; \
+    unzip -p /opt/exo/webapps/agenda.war WEB-INF/classes/locale/portlet/Agenda_pt_BR.properties \
+      | grep -q '^agenda.timeline.seeMore=Ver mais$'; \
+    unzip -p /opt/exo/webapps/agenda.war WEB-INF/classes/locale/portlet/Agenda_pt_BR.properties \
+      | grep -q '^agenda.timeline.seeMore.tooltip=Ver mais$'; \
+    unzip -p /opt/exo/webapps/task-management.war WEB-INF/classes/locale/portlet/taskManagement_pt_BR.properties \
+      | grep -q '^label.seeAll=Ver mais$'; \
+    test "$(unzip -l /opt/exo/webapps/agenda.war | tail -1 | awk '{print $2}')" -ge 600; \
+    test "$(unzip -l /opt/exo/webapps/agenda.war | tail -1 | awk '{print $2}')" -le 640; \
+    test "$(unzip -l /opt/exo/webapps/task-management.war | tail -1 | awk '{print $2}')" -ge 520; \
+    test "$(unzip -l /opt/exo/webapps/task-management.war | tail -1 | awk '{print $2}')" -le 560; \
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties \
+      | grep -q 'ESCRITA POR NOS'; \
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties > /tmp/mw.properties; \
+    for par in 'dashboard=Painel' 'drive=Documentos' 'tasks=Tarefas' 'agenda=Agenda' \
+               'notes=Notas' 'more=Mais' 'process=Processos' 'content=Artigos' \
+               'team=Equipe'; do \
+      k="${par%%=*}"; v="${par#*=}"; \
+      grep -q "^portal[.]myworkspace[.]${k}=${v}\$" /tmp/mw.properties \
+        || { echo "rotulo errado: portal.myworkspace.${k} deveria ser ${v}"; exit 1; }; \
+    done; \
+    ! grep -qE '^portal[.]myworkspace[.](drive=Drive|notes=Notes|tasks=Task|more=More|process=Process|content=Content|team=Team|dashboard=Dashboard|name=My)' /tmp/mw.properties; \
+    rm -f /tmp/mw.properties; \
+    unzip -Z1 /opt/exo/webapps/social.war 'js/loginCommon.bundle.js' | grep -q .; \
+    unzip -Z1 /opt/exo/webapps/deeds-tenant.war 'js/metamaskSetupForm.js' | grep -q .; \
+    test "$(unzip -l /opt/exo/webapps/deeds-tenant.war | tail -1 | awk '{print $2}')" -ge 234; \
+    test "$(unzip -l /opt/exo/webapps/deeds-tenant.war | tail -1 | awk '{print $2}')" -le 250; \
+    unzip -p /opt/exo/webapps/layout.war WEB-INF/jsp/siteNavigation.jsp \
+      | grep -q 'siteNavigation.button.tooltip.label'; \
+    ! unzip -p /opt/exo/webapps/layout.war WEB-INF/jsp/siteNavigation.jsp \
+      | grep -q 'title="Site navigation"'; \
+    unzip -p /opt/exo/webapps/social.war WEB-INF/jsp/portlet/platformSettings.jsp \
+      | grep -q 'aria-label="<%=tooltip%>"'; \
+    ! unzip -p /opt/exo/webapps/social.war WEB-INF/jsp/portlet/platformSettings.jsp \
+      | grep -q 'aria-label="Enter the administration settings"'; \
+    rm -rf /build; \
+    echo "OK: correcoes injetadas e verificadas nos 7 war"
+
+# ---------------------------------------------------------------------------
+# 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
+#    BrandingServiceImpl.updateBrandingInformation() nunca chama
+#    LocaleConfigService.saveDefaultLocaleConfig(), entao o botao "Idioma
+#    padrao" da Administracao aceita a troca (HTTP 204) mas nunca persiste.
+#    Ver o cabecalho de conf/java/.../BrandingServiceImpl.java para a
+#    explicacao completa do bug e da correcao. Compilado AQUI, a partir do
+#    fonte, contra o classpath real da imagem -- nao e' um .class pronto
+#    copiado de fora. Confere que a API publica+privada da classe patched
+#    e' IDENTICA a original, exceto pelas 3 linhas de `throws` que o
+#    decompilador precisou (artefato do CFR, nao do bug -- ver cabecalho).
+# ---------------------------------------------------------------------------
+COPY conf/java/org/exoplatform/portal/branding/BrandingServiceImpl.java \
+     /build-java/org/exoplatform/portal/branding/BrandingServiceImpl.java
+
+RUN set -eux; \
+    CP=$(find /opt/exo/lib -name '*.jar' | tr '\n' ':'); \
+    javap -cp "$CP" -p org.exoplatform.portal.branding.BrandingServiceImpl | sort > /tmp/orig-api.txt; \
+    cd /build-java; \
+    javac -cp "$CP" -d /build-java-out org/exoplatform/portal/branding/BrandingServiceImpl.java; \
+    javap -classpath "/build-java-out:$CP" -p org.exoplatform.portal.branding.BrandingServiceImpl | sort > /tmp/patched-api.txt; \
+    diff /tmp/orig-api.txt /tmp/patched-api.txt > /tmp/api.diff || true; \
+    test "$(grep -c '^[<>]' /tmp/api.diff)" -eq 6; \
+    test "$(grep -c 'throws java.lang.Exception;$' /tmp/api.diff)" -eq 3; \
+    ! grep -qE '^[<>].*public ' /tmp/api.diff; \
+    jar uf /opt/exo/lib/portal.component.portal.jar -C /build-java-out .; \
+    chown exo:exo /opt/exo/lib/portal.component.portal.jar; \
+    javap -classpath /opt/exo/lib/portal.component.portal.jar -p -c org.exoplatform.portal.branding.BrandingServiceImpl \
+      | grep -q 'saveDefaultLocaleConfig'; \
+    rm -rf /build-java /build-java-out /tmp/orig-api.txt /tmp/patched-api.txt /tmp/api.diff; \
+    echo "OK: BrandingServiceImpl recompilado e injetado; API publica identica, so 3 throws privados alterados"
+
+USER exo
