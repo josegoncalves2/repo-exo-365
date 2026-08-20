@@ -112,6 +112,13 @@ services:
   # ----------------------------------------------------------------
   exo:
     image: ${EXO_IMAGE}
+    # `docker compose up -d` sozinho NAO reconstroi a imagem -- so' usa o que
+    # ja' existe localmente com essa tag. Para aplicar mudancas do
+    # Dockerfile.exo (patches de idioma/branding/CSS/JS), rode
+    # `docker compose build exo` ou `docker compose up -d --build` antes.
+    build:
+      context: .
+      dockerfile: Dockerfile.exo
     container_name: exo-app
     environment:
       TZ: ${TZ}
