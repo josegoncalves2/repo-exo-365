@@ -281,6 +281,43 @@ RUN set -eux; \
     echo "OK: DefaultUserBanner.png substituido pela imagem do operador"
 
 # ---------------------------------------------------------------------------
+# 6e) NOVO (2026-08-20): bug real no proprio JS compilado da eXo/Meeds (nao
+#    e' configuracao) -- o seletor "Instancia do Portlet" (editor de layout,
+#    Adicionar aplicacao) nunca mostra nenhum item, em QUALQUER instalacao
+#    eXo Community nova, nao so' nesta. Causa raiz, confirmada lendo
+#    js/layoutEditor.bundle.js: o componente filtra a lista de instancias
+#    por `.filter(t => t.name)`, mas GET /layout/rest/portlet/instances
+#    NUNCA devolve "name" preenchido (dado por design -- o nome de verdade
+#    vive em GET /layout/rest/portlets, as DEFINICOES de portlet, nao nas
+#    instancias). O metodo refreshPortletInstances() enriquece
+#    "this.portlets" com o nome certo (via chave i18n
+#    layout.portletInstance.<portletName>.name, com fallback pro proprio
+#    campo "name" da definicao) mas NUNCA faz o mesmo merge pra
+#    "this.portletInstances" -- por isso o filtro derruba a lista inteira,
+#    sempre. Confirmado tambem por tentativa direta: PUT/POST em
+#    /layout/rest/portlet/instances aceita (200) mas descarta "name"
+#    silenciosamente, confirmando que o campo nao e' gravavel por ali --
+#    o dado certo so' existe do lado das definicoes.
+#    Patch: depois de montar "this.portlets" (que already tem nome certo),
+#    mapeia "this.portletInstances" cruzando por contentId e copiando
+#    name/description da definicao correspondente antes do filtro rodar.
+#    Nenhuma chamada de rede nova, nenhum campo de API mudou -- so' o merge
+#    que faltava no proprio cliente.
+# ---------------------------------------------------------------------------
+COPY conf/js/layoutEditor.bundle.js /tmp/layoutEditor.bundle.js
+
+RUN set -eux; \
+    ! unzip -p /opt/exo/webapps/layout.war js/layoutEditor.bundle.js \
+      | grep -q 'this.portletInstances=t.filter((t=>!t.disabled)).map((i=>{const p=this.portlets.find'; \
+    cd /tmp && mkdir -p le/js && cp /tmp/layoutEditor.bundle.js le/js/layoutEditor.bundle.js && cd le; \
+    jar uf /opt/exo/webapps/layout.war js/layoutEditor.bundle.js; \
+    chown exo:exo /opt/exo/webapps/layout.war; \
+    cd /; rm -rf /tmp/le /tmp/layoutEditor.bundle.js; \
+    unzip -p /opt/exo/webapps/layout.war js/layoutEditor.bundle.js \
+      | grep -q 'this.portletInstances=t.filter((t=>!t.disabled)).map((i=>{const p=this.portlets.find'; \
+    echo "OK: layoutEditor.bundle.js patched -- merge de nome instancia<->definicao aplicado"
+
+# ---------------------------------------------------------------------------
 # 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
 #    BrandingServiceImpl.updateBrandingInformation() nunca chama
 #    LocaleConfigService.saveDefaultLocaleConfig(), entao o botao "Idioma
