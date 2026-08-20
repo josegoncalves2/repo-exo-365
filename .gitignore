@@ -16,7 +16,12 @@ __pycache__/
 *.pyc
 
 # Dados de execução que não descrevem o projeto
-conf/synapse/
+conf/synapse/*
+# EXCECAO: este arquivo NAO e' dado de execucao, e' documentacao -- a copia
+# versionada dos ajustes obrigatorios do homeserver.yaml (que vive em
+# data/synapse/, ignorado junto com todo o /data). Sem ele, uma reinstalacao
+# do zero perde os dois ajustes que fazem o chat funcionar.
+!conf/synapse/homeserver-ajustes-obrigatorios.yaml
 *.pid
 
 # Banco de dados

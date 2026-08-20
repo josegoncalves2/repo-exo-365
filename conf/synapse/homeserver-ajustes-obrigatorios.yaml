@@ -1,0 +1,63 @@
+# ===================================================================
+# AJUSTES OBRIGATORIOS no homeserver.yaml do Synapse (2026-08-20)
+#
+# Estes dois blocos NAO fazem parte do homeserver.yaml gerado pelo
+# Synapse. Sem eles o chat da eXo fica quebrado de formas silenciosas
+# (nenhum erro na tela). O arquivo real vive em
+# data/synapse/homeserver.yaml, que e' bind mount do host e esta' no
+# .gitignore junto com todo o /data -- por isso a copia versionada
+# aqui: numa reinstalacao do zero, reaplicar os dois blocos abaixo.
+#
+# Aplicar com:  docker compose restart synapse
+# Conferir com: docker exec exo-synapse grep -n 'rc_login\|authenticated_media' /data/homeserver.yaml
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1) rc_login -- limite de taxa de login
+#
+# O widget de chat da eXo faz login via JWT (troca o cookie
+# matrix_jwt_token por um access_token) A CADA carregamento de pagina /
+# montagem do widget. Nao e' um cliente Matrix tradicional, que loga uma
+# vez e mantem sessao longa. O default do Synapse para rc_login e'
+# dimensionado para humanos digitando senha (per_second ~0.17,
+# burst_count 3) e passava a devolver 429 depois de poucos reloads ou
+# abas abertas -- o chat ficava "morto" sem aviso: o login falhava, o
+# /sync nunca rodava e a lista de conversas ficava vazia para sempre
+# naquela sessao. Confirmado por captura de rede: 2 logins em sequencia
+# normal ja' bastavam para 429.
+#
+# Risco de forca-bruta e' irrelevante aqui: o login e' mediado pela
+# propria eXo -- o JWT so' e' emitido para quem ja' esta' autenticado na
+# sessao do portal, entao quem manda o token ja' provou identidade.
+# -------------------------------------------------------------------
+rc_login:
+  address:
+    per_second: 10
+    burst_count: 50
+  account:
+    per_second: 10
+    burst_count: 50
+  failed_attempts:
+    per_second: 10
+    burst_count: 50
+
+# -------------------------------------------------------------------
+# 2) enable_authenticated_media: false
+#
+# A partir das versoes recentes (esta stack usa v1.158.0) o Synapse
+# desativa por padrao os endpoints ANTIGOS de midia sem autenticacao
+# (/_matrix/media/v3/...). O frontend de chat da eXo ainda usa
+# exatamente esses caminhos para buscar imagem, anexo, avatar e
+# thumbnail. Resultado: toda imagem no chat virava bolha vazia, porque
+# a URL pedida pelo JS devolvia 404 -- enquanto o endpoint novo
+# (/_matrix/client/v1/media/...) respondia 200 normalmente.
+#
+# Confirmado na pratica: mesma midia, mesmo token --
+#   /_matrix/media/v3/thumbnail/...        -> 404
+#   /_matrix/client/v1/media/thumbnail/... -> 200 image/png
+#
+# Desligar o modo autenticado reativa o caminho antigo e faz as imagens
+# aparecerem, sem precisar alterar o JS da eXo. Alternativa "correta"
+# seria corrigir o frontend para usar a API nova -- bem mais invasivo.
+# -------------------------------------------------------------------
+enable_authenticated_media: false
