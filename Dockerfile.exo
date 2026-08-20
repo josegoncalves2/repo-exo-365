@@ -230,26 +230,32 @@ RUN set -eux; \
 #    starfield padrao da eXo, entao nao regride ninguem.
 # ---------------------------------------------------------------------------
 COPY conf/images/myworkspace-background.webp /tmp/myworkspace-background.webp
-COPY conf/images/myworkspace-bottom-transparent.webp /tmp/myworkspace-bottom-transparent.webp
 
-# CORRIGIDO (mesmo dia): a v5 usava a MESMA imagem em top.webp e bottom.webp.
-# Sao dois containers com tamanho/posicao gravados no banco DIFERENTES entre
-# si (top: contain, top left; bottom: sem size explicito, + linear-gradient
-# por baixo) -- a mesma foto nos dois lugares aparecia duplicada e cortada
-# de dois jeitos diferentes. bottom.webp agora e' 1x1 transparente: some a
-# segunda copia, e o linear-gradient(#4D87C7FF, #FFFFFFFF) que ja' estava
-# configurado naquele container (nao mexemos nele) volta a aparecer sozinho.
+# CORRIGIDO DE NOVO (mesmo dia): a v6 tinha posto bottom.webp 1x1 transparente
+# porque o CSS gravado no banco pros dois containers usava backgroundSize
+# "contain"/default (sem cobrir a area), entao a mesma imagem nos dois
+# lugares ficava duplicada e cortada. Em vez de so' trocar o arquivo,
+# achamos e usamos a API real de layout do proprio eXo
+# (GET/PUT /layout/rest/pages/layout?pageRef=...), a mesma que o editor de
+# layout nativo (icone de engrenagem -> Editar Layout) usa pra salvar --
+# e regravamos backgroundSize=cover e backgroundPosition=center center nos
+# dois containers (storageId 416 e 422, viram novos ids a cada save por
+# causa do versionamento do JCR), removendo o linear-gradient que so'
+# fazia sentido com o design antigo. Com "cover" os dois containers
+# preenchem inteiros sem sobra nem distorcao, entao a mesma imagem nos
+# dois volta a fazer sentido -- por isso bottom.webp volta a ser a imagem
+# do operador, nao mais o pixel transparente.
 RUN set -eux; \
     cd /tmp && mkdir -p mwbg/images/background/myWorkspace && cd mwbg; \
     cp /tmp/myworkspace-background.webp images/background/myWorkspace/top.webp; \
-    cp /tmp/myworkspace-bottom-transparent.webp images/background/myWorkspace/bottom.webp; \
+    cp /tmp/myworkspace-background.webp images/background/myWorkspace/bottom.webp; \
     jar uf /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/top.webp; \
     jar uf /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp; \
     chown exo:exo /opt/exo/webapps/digital-workplace.war; \
-    cd /; rm -rf /tmp/mwbg /tmp/myworkspace-background.webp /tmp/myworkspace-bottom-transparent.webp; \
+    cd /; rm -rf /tmp/mwbg /tmp/myworkspace-background.webp; \
     test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/top.webp | wc -c)" -eq 34206; \
-    test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp | wc -c)" -eq 34; \
-    echo "OK: top.webp = imagem do operador; bottom.webp = 1x1 transparente (evita duplicacao cortada)"
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp | wc -c)" -eq 34206; \
+    echo "OK: top.webp e bottom.webp = imagem do operador (CSS gravado no banco agora usa cover/center)"
 
 # ---------------------------------------------------------------------------
 # 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
