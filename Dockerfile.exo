@@ -230,18 +230,26 @@ RUN set -eux; \
 #    starfield padrao da eXo, entao nao regride ninguem.
 # ---------------------------------------------------------------------------
 COPY conf/images/myworkspace-background.webp /tmp/myworkspace-background.webp
+COPY conf/images/myworkspace-bottom-transparent.webp /tmp/myworkspace-bottom-transparent.webp
 
+# CORRIGIDO (mesmo dia): a v5 usava a MESMA imagem em top.webp e bottom.webp.
+# Sao dois containers com tamanho/posicao gravados no banco DIFERENTES entre
+# si (top: contain, top left; bottom: sem size explicito, + linear-gradient
+# por baixo) -- a mesma foto nos dois lugares aparecia duplicada e cortada
+# de dois jeitos diferentes. bottom.webp agora e' 1x1 transparente: some a
+# segunda copia, e o linear-gradient(#4D87C7FF, #FFFFFFFF) que ja' estava
+# configurado naquele container (nao mexemos nele) volta a aparecer sozinho.
 RUN set -eux; \
     cd /tmp && mkdir -p mwbg/images/background/myWorkspace && cd mwbg; \
     cp /tmp/myworkspace-background.webp images/background/myWorkspace/top.webp; \
-    cp /tmp/myworkspace-background.webp images/background/myWorkspace/bottom.webp; \
+    cp /tmp/myworkspace-bottom-transparent.webp images/background/myWorkspace/bottom.webp; \
     jar uf /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/top.webp; \
     jar uf /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp; \
     chown exo:exo /opt/exo/webapps/digital-workplace.war; \
-    cd /; rm -rf /tmp/mwbg /tmp/myworkspace-background.webp; \
+    cd /; rm -rf /tmp/mwbg /tmp/myworkspace-background.webp /tmp/myworkspace-bottom-transparent.webp; \
     test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/top.webp | wc -c)" -eq 34206; \
-    test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp | wc -c)" -eq 34206; \
-    echo "OK: top.webp/bottom.webp substituidos pela imagem do operador (mesmo caminho, conteudo novo)"
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp | wc -c)" -eq 34; \
+    echo "OK: top.webp = imagem do operador; bottom.webp = 1x1 transparente (evita duplicacao cortada)"
 
 # ---------------------------------------------------------------------------
 # 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
