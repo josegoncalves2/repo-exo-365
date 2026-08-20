@@ -67,6 +67,15 @@ sobe synapse      300
 sobe onlyoffice   420
 # O eXo é o último dos pesados e o que mais demora (Tomcat + 48 webapps).
 sobe exo          1500
+
+# BrandingService.pageBackground volta pro default (sem imagem, position
+# errado) toda vez que o container exo-app e' recriado -- descoberto ao vivo
+# em 2026-08-20 (rebuild pra outro patch resetou um fundo confirmado minutos
+# antes por screenshot). Nao trava a subida: e' cosmetico, nao impede a
+# plataforma de funcionar, so' registra e segue.
+python3 "$(dirname "$0")/reaplicar-branding-pos-rebuild.py" \
+  || log "AVISO: reaplicar-branding-pos-rebuild.py falhou (nao bloqueante)"
+
 # O proxy só depois: assim nenhuma requisição encontra o backend fora do ar.
 sobe web          120
 log "stack no ar — RAM livre: $(livre)MB"

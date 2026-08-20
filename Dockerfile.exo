@@ -419,4 +419,30 @@ RUN set -eux; \
     rm -rf /build-java3 /build-java3-out /tmp/orig-api3.txt /tmp/patched-api3.txt /tmp/api3.diff; \
     echo "OK: MatrixRest recompilado e injetado; API identica, DM agora marca directChat=true"
 
+# ---------------------------------------------------------------------------
+# 11) NOVO (2026-08-20): duas chaves em ingles no bundle pt_BR do portlet de
+#    administracao de Espacos (analytics.war) -- nao e' bug de precedencia de
+#    locale, o arquivo pt_BR da propria imagem oficial tem so' essas 2 chaves
+#    e as duas identicas ao bundle en (nunca foram traduzidas na origem).
+#    Reportado ao vivo em Administracao > Organizacao > Espacos: coluna
+#    "Last Activity" em ingles no meio de uma tela 100% traduzida.
+# ---------------------------------------------------------------------------
+COPY conf/i18n/SpacesAdministrationPortlet_pt_BR.properties \
+     /build-analytics/WEB-INF/classes/locale/portlet/social/SpacesAdministrationPortlet_pt_BR.properties
+
+RUN set -eux; \
+    unzip -p /opt/exo/webapps/analytics.war \
+      WEB-INF/classes/locale/portlet/social/SpacesAdministrationPortlet_pt_BR.properties \
+      | grep -q '^social\.spaces\.administration\.manageSpaces\.lastActivity=Last Activity$'; \
+    jar uf /opt/exo/webapps/analytics.war -C /build-analytics .; \
+    chown exo:exo /opt/exo/webapps/analytics.war; \
+    rm -rf /build-analytics; \
+    unzip -p /opt/exo/webapps/analytics.war \
+      WEB-INF/classes/locale/portlet/social/SpacesAdministrationPortlet_pt_BR.properties \
+      | grep -q '^social\.spaces\.administration\.manageSpaces\.lastActivity=Última Atividade$'; \
+    ! unzip -p /opt/exo/webapps/analytics.war \
+      WEB-INF/classes/locale/portlet/social/SpacesAdministrationPortlet_pt_BR.properties \
+      | grep -q 'Last Activity'; \
+    echo "OK: SpacesAdministrationPortlet_pt_BR.properties traduzido (lastActivity, loadingLastActivity)"
+
 USER exo
