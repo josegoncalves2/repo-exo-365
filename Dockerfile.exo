@@ -207,4 +207,41 @@ RUN set -eux; \
     rm -rf /build-java /build-java-out /tmp/orig-api.txt /tmp/patched-api.txt /tmp/api.diff; \
     echo "OK: BrandingServiceImpl recompilado e injetado; API publica identica, so 3 throws privados alterados"
 
+# ---------------------------------------------------------------------------
+# 9) NOVO (2026-08-19): REDESIGN A PEDIDO EXPLICITO DO OPERADOR, nao correcao
+#    de bug -- DefaultLocalePolicyService.determineLocale() so' usava o
+#    "Idioma padrao" como ULTIMO fallback, depois de perfil pessoal salvo,
+#    cookie, sessao e Accept-Language do navegador; na pratica isso deixava
+#    a troca do "Idioma padrao" sem efeito visivel pra qualquer conta ja'
+#    logada ou qualquer navegador real. Pedido: "ao mudar o idioma, o idioma
+#    deve ser alterado" -- o padrao agora vale pra todo mundo, sobrepondo
+#    perfil pessoal e navegador; unica excecao mantida e' a navegacao
+#    explicita por URL (/portal/<lang>/...), que e' acao deliberada, nao
+#    preferencia passiva. Ver o cabecalho de conf/java/.../
+#    DefaultLocalePolicyService.java para a explicacao completa. Unica
+#    implementacao de LocalePolicy registrada na plataforma (portal.war/
+#    WEB-INF/conf/portal/web-configuration.xml) -- nao ha' outro binding a
+#    ajustar.
+# ---------------------------------------------------------------------------
+COPY conf/java/org/exoplatform/portal/application/localization/DefaultLocalePolicyService.java \
+     /build-java2/org/exoplatform/portal/application/localization/DefaultLocalePolicyService.java
+
+RUN set -eux; \
+    CP=$(find /opt/exo/lib -name '*.jar' | tr '\n' ':'); \
+    javap -cp "$CP" -p org.exoplatform.portal.application.localization.DefaultLocalePolicyService | sort > /tmp/orig-api2.txt; \
+    cd /build-java2; \
+    javac -cp "$CP" -d /build-java2-out org/exoplatform/portal/application/localization/DefaultLocalePolicyService.java; \
+    javap -classpath "/build-java2-out:$CP" -p org.exoplatform.portal.application.localization.DefaultLocalePolicyService | sort > /tmp/patched-api2.txt; \
+    diff /tmp/orig-api2.txt /tmp/patched-api2.txt > /tmp/api2.diff || true; \
+    test ! -s /tmp/api2.diff; \
+    jar uf /opt/exo/lib/portal.webui.portal.jar -C /build-java2-out .; \
+    chown exo:exo /opt/exo/lib/portal.webui.portal.jar; \
+    javap -classpath /opt/exo/lib/portal.webui.portal.jar -p -c org.exoplatform.portal.application.localization.DefaultLocalePolicyService \
+      | grep -q 'getDefaultLocaleConfig'; \
+    javap -classpath /opt/exo/lib/portal.webui.portal.jar -p -c org.exoplatform.portal.application.localization.DefaultLocalePolicyService \
+      > /tmp/check.txt; \
+    ! grep -q 'getLocaleConfigForRegistered' /tmp/check.txt; \
+    rm -rf /build-java2 /build-java2-out /tmp/orig-api2.txt /tmp/patched-api2.txt /tmp/api2.diff /tmp/check.txt; \
+    echo "OK: DefaultLocalePolicyService recompilado e injetado; API identica, so o corpo de determineLocale() mudou"
+
 USER exo
