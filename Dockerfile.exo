@@ -101,6 +101,37 @@ RUN set -eux; \
     echo "OK: strings hardcoded confirmadas na imagem oficial; patch conferido antes do merge"
 
 # ---------------------------------------------------------------------------
+# 6b) NOVO (2026-08-20): a pagina myworkspace (home/dashboard, "Bem-vindo,
+#    <nome>!") tem, na propria definicao de layout (pages.xml, nao codigo
+#    Java), background-image/background-color fixos no container raiz e
+#    background-image + linear-gradient fixos na secao inferior, apontando
+#    pra /digital-workplace/images/background/myWorkspace/{top,bottom}.webp.
+#    Isso ignora completamente o que estiver salvo no BrandingService
+#    (pageBackground/pageBackgroundColor -- tela Tema -> Desenho e pop-ups
+#    da Administracao): a pagina tem estilo CSS proprio no layout, entao o
+#    fundo escolhido no Tema nunca aparece aqui. Confirmado ao vivo: upload
+#    de imagem em Tema persistiu certinho no branding (pageBackground.fileId
+#    passou de 0 pra um id valido), mas o dashboard continuou mostrando
+#    top.webp/bottom.webp -- prova de que os dois mecanismos sao
+#    desconectados, nao um bug de persistencia. Patch remove os dois blocos
+#    de <background-*> fixos (container raiz e secao inferior), deixando a
+#    pagina herdar o fundo global normalmente, como as outras paginas que
+#    ja nao tem css-style proprio.
+# ---------------------------------------------------------------------------
+COPY conf/pages-myworkspace.xml \
+     /build/digital-workplace/WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml
+
+RUN set -eux; \
+    unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml \
+      | grep -q 'background/myWorkspace/top.webp'; \
+    grep -q '<container template="system:/groovy/portal/webui/container/UIPageLayout.gtmpl">' \
+      /build/digital-workplace/WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml; \
+    ! grep -q 'background/myWorkspace' \
+      /build/digital-workplace/WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml; \
+    echo "OK: fundo fixo da pagina myworkspace confirmado na imagem oficial; removido no patch"
+
+# ---------------------------------------------------------------------------
 # 7) Funde tudo que esta' em /build/<app>/ dentro do .war correspondente
 #    (jar uf so' adiciona/sobrescreve entradas, nao recria o war do zero) e
 #    reconfere CADA correcao diretamente de dentro do war ja' modificado.
@@ -149,6 +180,9 @@ RUN set -eux; \
     unzip -p /opt/exo/webapps/digital-workplace.war \
       WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties \
       | grep -q 'ESCRITA POR NOS'; \
+    ! unzip -p /opt/exo/webapps/digital-workplace.war \
+      WEB-INF/conf/digital-workplace/portal/myworkspace/pages.xml \
+      | grep -q 'background/myWorkspace'; \
     unzip -p /opt/exo/webapps/digital-workplace.war \
       WEB-INF/classes/locale/navigation/portal/myworkspace_pt_BR.properties > /tmp/mw.properties; \
     for par in 'dashboard=Painel' 'drive=Documentos' 'tasks=Tarefas' 'agenda=Agenda' \
