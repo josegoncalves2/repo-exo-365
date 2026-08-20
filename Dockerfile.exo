@@ -210,6 +210,40 @@ RUN set -eux; \
     echo "OK: correcoes injetadas e verificadas nos 7 war"
 
 # ---------------------------------------------------------------------------
+# 6c) NOVO (2026-08-20): a remocao do <background-image> no pages.xml (passo
+#    6b) NAO tem efeito nesta instalacao -- a pagina myworkspace ja foi
+#    importada pro JCR/banco antes deste patch existir, e o eXo so' le
+#    pages.xml pra popular o banco na primeira importacao; depois disso, o
+#    container ja tem o proprio css-style gravado no banco e o .war deixa
+#    de ser consultado pra essa pagina. Confirmado ao vivo via DevTools: o
+#    container root (id "Container416") continua com
+#    --pageBodyBackgroundImage: url(.../myWorkspace/top.webp) e a secao
+#    inferior com background-image: url(.../myWorkspace/bottom.webp) MESMO
+#    depois do deploy do patch do passo 6b. Como a URL gravada no banco nao
+#    muda (e' o mesmo caminho de sempre), a correcao que alcanca uma
+#    instalacao ja existente e' trocar o CONTEUDO do arquivo servido nesse
+#    caminho, nao a referencia -- dai o jar uf sobrescrevendo os dois
+#    arquivos originais do addon (top.webp e bottom.webp) com a mesma
+#    imagem (pedido explicito do operador: tratar os dois like um so'),
+#    sem tocar no pages.xml nem exigir reimport. Fallback pra quem nunca
+#    trocou nada (instalacao nova): mostra a imagem nova em vez do
+#    starfield padrao da eXo, entao nao regride ninguem.
+# ---------------------------------------------------------------------------
+COPY conf/images/myworkspace-background.webp /tmp/myworkspace-background.webp
+
+RUN set -eux; \
+    cd /tmp && mkdir -p mwbg/images/background/myWorkspace && cd mwbg; \
+    cp /tmp/myworkspace-background.webp images/background/myWorkspace/top.webp; \
+    cp /tmp/myworkspace-background.webp images/background/myWorkspace/bottom.webp; \
+    jar uf /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/top.webp; \
+    jar uf /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp; \
+    chown exo:exo /opt/exo/webapps/digital-workplace.war; \
+    cd /; rm -rf /tmp/mwbg /tmp/myworkspace-background.webp; \
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/top.webp | wc -c)" -eq 34206; \
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war images/background/myWorkspace/bottom.webp | wc -c)" -eq 34206; \
+    echo "OK: top.webp/bottom.webp substituidos pela imagem do operador (mesmo caminho, conteudo novo)"
+
+# ---------------------------------------------------------------------------
 # 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
 #    BrandingServiceImpl.updateBrandingInformation() nunca chama
 #    LocaleConfigService.saveDefaultLocaleConfig(), entao o botao "Idioma
