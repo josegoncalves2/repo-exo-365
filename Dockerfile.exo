@@ -386,4 +386,37 @@ RUN set -eux; \
     rm -rf /build-java2 /build-java2-out /tmp/orig-api2.txt /tmp/patched-api2.txt /tmp/api2.diff /tmp/check.txt; \
     echo "OK: DefaultLocalePolicyService recompilado e injetado; API identica, so o corpo de determineLocale() mudou"
 
+# ---------------------------------------------------------------------------
+# 10) NOVO (2026-08-20): bug real no Java compilado da propria eXo/Meeds
+#    (addon de chat, matrix-services.jar) -- lista de conversas do chat
+#    fica SEMPRE vazia pra mensagens diretas (1:1), em qualquer instalacao,
+#    nao so' aqui. MatrixRest.updateRoomEntity() marca explicitamente
+#    room.setDirectChat(false) no ramo de sala de ESPACO mas nunca chama
+#    setDirectChat(true) no ramo de MENSAGEM DIRETA -- o campo fica no
+#    default (false) sempre. processRooms() so' inclui a sala se
+#    isDirectChat()&&privateRoomsEnabled OU !isDirectChat()&&espacoAutorizado;
+#    com isDirectChat() incorretamente false numa DM (sem spaceId), as DUAS
+#    condicoes falham sempre e a sala e' descartada, mesmo com config de
+#    chat 100% habilitada. Ver o cabecalho de conf/java/.../MatrixRest.java
+#    para a explicacao completa, incluindo confirmacao ao vivo via consulta
+#    direta na tabela MATRIX_ROOM e na configuracao STG_SETTINGS.
+# ---------------------------------------------------------------------------
+COPY conf/java/io/meeds/chat/rest/MatrixRest.java \
+     /build-java3/io/meeds/chat/rest/MatrixRest.java
+
+RUN set -eux; \
+    CP=$(find /opt/exo/lib -name '*.jar' | tr '\n' ':'); \
+    javap -cp "$CP" -p io.meeds.chat.rest.MatrixRest | sort > /tmp/orig-api3.txt; \
+    cd /build-java3; \
+    javac -cp "$CP" -d /build-java3-out io/meeds/chat/rest/MatrixRest.java; \
+    javap -classpath "/build-java3-out:$CP" -p io.meeds.chat.rest.MatrixRest | sort > /tmp/patched-api3.txt; \
+    diff /tmp/orig-api3.txt /tmp/patched-api3.txt > /tmp/api3.diff || true; \
+    test ! -s /tmp/api3.diff; \
+    jar uf /opt/exo/lib/matrix-services.jar -C /build-java3-out .; \
+    chown exo:exo /opt/exo/lib/matrix-services.jar; \
+    test "$(javap -classpath /opt/exo/lib/matrix-services.jar -p -c io.meeds.chat.rest.MatrixRest \
+      | grep -c 'Method io/meeds/chat/service/model/RoomEntity.setDirectChat')" -eq 4; \
+    rm -rf /build-java3 /build-java3-out /tmp/orig-api3.txt /tmp/patched-api3.txt /tmp/api3.diff; \
+    echo "OK: MatrixRest recompilado e injetado; API identica, DM agora marca directChat=true"
+
 USER exo
