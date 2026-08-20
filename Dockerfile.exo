@@ -258,6 +258,29 @@ RUN set -eux; \
     echo "OK: top.webp e bottom.webp = imagem do operador (CSS gravado no banco agora usa cover/center)"
 
 # ---------------------------------------------------------------------------
+# 6d) NOVO (2026-08-20): capa padrao (skin/images/banner/DefaultUserBanner.png,
+#    portlet ProfileHeader) mostrada pra qualquer usuario que nunca subiu uma
+#    capa propria -- confirmado: nao ha' NENHUMA configuracao de admin pra
+#    esse arquivo, e' um asset estatico do addon digital-workplace, servido
+#    direto por /portal/rest/v1/social/users/default-image/banner. Trocado
+#    pela mesma imagem do operador, redimensionada pro tamanho original
+#    (1584x396, mesma proporcao ~4:1 do arquivo oficial) pra nao distorcer
+#    o layout do portlet. Efeito: qualquer conta que nunca configurou capa
+#    propria (a maioria) passa a ver a marca da prefeitura em vez do
+#    starfield generico da eXo, sem precisar de acao nenhuma do usuario.
+# ---------------------------------------------------------------------------
+COPY conf/images/default-user-banner.png /tmp/default-user-banner.png
+
+RUN set -eux; \
+    cd /tmp && mkdir -p dub/skin/images/banner && cd dub; \
+    cp /tmp/default-user-banner.png skin/images/banner/DefaultUserBanner.png; \
+    jar uf /opt/exo/webapps/digital-workplace.war skin/images/banner/DefaultUserBanner.png; \
+    chown exo:exo /opt/exo/webapps/digital-workplace.war; \
+    cd /; rm -rf /tmp/dub /tmp/default-user-banner.png; \
+    test "$(unzip -p /opt/exo/webapps/digital-workplace.war skin/images/banner/DefaultUserBanner.png | wc -c)" -eq 237287; \
+    echo "OK: DefaultUserBanner.png substituido pela imagem do operador"
+
+# ---------------------------------------------------------------------------
 # 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
 #    BrandingServiceImpl.updateBrandingInformation() nunca chama
 #    LocaleConfigService.saveDefaultLocaleConfig(), entao o botao "Idioma
