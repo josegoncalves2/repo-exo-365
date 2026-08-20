@@ -35,3 +35,7 @@ backup/
 # E' emitido pela CA interna do projeto e deve ser gerado por instalacao,
 # nunca versionado — pelo mesmo motivo que conf/mysql-certs/.
 conf/jitsi-certs/
+
+# Certificado TLS do portal (2026-08-20). Mesmo motivo do jitsi-certs/:
+# contem CHAVE PRIVADA (portal-key.pem), emitido pela mesma CA interna.
+conf/portal-certs/
