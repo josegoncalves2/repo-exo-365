@@ -61,3 +61,36 @@ rc_login:
 # seria corrigir o frontend para usar a API nova -- bem mais invasivo.
 # -------------------------------------------------------------------
 enable_authenticated_media: false
+
+# -------------------------------------------------------------------
+# 3) auto_accept_invites (2026-08-21)
+#
+# A eXo cria a sala Matrix da mensagem direta, faz JOIN do remetente e
+# apenas CONVIDA o destinatario. Enquanto o convite nao e' aceito, a
+# sala fica em membership='invite' e NAO aparece no /sync do cliente:
+# o painel de Bate-papo do destinatario mostra "Voce ainda nao tem
+# discussoes" mesmo havendo mensagens ja' gravadas na sala.
+#
+# Medido nesta stack antes da correcao:
+#   diogo.silva -> /sync joined=0 invite=2
+#   sala !VINqxMKPZXNXScADTY ja' tinha 3 mensagens reais
+#   6 convites pendentes no total (salas com 3, 4 e 11 mensagens)
+#
+# Para uma plataforma que substitui o Teams isso e' comportamento
+# errado: quem recebe mensagem direta deve ve-la, nao "aceitar convite".
+#
+# Modulo NATIVO do Synapse (>= 1.109), nao exige patch de codigo.
+# only_for_direct_messages: true  -> salas de ESPACO continuam exigindo
+#                                    aceite explicito, de proposito.
+# only_from_local_users: true     -> nao auto-aceita convite federado.
+#
+# Confirmacao no log do Synapse apos aplicar:
+#   "Loaded local module <...InviteAutoAccepter object...>"
+#   "Accepting invites on this worker"
+# Prova funcional: DM nova criada -> membership registra invite e, em
+# seguida, join automatico do destinatario.
+# -------------------------------------------------------------------
+auto_accept_invites:
+  enabled: true
+  only_for_direct_messages: true
+  only_from_local_users: true
