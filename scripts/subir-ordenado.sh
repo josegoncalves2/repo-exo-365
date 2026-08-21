@@ -58,7 +58,7 @@ sobe(){
   return 1
 }
 
-log "início da subida ordenada — RAM livre: $(livre)MB"
+log "início da subida ordenada (13 servicos) — RAM livre: $(livre)MB"
 sobe mailpit      90
 sobe mysql        420
 sobe es           300
@@ -75,6 +75,21 @@ sobe exo          1500
 # plataforma de funcionar, so' registra e segue.
 python3 "$(dirname "$0")/reaplicar-branding-pos-rebuild.py" \
   || log "AVISO: reaplicar-branding-pos-rebuild.py falhou (nao bloqueante)"
+
+# ---------------------------------------------------------------------------
+# VIDEOCONFERENCIA (2026-08-21). Estes 5 servicos faltavam aqui: o systemd
+# subia a stack SEM Jitsi, e num boot real do servidor a plataforma voltava
+# sem ligacao nenhuma. Descoberto ao conferir o boot apos um down/up completo.
+# Ordem obrigatoria: o prosody e' o barramento XMPP e tem de existir antes do
+# jicofo e do jvb; o jitsi-call (microservico do addon oficial, que assina os
+# JWT das salas) e' independente; o jitsi-web depende de prosody+jicofo.
+# Tudo antes do proxy, que faz o roteamento para eles.
+# ---------------------------------------------------------------------------
+sobe jitsi-prosody 180
+sobe jitsi-jicofo  180
+sobe jitsi-jvb     180
+sobe jitsi-call    240
+sobe jitsi-web     180
 
 # O proxy só depois: assim nenhuma requisição encontra o backend fora do ar.
 sobe web          120
