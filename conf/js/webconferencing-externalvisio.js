@@ -227,9 +227,9 @@
         return process.promise();
       };
 
-      var getCallUrl = function(callId) {
+      var getCallUrl = function(callId, isSpace) {
         var process = $.Deferred();
-        getActiveProviders(callId)
+        getActiveProviders(callId, isSpace)
           .then((activeProviders) => {
             if(activeProviders.length>0) {
               process.resolve(activeProviders[0].url);
