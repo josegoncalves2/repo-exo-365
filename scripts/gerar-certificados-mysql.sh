@@ -33,6 +33,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIR="${ROOT}/conf/mysql-certs"
 DIAS=3650
+# Host que entra no CN/SAN dos certificados do portal e do Jitsi. Se o
+# certificado nao cobrir o endereco que o NAVEGADOR usa, o Chrome recusa com
+# ERR_CERT_COMMON_NAME_INVALID e a plataforma fica inacessivel por HTTPS.
+VHOST="${1:-$(grep -s "^EXO_PROXY_VHOST=" "${ROOT}/.env" | cut -d= -f2)}"
+VHOST="${VHOST:-192.168.1.59}"
 
 rm -rf "$DIR"; mkdir -p "$DIR"; cd "$DIR"
 
@@ -54,8 +59,48 @@ openssl x509 -req -in server.csr -CA ca-int.pem -CAkey ca-int-key.pem \
   -CAcreateserial -out server-cert.pem -days "$DIAS" \
   -extfile <(printf 'subjectAltName=DNS:mysql,DNS:localhost,IP:127.0.0.1\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n') 2>/dev/null
 
-echo "[certs] 4/4 — cadeia (intermediária primeiro, raiz depois)"
+echo "[certs] 4/6 — cadeia (intermediária primeiro, raiz depois)"
 cat ca-int.pem ca-root.pem > ca-chain.pem
+
+# ---------------------------------------------------------------------------
+# 2026-08-21: portal-certs e jitsi-certs passam a ser gerados AQUI.
+# Antes so' o MySQL era coberto. Os outros dois existiam apenas na maquina
+# original, criados a mao -- num servidor novo o nginx nao subia, porque
+# conf/nginx.conf exige os quatro arquivos:
+#   ssl_certificate     /etc/nginx/portal-certs/portal-fullchain.pem
+#   ssl_certificate_key /etc/nginx/portal-certs/portal-key.pem
+#   ssl_certificate     /etc/nginx/jitsi-certs/jitsi-fullchain.pem
+#   ssl_certificate_key /etc/nginx/jitsi-certs/jitsi-key.pem
+# Sem nginx a plataforma inteira fica inacessivel. Ambos assinados pela mesma
+# CA intermediaria, entao quem confia nela confia nos tres.
+# ---------------------------------------------------------------------------
+emite(){
+  local nome="$1" destino="$2" cn="$3" san="$4"
+  mkdir -p "$destino"
+  openssl req -newkey rsa:2048 -keyout "${destino}/${nome}-key.pem" \
+    -out "/tmp/${nome}.csr" -nodes -subj "/C=BR/O=PMO eXo/CN=${cn}" 2>/dev/null
+  openssl x509 -req -in "/tmp/${nome}.csr" -CA ca-int.pem -CAkey ca-int-key.pem \
+    -CAcreateserial -out "/tmp/${nome}-cert.pem" -days "$DIAS" \
+    -extfile <(printf 'subjectAltName=%s\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n' "$san") 2>/dev/null
+  cat "/tmp/${nome}-cert.pem" ca-int.pem ca-root.pem > "${destino}/${nome}-fullchain.pem"
+  rm -f "/tmp/${nome}.csr" "/tmp/${nome}-cert.pem"
+  chmod 644 "${destino}/${nome}-fullchain.pem"; chmod 640 "${destino}/${nome}-key.pem"
+}
+
+echo "[certs] 5/6 — certificado do portal (CN=${VHOST})"
+emite portal "${ROOT}/conf/portal-certs" "$VHOST" "IP:${VHOST},DNS:${VHOST},DNS:localhost,IP:127.0.0.1"
+
+echo "[certs] 6/6 — certificado do Jitsi (CN=${VHOST})"
+emite jitsi "${ROOT}/conf/jitsi-certs" "$VHOST" "IP:${VHOST},DNS:${VHOST},DNS:localhost,IP:127.0.0.1"
+
+# Portao: o nginx exige os quatro arquivos; falhar aqui e' melhor do que
+# descobrir no boot com o proxy fora do ar.
+for f in "${ROOT}/conf/portal-certs/portal-fullchain.pem" \
+         "${ROOT}/conf/portal-certs/portal-key.pem" \
+         "${ROOT}/conf/jitsi-certs/jitsi-fullchain.pem" \
+         "${ROOT}/conf/jitsi-certs/jitsi-key.pem"; do
+  [ -s "$f" ] || { echo "[certs] ERRO: $f nao foi gerado" >&2; exit 1; }
+done
 
 # A chave da raiz não fica no servidor: com ela seria possível emitir
 # certificados novos confiáveis para esta cadeia.
