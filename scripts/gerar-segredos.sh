@@ -54,6 +54,10 @@ sed \
   -e "s|__MATRIX_FORM_SECRET__|$(gen)|" \
   -e "s|__MATRIX_JWT_SECRET__|$(gen)|" \
   -e "s|__MATRIX_EXO_PASSWORD__|$(openssl rand -base64 18 | tr -d '/+=')|" \
+  -e "s|__JICOFO_COMPONENT_SECRET__|$(gen)|" \
+  -e "s|__JICOFO_AUTH_PASSWORD__|$(openssl rand -hex 24)|" \
+  -e "s|__JVB_AUTH_PASSWORD__|$(openssl rand -hex 24)|" \
+  -e "s|__EXO_ADMIN_PASS__|$(openssl rand -base64 18 | tr -d '/+=')|" \
   -e "s|__JITSI_JWT_APP_SECRET__|${JITSI_JWT_APP_SECRET_V}|" \
   -e "s|__JITSI_EXO_JWT_SECRET__|${JITSI_EXO_JWT_SECRET_V}|" \
   -e "s|__JITSI_INTERNAL_SECRET__|${JITSI_INTERNAL_SECRET_V}|" \
@@ -74,9 +78,9 @@ if [ ! -f conf/exo.properties ]; then
 fi
 
 # Portao: nenhum placeholder pode sobreviver nos dois arquivos gerados.
-if grep -qE '__[A-Z0-9_]+__' .env conf/exo.properties; then
+if grep -vE '^\s*#' .env conf/exo.properties | grep -qE '__[A-Z0-9_]+__'; then
   echo "ERRO: placeholder nao substituido:" >&2
-  grep -nE '__[A-Z0-9_]+__' .env conf/exo.properties >&2
+  grep -nE '__[A-Z0-9_]+__' .env conf/exo.properties | grep -vE ':[0-9]+:\s*#' >&2
   exit 1
 fi
 
