@@ -102,3 +102,13 @@ webconferencing.jitsi.active=true
 webconferencing.jitsi.url=http://jitsi-call
 webconferencing.jitsi.internal.secret=__JITSI_INTERNAL_SECRET__
 webconferencing.jitsi.external.secret=__JITSI_EXO_JWT_SECRET__
+
+# ---------------------------------------------------------------------------
+# AGENDA: provedor de videoconferencia padrao
+# Sem isto, o formulario de evento so' oferece "Insira um link para a chamada
+# do evento" (colar URL a mao). Com o provedor definido, ao escolher a agenda
+# do espaco aparece o botao "Criar conferencia", que gera a sala e o convite:
+#   TYPE=jitsi  URL=https://<host>/jitsi/meet/g_<space>-<uuid>?inviteId=<token>
+# Valor = o 'type' do provider no WebConferencingService (getProvidersConfig).
+# ---------------------------------------------------------------------------
+exo.agenda.webConferencing.default=jitsi
