@@ -32,6 +32,14 @@ gen(){ openssl rand -hex 32; }
 # caracteres, portanto 64 bytes, portanto HS512. O homeserver.yaml precisa
 # declarar o MESMO algoritmo, ou o Synapse responde
 # "403 JWT validation failed: unsupported_algorithm".
+# Segredos do addon oficial eXo Jitsi: precisam ser IDENTICOS no .env e no
+# conf/exo.properties. Por isso sao gerados aqui, em variaveis, e nao inline
+# no sed -- inline cada ocorrencia geraria um valor diferente e o portal
+# levaria 401 do microservico jitsi-call.
+JITSI_JWT_APP_SECRET_V="$(gen)"
+JITSI_EXO_JWT_SECRET_V="$(gen)"
+JITSI_INTERNAL_SECRET_V="$(gen)"
+
 sed \
   -e "s|__EXO_PROXY_VHOST__|${VHOST}|g" \
   -e "s|__MATRIX_SERVER_NAME__|${VHOST}|g" \
@@ -46,10 +54,42 @@ sed \
   -e "s|__MATRIX_FORM_SECRET__|$(gen)|" \
   -e "s|__MATRIX_JWT_SECRET__|$(gen)|" \
   -e "s|__MATRIX_EXO_PASSWORD__|$(openssl rand -base64 18 | tr -d '/+=')|" \
+  -e "s|__JITSI_JWT_APP_SECRET__|${JITSI_JWT_APP_SECRET_V}|" \
+  -e "s|__JITSI_EXO_JWT_SECRET__|${JITSI_EXO_JWT_SECRET_V}|" \
+  -e "s|__JITSI_INTERNAL_SECRET__|${JITSI_INTERNAL_SECRET_V}|" \
+  -e "s|__JITSI_PUBLIC_URL__|https://${VHOST}:8443|g" \
+  -e "s|__JITSI_JVB_ADVERTISE_IP__|${VHOST}|g" \
   .env.example > .env
 chmod 600 .env
 
-cp -n conf/exo.properties.example conf/exo.properties
+# exo.properties recebe os MESMOS segredos do Jitsi que foram para o .env.
+# (antes era um cp cru, que deixava os placeholders __...__ literais no
+# arquivo e derrubava a ligacao com 401)
+if [ ! -f conf/exo.properties ]; then
+  sed \
+    -e "s|__JITSI_INTERNAL_SECRET__|${JITSI_INTERNAL_SECRET_V}|" \
+    -e "s|__JITSI_EXO_JWT_SECRET__|${JITSI_EXO_JWT_SECRET_V}|" \
+    conf/exo.properties.example > conf/exo.properties
+  chmod 600 conf/exo.properties
+fi
+
+# Portao: nenhum placeholder pode sobreviver nos dois arquivos gerados.
+if grep -qE '__[A-Z0-9_]+__' .env conf/exo.properties; then
+  echo "ERRO: placeholder nao substituido:" >&2
+  grep -nE '__[A-Z0-9_]+__' .env conf/exo.properties >&2
+  exit 1
+fi
+
+# Portao: os pares que precisam bater entre .env e exo.properties.
+for par in "JITSI_EXO_JWT_SECRET:webconferencing.jitsi.external.secret" \
+           "JITSI_INTERNAL_SECRET:webconferencing.jitsi.internal.secret"; do
+  v_env="$(grep "^${par%%:*}=" .env | cut -d= -f2-)"
+  v_pro="$(grep "^${par##*:}=" conf/exo.properties | cut -d= -f2-)"
+  if [ "$v_env" != "$v_pro" ] || [ -z "$v_env" ]; then
+    echo "ERRO: ${par%%:*} != ${par##*:}" >&2
+    exit 1
+  fi
+done
 echo "Gerados:"
 echo "  .env                  (chmod 600, segredos aleatórios)"
 echo "  conf/exo.properties   (cópia do exemplo; o bloco Matrix é escrito"

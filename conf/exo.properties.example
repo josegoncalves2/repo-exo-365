@@ -81,3 +81,24 @@ exo.audit.enabled=true
 # silenciosamente. Quem serve a chamada e' o Jitsi auto-hospedado desta
 # stack (servicos jitsi-* do docker-compose.yml), em https://<host>:8443.
 webconferencing.externalVisio.active=true
+
+# ---------------------------------------------------------------------------
+# ADDON OFICIAL eXo Jitsi 7.2.1 (org.exoplatform.addons.jitsi:exo-jitsi)
+#
+# Sem este bloco NAO existe ligacao (toque + atender/recusar): o External
+# Visio acima apenas abre a URL de uma sala. O addon implementa o provider da
+# SPI WebConferencingService e depende do microservico jitsi-call, que assina
+# o JWT da sala ja' com o nome do usuario -- e' o que dispensa "digite seu
+# nome" e o lobby.
+#
+# ATENCAO aos pares que TEM de bater, ou o portal leva 401 do microservico:
+#   webconferencing.jitsi.external.secret  ==  JITSI_EXO_JWT_SECRET (.env)
+#   webconferencing.jitsi.internal.secret  ==  JITSI_INTERNAL_SECRET (.env)
+# scripts/gerar-segredos.sh preenche os dois arquivos com o MESMO valor.
+#
+# Os defaults do addon sao publicos (estao no fonte no GitHub) -- nunca use.
+# ---------------------------------------------------------------------------
+webconferencing.jitsi.active=true
+webconferencing.jitsi.url=http://jitsi-call
+webconferencing.jitsi.internal.secret=__JITSI_INTERNAL_SECRET__
+webconferencing.jitsi.external.secret=__JITSI_EXO_JWT_SECRET__
