@@ -673,6 +673,11 @@ services:
       JWT_ACCEPTED_ISSUERS: ${JITSI_JWT_APP_ID}
       JWT_ACCEPTED_AUDIENCES: ${JITSI_JWT_APP_ID}
       ENABLE_GUESTS: 0
+      # Tela "Participar da reuniao" (prejoin): numa LIGACAO ela nao faz
+      # sentido -- quem atende tem de cair direto na conversa, como no
+      # celular. O JWT ja traz nome e autorizacao: nada a preencher.
+      ENABLE_PREJOIN_PAGE: 0
+      ENABLE_WELCOME_PAGE: 0
       TZ: ${TZ}
     volumes:
       - ./data/jitsi/web:/config
