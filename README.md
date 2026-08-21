@@ -4,13 +4,6 @@ Substituição open source da suíte Microsoft 365, provisionada em
 `192.168.1.59` (`pmoexo`), diretório `/opt/projetos/exo`.
 **O servidor é dedicado exclusivamente a esta suíte.**
 
-| Documento | Conteúdo |
-|---|---|
-| [`AUDIT.md`](AUDIT.md) | **Trilha de auditoria completa** — cada passo, decisão, defeito e teste |
-| [`MAPEAMENTO-OFFICE365.md`](MAPEAMENTO-OFFICE365.md) | O que cada recurso do Microsoft 365 corresponde no eXo, e as lacunas |
-| [`DOCUMENTACAO-ADMIN-WEB.md`](DOCUMENTACAO-ADMIN-WEB.md) | Matriz da configuração oficial, cobertura Web atual e roadmap para eliminar dependência de CLI |
-| `evidence/` | Saída bruta de toda execução e capturas de tela dos testes |
-
 ---
 
 ## Instalação do zero (a partir deste repositório)
