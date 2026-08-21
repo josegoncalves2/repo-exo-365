@@ -513,3 +513,35 @@ RUN set -eux; \
     echo "OK: SpacesAdministrationPortlet_pt_BR.properties traduzido (lastActivity, loadingLastActivity)"
 
 USER exo
+
+# ---------------------------------------------------------------------------
+# 12) NOVO (2026-08-21): ADDON OFICIAL eXo Jitsi 7.2.1
+#     org.exoplatform.addons.jitsi:exo-jitsi:7.2.1
+#
+#     Por que ele e' obrigatorio: o conector External Visio que a imagem
+#     community traz NAO e' um sistema de chamadas -- startCall() e' um unico
+#     window.open(url) e o jar do external-visio tem ZERO classes de
+#     notificacao (medido). Resultado pratico: quem clicava entrava sozinho
+#     numa sala, tinha de digitar o nome e passar por lobby, e o outro lado
+#     nunca era avisado. Isso nao e' ligacao.
+#     Este addon implementa o provider da SPI WebConferencingService, com
+#     callId simetrico (p_<userA>-<userB>) e aviso de chamada por push CometD
+#     (webConferencing.onUserUpdate -> callState == "started").
+#     Depende do microservico jitsi-call (servico do docker-compose.yml), que
+#     assina o JWT da sala JA COM O NOME do usuario -- e' o que elimina o
+#     "digite seu nome" e o lobby.
+#     Baixado de repository.exoplatform.org; sha256 conferido no build.
+# ---------------------------------------------------------------------------
+COPY conf/addons/exo-jitsi-7.2.1.zip /tmp/exo-jitsi.zip
+
+RUN set -eux; \
+    echo "e21bb179e72e242f169ad968a0cdb816b484e7e13c784046cffce4ed25812566  /tmp/exo-jitsi.zip" | sha256sum -c -; \
+    cd /tmp && unzip -o exo-jitsi.zip -d /tmp/jitsiaddon; \
+    cp /tmp/jitsiaddon/webapps/jitsi.war /opt/exo/webapps/jitsi.war; \
+    cp /tmp/jitsiaddon/lib/web-conferencing-jitsi-services.jar /opt/exo/lib/web-conferencing-jitsi-services.jar; \
+    chown exo:exo /opt/exo/webapps/jitsi.war /opt/exo/lib/web-conferencing-jitsi-services.jar; \
+    rm -rf /tmp/jitsiaddon /tmp/exo-jitsi.zip; \
+    test -s /opt/exo/webapps/jitsi.war; \
+    test -s /opt/exo/lib/web-conferencing-jitsi-services.jar; \
+    unzip -p /opt/exo/webapps/jitsi.war js/webconferencing-jitsi.js | grep -q 'CALL_URL_PATH'; \
+    echo "OK: addon oficial exo-jitsi 7.2.1 instalado (jitsi.war + services.jar)"

@@ -518,11 +518,20 @@ services:
       JICOFO_AUTH_PASSWORD: ${JICOFO_AUTH_PASSWORD}
       JVB_AUTH_USER: jvb
       JVB_AUTH_PASSWORD: ${JVB_AUTH_PASSWORD}
-      # Sala aberta a quem tem o link: não há autenticação XMPP de usuário.
-      # O controle de acesso efetivo é o do eXo — o link da sala só é
-      # oferecido a quem já está autenticado no portal.
-      ENABLE_AUTH: 0
-      ENABLE_GUESTS: 1
+      # 2026-08-21 -- AUTENTICACAO JWT (addon oficial eXo Jitsi).
+      # Antes: ENABLE_AUTH=0 / ENABLE_GUESTS=1, sala aberta a quem tem o link.
+      # Isso e' exatamente o que fazia a experiencia NAO ser uma ligacao: ao
+      # abrir o link o Jitsi pedia o nome e jogava em lobby/"participar".
+      # Com JWT o token ja' carrega a identidade do usuario do portal e a
+      # autorizacao da sala -- entra direto, sem digitar nome e sem lobby.
+      # O token e' assinado pelo microservico jitsi-call com JWT_APP_SECRET.
+      ENABLE_AUTH: 1
+      AUTH_TYPE: jwt
+      JWT_APP_ID: ${JITSI_JWT_APP_ID}
+      JWT_APP_SECRET: ${JITSI_JWT_APP_SECRET}
+      JWT_ACCEPTED_ISSUERS: ${JITSI_JWT_APP_ID}
+      JWT_ACCEPTED_AUDIENCES: ${JITSI_JWT_APP_ID}
+      ENABLE_GUESTS: 0
       TZ: ${TZ}
     volumes:
       - ./data/jitsi/prosody:/config
@@ -560,7 +569,14 @@ services:
       # O padrão da imagem pede 3 GB de heap, que NÃO cabe nesta VM.
       # Ver o orçamento de memória comentado no .env.
       JICOFO_MAX_MEMORY: ${JICOFO_MAX_MEMORY}
-      ENABLE_AUTH: 0
+      # 2026-08-21 -- JWT do addon oficial eXo Jitsi (ver jitsi-prosody).
+      ENABLE_AUTH: 1
+      AUTH_TYPE: jwt
+      JWT_APP_ID: ${JITSI_JWT_APP_ID}
+      JWT_APP_SECRET: ${JITSI_JWT_APP_SECRET}
+      JWT_ACCEPTED_ISSUERS: ${JITSI_JWT_APP_ID}
+      JWT_ACCEPTED_AUDIENCES: ${JITSI_JWT_APP_ID}
+      ENABLE_GUESTS: 0
       TZ: ${TZ}
     volumes:
       - ./data/jitsi/jicofo:/config
@@ -649,8 +665,14 @@ services:
       XMPP_MUC_DOMAIN: muc.${JITSI_XMPP_DOMAIN}
       XMPP_INTERNAL_MUC_DOMAIN: internal-muc.${JITSI_XMPP_DOMAIN}
       XMPP_BOSH_URL_BASE: http://xmpp.meet.jitsi:5280
-      ENABLE_AUTH: 0
-      ENABLE_GUESTS: 1
+      # 2026-08-21 -- JWT do addon oficial eXo Jitsi (ver jitsi-prosody).
+      ENABLE_AUTH: 1
+      AUTH_TYPE: jwt
+      JWT_APP_ID: ${JITSI_JWT_APP_ID}
+      JWT_APP_SECRET: ${JITSI_JWT_APP_SECRET}
+      JWT_ACCEPTED_ISSUERS: ${JITSI_JWT_APP_ID}
+      JWT_ACCEPTED_AUDIENCES: ${JITSI_JWT_APP_ID}
+      ENABLE_GUESTS: 0
       TZ: ${TZ}
     volumes:
       - ./data/jitsi/web:/config
@@ -673,6 +695,46 @@ services:
       timeout: 10s
       retries: 15
       start_period: 30s
+    logging: *default-logging
+
+
+  # ---------------------------------------------------------------------------
+  # jitsi-call -- microservico OFICIAL do addon eXo Jitsi (exoplatform/jitsi).
+  #
+  # Porque ele existe: o conector External Visio que a imagem community traz
+  # apenas faz window.open(url). Nao ha chamada, nao ha toque, nao ha aviso do
+  # outro lado -- medido: startCall() e' so' um window.open e o jar do
+  # external-visio tem ZERO classes de notificacao. O addon oficial
+  # (org.exoplatform.addons.jitsi:exo-jitsi:7.2.1) implementa chamada de
+  # verdade, mas depende DESTE microservico, que assina os JWT das salas e
+  # atende o callback de gravacao.
+  #
+  # Cadeia: navegador -> nginx -> jitsi-call (assina JWT) -> Jitsi Meet.
+  # O eXo fala com ele via webconferencing.jitsi.url em exo.properties.
+  # ---------------------------------------------------------------------------
+  jitsi-call:
+    image: ${JITSI_CALL_IMAGE}
+    container_name: exo-jitsi-call
+    environment:
+      # URL do Jitsi Meet como o NAVEGADOR a alcanca (nao o nome interno):
+      # e' ela que entra no token e no link da sala.
+      PUBLIC_URL: ${JITSI_PUBLIC_URL}
+      # Casa com webconferencing.jitsi.external.secret no exo.properties.
+      # Se divergir, o portal fala com o microservico e leva 401.
+      EXO_JWT_SECRET: ${JITSI_EXO_JWT_SECRET}
+      # Casa com JWT_APP_SECRET/JWT_APP_ID do prosody. Se divergir, o token
+      # da sala e' recusado pelo Jitsi e o usuario nunca entra.
+      JWT_APP_SECRET: ${JITSI_JWT_APP_SECRET}
+      JWT_APP_ID: ${JITSI_JWT_APP_ID}
+      SIGNATURE_ALGORITHM: HS256
+      EXO_FILE_UPLOAD_URL: ${EXO_PROXY_SCHEMA}://${EXO_PROXY_VHOST}/portal/rest/jitsi/upload
+    mem_limit: ${MEM_LIMIT_JITSI_CALL}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null -w '%{http_code}' http://localhost/ | grep -qE '^(200|301|302|401|403|404)$$' || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
     logging: *default-logging
 
 networks:

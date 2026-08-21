@@ -147,55 +147,6 @@
           }).catch(() => []);
         });
       }
-      // -----------------------------------------------------------------
-      // SINALIZACAO DE CHAMADA (2026-08-21)
-      // O External Visio nativo faz APENAS window.open(url): quem clica entra
-      // sozinho na sala e o outro lado NUNCA fica sabendo -- nao chama, nao
-      // alerta, nao toca. Pior: a URL vem do perfil do DESTINATARIO, entao A
-      // abre 'pmeto-B' e B abre 'pmeto-A' -- salas DIFERENTES; mesmo os dois
-      // clicando, nunca se encontram.
-      // Aqui: (a) a sala passa a ser derivada do roomId da conversa Matrix,
-      // que e' o mesmo para os dois lados -- sala SIMETRICA; e (b) antes de
-      // abrir, e' postada uma mensagem no proprio chat com o link, que dispara
-      // a notificacao nativa do eXo no destinatario. O link recebido leva a
-      // MESMA sala de quem ligou.
-      // Degrada com seguranca: qualquer falha cai na URL original.
-      // -----------------------------------------------------------------
-      var visioCallRoomUrl = function(roomId) {
-        return visioFallbackBase() + '/exo-' + String(roomId).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      };
-
-      var visioSignalCall = function(dmMemberId) {
-        try {
-          var ms = (window.Vue && Vue.prototype) ? Vue.prototype.$matrixService : null;
-          if (!ms || !ms.retrieveCachedRooms || !dmMemberId) {
-            return Promise.resolve(null);
-          }
-          return Promise.resolve(ms.retrieveCachedRooms()).then(function(raw) {
-            var rooms = (typeof raw === 'string') ? JSON.parse(raw) : raw;
-            var room = (rooms || []).filter(function(r) { return r && r.dmMemberId === dmMemberId; })[0];
-            if (!room || !room.id) {
-              return null;
-            }
-            var url = visioCallRoomUrl(room.id);
-            var tok = window.localStorage.getItem('matrix_access_token');
-            if (!tok) {
-              return url;
-            }
-            var txn = 'visio' + Date.now();
-            var texto = 'Chamada de video iniciada. Entre em: ' + url;
-            return fetch('/_matrix/client/v3/rooms/' + encodeURIComponent(room.id)
-                         + '/send/m.room.message/' + txn, {
-              method: 'PUT',
-              headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ msgtype: 'm.text', body: texto })
-            }).then(function() { return url; }).catch(function() { return url; });
-          }).catch(function() { return null; });
-        } catch (e) {
-          return Promise.resolve(null);
-        }
-      };
-
       var startCall = function(url) {
         if (!url.match(/^(https?:\/\/|\/portal\/)/)) {
           url = `//${url}`;
@@ -224,11 +175,7 @@
                     callSettings.urlConnector = p.url;
                     callSettings.order = p.order;
                     callSettings.onCallOpen = () => {
-                      // sinaliza no chat e usa a sala simetrica; se falhar, mantem a URL original
-                      const dmId = context.isSpace ? null : identityId;
-                      Promise.resolve(visioSignalCall(dmId)).then((salaSimetrica) => {
-                        startCall(salaSimetrica || callSettings.urlConnector);
-                      }).catch(() => startCall(callSettings.urlConnector));
+                      startCall(callSettings.urlConnector);
                     };
                     callButton.init(callSettings).then(comp => {
                       // Ajouter le composant Vue à la liste
