@@ -86,6 +86,13 @@ services:
       # a mesma do MySQL), válido até 2036, com SAN IP:192.168.1.59.
       - ./conf/jitsi-certs:/etc/nginx/jitsi-certs:ro
       - ./conf/portal-certs:/etc/nginx/portal-certs:ro
+      # Close page redirect: quando a reuniao termina no Jitsi, o navegador
+      # vai para /close.html (ou close2.html ou close3.html conforme versao).
+      # O nginx serve estes arquivos como statics (nao faz proxy para o Jitsi),
+      # que redireciona automaticamente para o portal apos 2.5s.
+      - ./conf/jitsi/close-redirect.html:/jitsi-mounts/close.html:ro
+      - ./conf/jitsi/close-redirect.html:/jitsi-mounts/close2.html:ro
+      - ./conf/jitsi/close-redirect.html:/jitsi-mounts/close3.html:ro
     networks:
       default:
         aliases:
@@ -647,6 +654,13 @@ services:
       TZ: ${TZ}
     volumes:
       - ./data/jitsi/web:/config
+      # Fim de reuniao: a imagem oficial manda o usuario para a pagina de
+      # despedida do proprio Jitsi (marca Jitsi, nada a ver com a
+      # plataforma). Os tres arquivos de "close page" sao substituidos por
+      # uma pagina da prefeitura que devolve o usuario ao portal.
+      - ./conf/jitsi/close-redirect.html:/usr/share/jitsi-meet/static/close.html:ro
+      - ./conf/jitsi/close-redirect.html:/usr/share/jitsi-meet/static/close2.html:ro
+      - ./conf/jitsi/close-redirect.html:/usr/share/jitsi-meet/static/close3.html:ro
     depends_on:
       jitsi-prosody:
         condition: service_healthy

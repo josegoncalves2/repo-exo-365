@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Reunião encerrada</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html,body{height:100%;margin:0}
+  body{display:flex;align-items:center;justify-content:center;
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+       background:#1E3062;color:#fff;text-align:center}
+  .box{max-width:420px;padding:32px}
+  h1{font-size:1.35rem;font-weight:600;margin:0 0 12px}
+  p{opacity:.85;margin:0 0 24px;font-size:.95rem}
+  a{display:inline-block;background:#EDE733;color:#1E3062;text-decoration:none;
+    font-weight:600;padding:10px 22px;border-radius:20px}
+</style>
+<script>
+  // Volta para o portal. O host e o esquema do portal sao os mesmos da
+  // origem que abriu a sala, sem a porta do Jitsi.
+  var portal = location.protocol + '//' + location.hostname + '/portal/';
+  setTimeout(function () { location.replace(portal); }, 2500);
+</script>
+</head>
+<body>
+  <div class="box">
+    <h1>Reunião encerrada</h1>
+    <p>Voltando para a plataforma…</p>
+    <a id="back" href="/portal/">Voltar agora</a>
+  </div>
+  <script>
+    document.getElementById('back').href =
+      location.protocol + '//' + location.hostname + '/portal/';
+  </script>
+</body>
+</html>

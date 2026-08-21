@@ -318,6 +318,73 @@ RUN set -eux; \
     echo "OK: layoutEditor.bundle.js patched -- merge de nome instancia<->definicao aplicado"
 
 # ---------------------------------------------------------------------------
+# 6f) NOVO (2026-08-20): MESMO defeito da 6e, em OUTRA tela e OUTRO bundle.
+#    A 6e corrigiu o editor de layout (js/layoutEditor.bundle.js). A tela de
+#    Administracao > Desenvolvimento > Portlets, aba "Instancias", usa
+#    js/portlets.bundle.js -- que continuava mostrando "No data available"
+#    com ZERO linhas, mesmo com 88 instancias devolvidas pela API.
+#    Causa raiz apurada ate' o banco (AUDIT [115]): PORTAL_APPLICATIONS e
+#    PORTAL_APP_CATEGORIES NAO TEM coluna NAME; o nome viria do
+#    DescriptionService, e PORTAL_DESCRIPTIONS tem 115 linhas com NAME NULO
+#    -- o importador do eXo cria as linhas mas nunca grava os nomes que
+#    estao definidos em portlet-instances.json / portlet-instance-categories.json
+#    (layout-service.jar, analytics-services.jar, gamification-services.jar).
+#    Por isso GET /layout/rest/portlet/instances devolve "name":null sempre,
+#    e o cliente filtra por `.filter(t => t.name)` -- derrubando a lista toda.
+#    Patch (2 substituicoes, ancoras unicas no arquivo):
+#      1. refreshPortletInstances: deriva name/description do contentId usando
+#         a chave i18n oficial layout.portletInstance.<PortletName>.name|.description,
+#         resolvida por $te/$t; sem traducao, cai no proprio nome do portlet.
+#      2. refreshPortletInstanceCategories: mapeia o icone -> nameId das 11
+#         categorias reais e resolve layout.portletInstance.category.<id>.name.
+#    Nenhuma chamada de rede nova, nenhum campo de API mudou.
+#    Comprovado por clique real: de 0 para 68 linhas com nome em pt-BR.
+# ---------------------------------------------------------------------------
+COPY conf/js/portlets.bundle.js /tmp/portlets.bundle.js
+
+RUN set -eux; \
+    ! unzip -p /opt/exo/webapps/layout.war js/portlets.bundle.js \
+      | grep -q 'layout.portletInstance.category.'; \
+    cd /tmp && mkdir -p pb/js && cp /tmp/portlets.bundle.js pb/js/portlets.bundle.js && cd pb; \
+    jar uf /opt/exo/webapps/layout.war js/portlets.bundle.js; \
+    chown exo:exo /opt/exo/webapps/layout.war; \
+    cd /; rm -rf /tmp/pb /tmp/portlets.bundle.js; \
+    unzip -p /opt/exo/webapps/layout.war js/portlets.bundle.js \
+      | grep -q 'layout.portletInstance.category.'; \
+    echo "OK: portlets.bundle.js patched -- instancias e categorias com nome derivado do contentId/icone"
+
+# ---------------------------------------------------------------------------
+# 6g) NOVO (2026-08-20): botao de videoconferencia no chat so' aparecia para
+#    quem tinha digitado A MAO um link no perfil. Ver AUDIT [116].
+#    O provedor External Visio (unico conector de videoconferencia do eXo
+#    Community) resolve o link por identidade em
+#    GET /portal/rest/v1/externalVisio/<remoteId>. Se ninguem preencheu o
+#    campo "Jitsi / URL" no perfil, a resposta e' [] e o componente
+#    VisioConnectorMeetButton NUNCA e' montado -- nao ha' botao de chamada,
+#    que foi exatamente o defeito reportado (item 5). Confirmado por clique
+#    real: usuario novo (sem link) = sem botao; usuario com link = botao.
+#    Patch em js/webconferencing-externalvisio.js (arquivo fonte legivel, nao
+#    minificado): quando a resposta vem VAZIA, gera uma sala determinista no
+#    Jitsi auto-hospedado desta stack, uma por identidade
+#    (https://<host>:8443/sala-<remoteId>), respeitando activeForUsers /
+#    activeForSpaces do conector. Link manual continua tendo precedencia:
+#    o fallback so' entra quando nao existe link gravado.
+#    Base sobrescrivel em runtime por window.EXO_VISIO_FALLBACK_BASE.
+# ---------------------------------------------------------------------------
+COPY conf/js/webconferencing-externalvisio.js /tmp/webconferencing-externalvisio.js
+
+RUN set -eux; \
+    ! unzip -p /opt/exo/webapps/external-visio.war js/webconferencing-externalvisio.js \
+      | grep -q 'visioFallbackBase'; \
+    cd /tmp && mkdir -p wv/js && cp /tmp/webconferencing-externalvisio.js wv/js/webconferencing-externalvisio.js && cd wv; \
+    jar uf /opt/exo/webapps/external-visio.war js/webconferencing-externalvisio.js; \
+    chown exo:exo /opt/exo/webapps/external-visio.war; \
+    cd /; rm -rf /tmp/wv /tmp/webconferencing-externalvisio.js; \
+    unzip -p /opt/exo/webapps/external-visio.war js/webconferencing-externalvisio.js \
+      | grep -q 'visioFallbackBase'; \
+    echo "OK: webconferencing-externalvisio.js patched -- sala determinista quando nao ha link manual"
+
+# ---------------------------------------------------------------------------
 # 8) NOVO (2026-08-19): bug real no Java compilado da propria eXo/Meeds --
 #    BrandingServiceImpl.updateBrandingInformation() nunca chama
 #    LocaleConfigService.saveDefaultLocaleConfig(), entao o botao "Idioma
