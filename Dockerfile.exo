@@ -512,8 +512,6 @@ RUN set -eux; \
       | grep -q 'Last Activity'; \
     echo "OK: SpacesAdministrationPortlet_pt_BR.properties traduzido (lastActivity, loadingLastActivity)"
 
-USER exo
-
 # ---------------------------------------------------------------------------
 # 12) NOVO (2026-08-21): ADDON OFICIAL eXo Jitsi 7.2.1
 #     org.exoplatform.addons.jitsi:exo-jitsi:7.2.1
@@ -545,3 +543,5 @@ RUN set -eux; \
     test -s /opt/exo/lib/web-conferencing-jitsi-services.jar; \
     unzip -p /opt/exo/webapps/jitsi.war js/webconferencing-jitsi.js | grep -q 'CALL_URL_PATH'; \
     echo "OK: addon oficial exo-jitsi 7.2.1 instalado (jitsi.war + services.jar)"
+
+USER exo
