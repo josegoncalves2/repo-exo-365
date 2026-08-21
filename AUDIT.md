@@ -3112,3 +3112,12 @@ dashboard-depois.png).
 **Prova:** navegador real, login do usuario-novo, #btnChatButtonNew -> conversa com Jose -> #btnVisioConnectorButton presente e clicavel -> abre https://192.168.1.59:8443/pmeto-jose.goncalves
 **Status:** OK — todo usuario final agora tem videoconferencia, nao apenas os que preencheram o campo manualmente
 
+
+### [120] 2026-08-21 09:45 -03 — PERSISTENCIA VALIDADA: videoconferencia sobrevive restart
+**Problema:** Container estava rodando com imagem VELHA (exo-pmo:7.2.1-fix-idiomas-v10), nao com a rebuild que tinha os patches compilados. Apos restart, os patches desapareciam.
+**Solucao:** 
+  (a) Atualizei .env: EXO_IMAGE=exo-pmo:7.2.1-rebuild
+  (b) Docker compose down + up: deletou container antigo, criou novo com imagem rebuild
+  (c) Verificacao dentro do container: unzip dos .war files confirma patches presentes (visioFallbackBase x2, layout.portletInstance.category. x1)
+**Teste:** Dois participantes reais em Jitsi, P1=2→3 vídeos, P2=3 vídeos. Funcional.
+**Status:** PERPETUADO — imagem rebuild e arquivo de configuracao (.env) agora garantem que os patches estao sempre na stack, mesmo apos restart total.
