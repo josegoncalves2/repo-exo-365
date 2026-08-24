@@ -288,14 +288,48 @@ class Exo:
 # ---------------------------------------------------------------------------
 # consultas
 # ---------------------------------------------------------------------------
+def paginar(exo, base, chave, passo=100):
+    """Percorre TODAS as paginas de um endpoint da API v1, sem truncar.
+
+    Um limit fixo (era 500/200) mente por omissao: acima do teto o item some
+    e o chamador conclui que nao existe -- e entao CRIA um duplicado. Aqui a
+    parada e' guiada pelo campo 'size' (total real que a API informa), nao pelo
+    tamanho da pagina: medido, esta instalacao devolve paginas SUB-preenchidas
+    (offset=0&limit=2 traz 1 item de 52), entao "pagina menor que o passo" NAO
+    significa fim. offset e' indice absoluto, entao andamos de 'passo' em 'passo'
+    ate cobrir 'size'.
+    """
+    sep = "&" if "?" in base else "?"
+    itens, offset, total, giros = [], 0, None, 0
+    while True:
+        st, d = exo.get(f"{base}{sep}offset={offset}&limit={passo}")
+        if isinstance(d, list):
+            itens.extend(d)
+            break
+        if not isinstance(d, dict):
+            break
+        itens.extend(d.get(chave, []) or [])
+        if total is None:
+            total = d.get("size")
+        offset += passo
+        giros += 1
+        if total is not None and total >= 0:
+            if offset >= total:
+                break
+        elif not (d.get(chave) or []):
+            break
+        if giros > 100000:            # trava contra loop infinito
+            break
+    return itens
+
+
 def grupos_existentes(exo):
-    st, d = exo.get("/portal/rest/v1/groups?limit=500")
-    return {g.get("id") for g in (d.get("entities", []) if isinstance(d, dict) else [])}
+    return {g.get("id") for g in paginar(exo, "/portal/rest/v1/groups", "entities")}
 
 
 def espacos(exo):
-    st, d = exo.get("/portal/rest/v1/social/spaces?limit=500")
-    return {s.get("id"): s for s in (d.get("spaces", []) if isinstance(d, dict) else [])}
+    return {s.get("id"): s
+            for s in paginar(exo, "/portal/rest/v1/social/spaces", "spaces")}
 
 
 def _itens_binding(d):
@@ -340,11 +374,8 @@ def membros_do_grupo(exo, grupo):
     responde de verdade e' /v1/groups/memberships?groupId=<g>.
     """
     q = urllib.parse.quote(grupo, safe="")
-    st, d = exo.get(f"/portal/rest/v1/groups/memberships?groupId={q}&limit=500")
-    if st != 200 or not isinstance(d, dict):
-        return set()
     fora = set()
-    for e in d.get("entities", []):
+    for e in paginar(exo, f"/portal/rest/v1/groups/memberships?groupId={q}", "entities"):
         if not isinstance(e, dict):
             continue
         u = e.get("userName") or e.get("username")
@@ -356,13 +387,11 @@ def membros_do_grupo(exo, grupo):
 
 
 def membros_do_espaco(exo, space_id):
-    st, d = exo.get(f"/portal/rest/v1/social/spaces/{space_id}/users?limit=500")
     fora = set()
-    if isinstance(d, dict):
-        for e in (d.get("users") or d.get("entities") or []):
-            n = e.get("username") or e.get("userName") or e.get("remoteId") or e.get("id")
-            if n:
-                fora.add(str(n).split("/")[-1])
+    for e in paginar(exo, f"/portal/rest/v1/social/spaces/{space_id}/users", "users"):
+        n = e.get("username") or e.get("userName") or e.get("remoteId") or e.get("id")
+        if n:
+            fora.add(str(n).split("/")[-1])
     return fora
 
 
@@ -472,8 +501,11 @@ class Provisionador:
         self.diario = []
 
     # -- pessoas ------------------------------------------------------------
-    def _triar(self, lista, papel):
+    def _triar(self, lista, papel, obrigatorio=False):
         """Descarta quem nao existe, avisa quem esta desabilitado.
+
+        Com obrigatorio=True (gestores), quem nao existe BARRA a execucao em
+        vez de ser descartado -- um espaco sem seu gestor humano e' defeito.
 
         Conta desabilitada entra no grupo e NAO entra no espaco, sem erro
         algum -- custou uma investigacao inteira descobrir. E usuario
@@ -484,15 +516,34 @@ class Provisionador:
             return []
         faltam, desabilitados = [], []
         for u in lista:
-            st, d = self.exo.get(
-                f"/portal/rest/v1/social/users/{urllib.parse.quote(u)}")
-            if st != 200 or not isinstance(d, dict):
+            # _raw (nao get) porque usuario inexistente devolve 401/404 e o
+            # get() LEVANTARIA -- abortando com "HTTP 401" cru antes de eu poder
+            # dar a mensagem util ("informe o login exato"). Aqui eu classifico.
+            st, t = self.exo._raw(
+                "GET", f"/portal/rest/v1/social/users/{urllib.parse.quote(u)}")
+            try:
+                d = json.loads(t) if t.strip() else {}
+            except json.JSONDecodeError:
+                d = {}
+            if st != 200 or not isinstance(d, dict) or not d.get("username"):
                 faltam.append(u)
             elif str(d.get("enabled")).lower() in ("false", "0"):
                 desabilitados.append(u)
         if faltam:
+            # GESTOR que nao resolve e' ERRO, nao aviso. Antes, um login errado
+            # ("Wilson Franca" em vez de "wilson.franca") era descartado em
+            # silencio e o espaco nascia SEM gestor humano (so' root) -- e nada
+            # era desfeito. Agora isso barra a execucao e dispara o rollback,
+            # que remove o que este run criou. Membro comum ausente segue como
+            # aviso (nao compromete a governanca do espaco), mas bem visivel.
+            faltam_txt = ", ".join(faltam[:8])
+            if obrigatorio:
+                raise FalhaEtapa(
+                    f"{papel}(es) inexistente(s): {faltam_txt}. Informe o LOGIN "
+                    f"exato (ex.: 'wilson.franca', nao 'Wilson Franca'). Nada foi "
+                    f"mantido -- o espaco nao pode ficar sem seu {papel}.")
             self.log(f"    AVISO: {len(faltam)} {papel}(es) NAO EXISTEM, ignorados: "
-                     f"{', '.join(faltam[:8])}")
+                     f"{faltam_txt}")
             lista = [u for u in lista if u not in faltam]
         if desabilitados:
             self.log(f"    AVISO: {len(desabilitados)} {papel}(es) com conta "
@@ -501,12 +552,9 @@ class Provisionador:
         return lista
 
     def _tem_membership(self, user, grupo, tipo):
-        st, d = self.exo.get(
-            f"/portal/rest/v1/users/{urllib.parse.quote(user)}/memberships?limit=200")
-        if st != 200 or not isinstance(d, dict):
-            return False
+        base = f"/portal/rest/v1/users/{urllib.parse.quote(user)}/memberships"
         return any(e.get("groupId") == grupo and e.get("membershipType") == tipo
-                   for e in d.get("entities", []))
+                   for e in paginar(self.exo, base, "entities"))
 
     def _add_memberships(self, grupo, users, tipo, rotulo):
         """Adiciona em lote, pulando quem ja' tem. Anota para rollback."""
@@ -565,16 +613,23 @@ class Provisionador:
         if self.dry:
             self.log(f" 5. perfil   [simulacao] descricao/avatar/banner de '{rotulo}'")
             return
+        # O PUT SUBSTITUI o objeto: todo campo ausente do corpo e' ZERADO no
+        # servidor. Por isso a descricao viva vai SEMPRE no corpo -- atualizar
+        # so' a imagem (descricao=None) nao pode mais apagar a descricao (era o
+        # defeito: 'descricao foi perdida durante a execucao'). O alvo desejado
+        # vence quando informado; senao preserva-se o que ja' esta la'.
+        desc_atual = esp.get("description") or ""
+        desc_alvo = descricao if descricao is not None else desc_atual
         corpo = {"id": str(space_id),
                  "displayName": esp.get("displayName") or rotulo,
                  "visibility": esp.get("visibility") or "private",
-                 "subscription": esp.get("subscription") or "closed"}
+                 "subscription": esp.get("subscription") or "closed",
+                 "description": desc_alvo}
         if esp.get("parentSpaceId"):
             corpo["parentSpaceId"] = str(esp.get("parentSpaceId"))
 
         mudou = []
-        if descricao is not None and (esp.get("description") or "") != descricao:
-            corpo["description"] = descricao
+        if desc_alvo != desc_atual:
             mudou.append("descricao")
         for campo, dados, chave in (("avatar", self._imagem(avatar), "avatarId"),
                                     ("banner", self._imagem(banner), "bannerId")):
@@ -597,9 +652,13 @@ class Provisionador:
             self.log(" 5. perfil   AVISO: nao consegui conferir a gravacao")
             return
         ok = []
-        if "description" in corpo:
-            ok.append("descricao" if (det.get("description") or "") == descricao
+        if "descricao" in mudou:
+            ok.append("descricao" if (det.get("description") or "") == desc_alvo
                       else "descricao NAO GRAVOU")
+        elif (det.get("description") or "") != desc_alvo:
+            # a descricao foi junto no corpo justamente para NAO se perder;
+            # se ainda assim divergir, e' sinal de problema -- nao esconder.
+            ok.append("descricao PRESERVADA NAO BATEU")
         if "avatarId" in corpo or "bannerId" in corpo:
             depois = (det.get("bannerUrl") or "") + (det.get("avatarUrl") or "")
             ok.append("imagens" if depois != antes else "imagens NAO GRAVARAM")
@@ -762,7 +821,7 @@ class Provisionador:
         self.checa_parada()
 
         # 6) pessoas --------------------------------------------------------
-        gestores = self._triar(gestores, "gestor")
+        gestores = self._triar(gestores, "gestor", obrigatorio=True)
         usuarios = self._triar(usuarios, "usuario")
         if gestores:
             self._add_memberships(caminho, gestores, "manager", " 6. gestores")
@@ -819,6 +878,37 @@ def contar_niveis(payload):
     return total
 
 
+def checar_colisao_slug(payload):
+    """Barra dois nomes distintos que colapsam no mesmo slug de grupo.
+
+    slug_grupo tira acentos, troca pontuacao por '-' e sobe pra maiuscula:
+    'Setor 1', 'Setor-1' e 'Setor.1' viram todos SETOR-1. Sem esta trava, o
+    segundo irmao reaproveitava silenciosamente o grupo/espaco do primeiro
+    (os passos 1 e 2 sao idempotentes por caminho) -- corrupcao invisivel, e
+    o oposto do que o pedido exige ('nomenclaturas proprias' para cada nivel).
+    Detectado ANTES de criar qualquer coisa: nenhuma escrita parcial.
+    """
+    vistos = {}                         # caminho -> nome de origem
+    def visita(no, pai):
+        nome = str(no.get("nome") or "").strip()
+        if not nome or no.get("_existente"):
+            return
+        caminho = (pai + "/" if pai else "/") + slug_grupo(nome)
+        anterior = vistos.get(caminho)
+        if anterior is not None and anterior != nome:
+            raise FalhaEtapa(
+                f"colisao de nome: '{anterior}' e '{nome}' geram o MESMO grupo "
+                f"'{caminho}'. De' nomes que nao colapsem (acento, espaco e "
+                f"pontuacao viram '-' e a caixa e' ignorada). Nada foi criado.")
+        vistos[caminho] = nome
+        for div in _filhos(no, "secretaria"):
+            visita(div, caminho)
+        for st_ in _filhos(no, "divisao"):
+            visita(st_, caminho)
+    for sec in payload.get("secretarias") or []:
+        visita(sec, "")
+
+
 def provisionar_arvore(prov, payload):
     """Percorre secretarias > divisoes > setores, de cima para baixo.
 
@@ -836,6 +926,7 @@ def provisionar_arvore(prov, payload):
             else "/" + slug_grupo(str(no.get("nome") or ""))
 
     try:
+        checar_colisao_slug(payload)     # antes de qualquer escrita
         for sec in payload.get("secretarias") or []:
             if sec.get("_existente"):
                 gs = caminho_de(sec, "")
@@ -871,8 +962,13 @@ def provisionar_arvore(prov, payload):
         # sobrevivia e o Setor, por ser o ultimo, nunca chegava a ser tocado.
         # Em vez de caçar qual listener do eXo re-salva o espaco, o perfil
         # passa a ser a ultima escrita e e' reconferido aqui.
-        if feitos:
-            prov.log("\n== consolidando perfis (ultima escrita) ==")
+        # Rede de seguranca, agora redundante: desde que o PUT de perfil passou
+        # a carregar SEMPRE a descricao viva (aplicar_perfil), o passo 5 nao
+        # apaga mais a descricao, entao nao ha o que "regravar". Fica como
+        # conferencia final -- e nunca em simulacao, onde os ids sao ficticios
+        # e o GET real devolveria 401/500 e dispararia um rollback FALSO.
+        if feitos and not prov.dry:
+            prov.log("\n== conferindo perfis (ultima escrita) ==")
             for f in feitos:
                 prov.checa_parada()
                 st, det = prov.exo.get(
@@ -882,8 +978,7 @@ def provisionar_arvore(prov, payload):
                 falta_desc = (f.get("descricao") is not None
                               and (det.get("description") or "") != f["descricao"])
                 if falta_desc:
-                    prov.log(f"   '{f['rotulo']}': descricao foi perdida durante a "
-                             f"execucao, regravando")
+                    prov.log(f"   '{f['rotulo']}': descricao divergente, regravando")
                     prov.aplicar_perfil(f["espaco"], det, f["rotulo"],
                                         f["descricao"], None, None)
                 else:
@@ -908,12 +1003,18 @@ def provisionar_arvore(prov, payload):
                 prov.checa_parada()
                 partes = f["grupo"].strip("/").split("/")
                 cadeia = ["/" + "/".join(partes[:i + 1]) for i in range(len(partes))]
+                # Em simulacao o grupo NAO foi criado de verdade; consultar seus
+                # membros faria GET num grupo inexistente -> 404 -> excecao ->
+                # rollback FALSO (o "erro assustador" que a simulacao mostrava
+                # para qualquer nivel novo). A simulacao para aqui, sem tocar a
+                # rede: nada foi criado, entao nada ha para propagar.
+                if prov.dry:
+                    prov.log(f"   '{f['rotulo']}': (simulacao) propagaria a cadeia "
+                             f"{' <- '.join(cadeia)} apos a criacao real")
+                    continue
                 querem = set()
                 for g in cadeia:
                     querem |= membros_do_grupo(prov.exo, g)
-                if prov.dry:
-                    prov.log(f"   '{f['rotulo']}': {len(querem)} da cadeia (simulacao)")
-                    continue
                 ja = membros_do_espaco(prov.exo, f["espaco"])
                 faltam = sorted(querem - ja)
                 if not faltam:
@@ -922,12 +1023,24 @@ def provisionar_arvore(prov, payload):
                     continue
                 entraram = []
                 for u in faltam:
-                    st_m, _ = prov.exo.escreve(
+                    st_m, resp_m = prov.exo.escreve(
                         "POST", "/portal/rest/v1/social/spacesMemberships",
                         {"space": str(f["espaco"]), "user": u, "role": "member"},
                         f"entrar {u} em {f['rotulo']}")
                     if st_m < 400:
                         entraram.append(u)
+                        # Journaliza para o rollback: esta pessoa pode ter sido
+                        # posta num espaco PRE-EXISTENTE; se um passo adiante
+                        # falhar, ela precisa sair junto. O id da associacao vem
+                        # na resposta; sem ele, desfaz por user:space.
+                        mid = (resp_m.get("id") if isinstance(resp_m, dict) else None) \
+                            or f"{u}:{f['espaco']}"
+                        midq = urllib.parse.quote(str(mid), safe="")
+                        prov.anota(
+                            f"membro {u} no espaco {f['rotulo']}",
+                            lambda midq=midq: prov.exo.escreve(
+                                "DELETE",
+                                f"/portal/rest/v1/social/spacesMemberships/{midq}"))
                 prov.log(f"   '{f['rotulo']}': {len(entraram)} entraram agora "
                          f"-> {', '.join(entraram[:8])}")
                 if len(entraram) < len(faltam):

@@ -3486,3 +3486,33 @@ A verificação mede pelo modelo Social (o que a UI consome), não pelo mesmo en
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (defeito 15 — `escreve` tolera sucesso sem corpo), restauração de `scripts/{exo_estrutura,estrutura-web,estrutura-organizacional}.py` via git, `.env` (credencial de admin, 600)
 **Status:** OK — ciclo apagar→recriar comprovado ponta a ponta pela CLI, 36/36 pela verificação independente, serviço web restaurado e íntegro.
+
+---
+
+### [133] 2026-08-24 13:40 -03 — CICLO 1 DOS 5 FISCAIS: 2 APROVA / 3 REJEITA -> revolução com 7 correções
+
+**Regra do modelo.md:** 5 fiscais críticos, loop até 5 votos APROVA simultâneos; papel deles é FISCALIZAR (read-only), quem executa é o Executor.
+
+**Votos do ciclo 1:**
+- Emocional/Estético: **APROVA** (elogiou o reframe de auth, cadeia descendente, propagação imediata, verificação que baixa bytes; pediu honestidade no texto "mede por caminho diferente").
+- Cético/Destruidor: **APROVA** (não achou fraude; verificador mede de verdade, segurança 401/403 confirmada por curl).
+- Leigo: **REJEITA** — (#1) campo "sigla" opaco + erro cru; (#2) gestor descartado em silêncio; (#3) **simulação dá ERRO FALSO** (404) para qualquer nível novo; (#4) sem mensagem humana de sucesso.
+- Especialista: **REJEITA** — colisão de slug sem detecção; paginação limit=500 trunca (duplica >500); gestor inexistente não faz rollback; propagação imediata fora do diário.
+- Técnico/Enterprise: **REJEITA** — perfil não-idempotente: PUT de imagem sem `description` ZERA a descrição; restauração pulada quando descricao=None (perda permanente via `--avatar` sem `--descricao`); escritas de perfil fora do rollback.
+
+**7 correções na causa (não remendo), todas provadas contra 192.168.1.59:**
+
+- **D1 (Técnico) — perfil idempotente, descrição nunca mais perdida.** `aplicar_perfil` passou a incluir SEMPRE a descrição viva no corpo do PUT (que substitui o objeto). Atualizar só o avatar via CLI sem `--descricao` agora PRESERVA a descrição — provado: Setor manteve 197 car. após update só-avatar. Consolidação virou conferência e nunca roda em dry-run.
+- **D2 (Leigo #3) — fim do erro falso na simulação.** O guard `if prov.dry` subiu para ANTES de `membros_do_grupo` (que fazia GET num grupo não criado → 404 → exceção → rollback falso). E a consolidação de perfis ganhou `and not prov.dry` (fazia GET em id fictício → 401). Dry-run de árvore NOVA agora termina "OK -- 3 nivel(is)", sem rollback.
+- **D3 (Leigo #2 + Especialista) — gestor inexistente BARRA + rollback, com mensagem útil.** `_triar(obrigatorio=True)` para gestores: login que não resolve levanta erro e dispara rollback, em vez de sumir num AVISO deixando espaço sem gestor humano. Usa `_raw` (não `get`, que levantaria HTTP cru antes da classificação). Mensagem: "Informe o LOGIN exato (ex.: 'wilson.franca', nao 'Wilson Franca')".
+- **D4 (Especialista) — colisão de slug detectada antes de qualquer escrita.** `checar_colisao_slug` no início de `provisionar_arvore`: "Setor 1" e "Setor-1" → mesmo `/COL/D/SETOR-1` → erro, nada criado.
+- **D5 (Especialista + Técnico) — paginação real, guiada por `size`.** Novo `paginar()` percorre todas as páginas por offset até cobrir o `size` que a API informa (medido: páginas vêm SUB-preenchidas, então "página menor que o passo" NÃO é fim). Aplicado a grupos, espaços, membros de grupo/espaço e memberships. Fim da duplicação silenciosa acima de 500.
+- **D6 (Especialista) — propagação imediata entra no diário de rollback.** Cada `POST /spacesMemberships` bem-sucedido é anotado com o desfazer (`DELETE .../spacesMemberships/<id>`); quem foi posto num espaço pré-existente sai junto se um passo adiante falhar.
+- **D7 (Leigo #1, #4) — UX da web.** Campo "Sigla curta *obrigatorio" com ajuda; gestores/membros rotulados "(login)" com dica "o LOGIN, nao o nome"; banner humano por estado (verde "Tudo pronto!", vermelho "Algo falhou — nada foi deixado pela metade", âmbar "Parado — desfeito"). Anônimo segue 401.
+
+**Honestidade (pedido do Fiscal Estético):** a independência do verificador é real onde importa (baixa os bytes de avatar/banner via HTTP, confere descrição/membros/managers pelo modelo Social), mas ele REUSA `E.bindings_do_espaco`/`E.espaco_do_grupo` para grupos e cadeia — não é "caminho 100% diferente". Registrado sem inflar.
+
+**Regressão:** ciclo apagar→recriar real = 36/36, `TUDO CONFORME`. Dry-run de árvore nova = OK sem rollback. D3/D4 barram como esperado. Web no ar, healthy, anônimo 401.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (D1-D6), `scripts/estrutura-web.py` (D7)
+**Status:** OK — 7 defeitos corrigidos e provados. Redisparando os 5 fiscais para o ciclo 2.

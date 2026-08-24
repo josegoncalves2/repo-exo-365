@@ -268,6 +268,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div>
   <div class="card">
     <div class="topo"><h2 style="margin:0">Execucao</h2><span id="estado">ocioso</span></div>
+    <div id="humano" style="display:none;padding:10px 12px;border-radius:8px;
+         margin-bottom:8px;font-weight:600"></div>
     <div id="log"></div>
   </div>
 </div>
@@ -286,23 +288,29 @@ function delSet(i,j,k){arv[i].divisoes[j].setores.splice(k,1);pinta()}
 function campos(no,cam){
   return `
   <div class="linha">
-    <div><label>Sigla / nome do grupo</label>
+    <div><label>Sigla curta <b style="color:var(--vermelho)">*obrigatorio</b></label>
       <input value="${esc(no.nome)}" oninput="set('${cam}','nome',this.value)"
-             placeholder="ex: SITDS"></div>
-    <div><label>Nome de exibicao do espaco</label>
+             placeholder="ex: SITDS"
+             title="Codigo curto e unico do nivel (vira o identificador do grupo). Ex.: SITDS, DIT, ST">
+      <small style="color:var(--suave)">codigo curto e unico (vira o grupo). ex.: SITDS</small></div>
+    <div><label>Nome que aparece na tela</label>
       <input value="${esc(no.rotulo)}" oninput="set('${cam}','rotulo',this.value)"
-             placeholder="ex: Secretaria de Inovacao..."></div>
+             placeholder="ex: Secretaria de Inovacao...">
+      <small style="color:var(--suave)">titulo por extenso do espaco</small></div>
   </div>
   <label>Descricao do espaco (perfil)</label>
   <textarea oninput="set('${cam}','descricao',this.value)"
             placeholder="Aparece na tela do espaco">${esc(no.descricao)}</textarea>
   <div class="linha">
-    <div><label>Gestores (virgula)</label>
+    <div><label>Gestores (login, virgula)</label>
       <input value="${esc(no.gestores)}" oninput="set('${cam}','gestores',this.value)"
-             placeholder="wilson.franca"></div>
-    <div><label>Membros (virgula)</label>
+             placeholder="wilson.franca"
+             title="Use o LOGIN, nao o nome. Ex.: wilson.franca (nao 'Wilson Franca')">
+      <small style="color:var(--suave)">o LOGIN, nao o nome. ex.: wilson.franca</small></div>
+    <div><label>Membros (login, virgula)</label>
       <input value="${esc(no.usuarios)}" oninput="set('${cam}','usuarios',this.value)"
-             placeholder="kaua.ferri"></div>
+             placeholder="kaua.ferri">
+      <small style="color:var(--suave)">o LOGIN, nao o nome. ex.: kaua.ferri</small></div>
   </div>
   <div class="linha">
     <div><label>Avatar (imagem)</label>
@@ -390,6 +398,18 @@ async function poll(){
     document.getElementById("bExec").disabled=r_;
     document.getElementById("bRem").disabled=r_;
     document.getElementById("bParar").disabled=!r_;
+    // Mensagem HUMANA: o leigo nao deve precisar ler REST cru para saber
+    // se deu certo. Cores e texto claros por estado.
+    const h=document.getElementById("humano");
+    const M={
+      rodando:["Trabalhando... aguarde.","#e3f2fd","#0d47a1"],
+      ok:["Tudo pronto! A estrutura foi gravada com sucesso.","#e8f5e9","#1b5e20"],
+      erro:["Algo falhou — e NADA foi deixado pela metade: o que este run criou foi desfeito automaticamente. Veja o detalhe abaixo.","#ffebee","#b71c1c"],
+      parado:["Parado a seu pedido — o que este run tinha criado foi desfeito.","#fff8e1","#8d6e00"]
+    };
+    if(M[j.estado]){h.style.display="block";h.textContent=M[j.estado][0];
+      h.style.background=M[j.estado][1];h.style.color=M[j.estado][2];}
+    else{h.style.display="none";}
   }catch(e){}
   setTimeout(poll,900);
 }
