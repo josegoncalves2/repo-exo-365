@@ -3459,3 +3459,30 @@ Cobre: 3 grupos; 3 espaços com nome exato, descrição preenchida, sem lixo té
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (propagação imediata, `membros_do_grupo`, `membros_do_espaco`, relatório de remoção), `scripts/estrutura-web.py` (`/api/log` blindado), `scripts/verificar-estrutura.py` (novo)
 **Status:** OK — ciclo completo pela web, 36/36 verificações sem esperar cron.
+
+---
+
+### [132] 2026-08-24 13:05 -03 — CICLO "APAGAR TUDO E RECRIAR" + defeito 15 (DELETE de corpo vazio quebrava a remoção)
+
+**Contexto na retomada:** uma sessão anterior (`5406539` "REVOLUÇÃO") havia APAGADO 1.979 linhas do sistema já testado (`exo_estrutura.py`, `estrutura-web.py`, `estrutura-organizacional.py`) para começar um `exo_motor_v2.py` que ficou pela metade (sem CLI, sem web). O container `exo-estrutura` seguia "healthy" só porque tinha os arquivos abertos em memória — o próximo `restart` (o mesmo que o README recomenda para corrigir defeitos) derrubaria o serviço, pois o bind mount `:ro` apontava para arquivos inexistentes. **Risco de outage latente.**
+
+**Ação 1 — restaurar o que funcionava, sem recriar do zero:** `git checkout c54b44f -- scripts/{exo_estrutura,estrutura-web,estrutura-organizacional}.py` (commit anterior à "revolução"). `docker compose restart estrutura` → `healthy`; `GET /estrutura/` anônimo volta a 401 (a proteção de sessão/CSRF da [130] estava junto). Outage evitado.
+
+**Ação 2 — validar credencial de admin sem cair em falso negativo.** Primeiro teste de login que montei dava "SEM SESSAO" para TODAS as senhas — meu teste é que estava errado (usava `/portal/login` em vez de `/portal/login?op=signin`, o endpoint real que o próprio `exo_estrutura.py::_login` usa). Refeito pelo método do script: `root` / `Pmotiadm@2` autentica (`/groups?limit=1` → 200); `saexo` / `pmotiadm` também. Registrado para não repetir a armadilha. Credencial gravada em `.env` (chmod 600, no `.gitignore`) — nunca versionada.
+
+**Defeito 15 — `escreve()` quebrava em DELETE de sucesso com corpo vazio.** O `DELETE .../removeGroupSpaceBinding/<id>` devolve 200/204 **sem corpo** (correto para um DELETE). O código fazia `json.loads(t)` incondicionalmente e, como `st < 400`, levantava `FalhaEtapa: JSON invalido: Expecting value: line 1 column 1 (char 0)` — **a remoção inteira abortava no primeiro binding**. Isso vinha mascarado: a árvore SITDS anterior fora criada e conferida (36/36), mas nunca fora **removida** por este caminho depois da mudança. Corrigido na causa: resposta de sucesso sem corpo passa a valer `{}` (não erro); corpo vazio com `st >= 400` continua erro explícito. Trecho em `exo_estrutura.py::Exo.escreve`.
+
+**Ciclo completo, executado de verdade contra `https://192.168.1.59` (não simulação):**
+```
+ANTES        verificar-estrutura.py -> 36/36, TUDO CONFORME
+FASE 1 DELETE --remover --sim -> 3 espaços apagados, 3 grupos apagados, vínculos retirados: "OK -- 3 removido(s)"
+PROVA VAZIO  verificar-estrutura.py -> 6/6 FALHA (grupos/espaços não existem) = NAO CONFORME (esperado: está vazio)
+FASE 2 CRIAR --arquivo sitds.json -> grupos, espaços (ids 71/72/73), aninhamento 71<-13 / 72<-71 / 73<-72,
+             cadeia de visibilidade, perfil (descrição+avatar+banner), gestores de nível e de espaço,
+             membros, e PROPAGAÇÃO IMEDIATA da cadeia (isabela/wilson entram no Setor sem esperar o cron)
+DEPOIS       verificar-estrutura.py -> 36/36, TUDO CONFORME O PEDIDO
+```
+A verificação mede pelo modelo Social (o que a UI consome), não pelo mesmo endpoint usado para escrever — 36 checks: 3 grupos; 3 espaços com nome exato, descrição preenchida, sem lixo técnico, privado/fechado, avatar e banner servindo 200; aninhamento; cadeia de visibilidade exata por nível; pessoas exatas nos três espaços (wilson só na Secretaria; +isabela na Divisão; +anderson +kaua no Setor); e os três gestores com poder real sobre o próprio espaço.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (defeito 15 — `escreve` tolera sucesso sem corpo), restauração de `scripts/{exo_estrutura,estrutura-web,estrutura-organizacional}.py` via git, `.env` (credencial de admin, 600)
+**Status:** OK — ciclo apagar→recriar comprovado ponta a ponta pela CLI, 36/36 pela verificação independente, serviço web restaurado e íntegro.

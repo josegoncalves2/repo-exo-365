@@ -959,3 +959,51 @@
 2026-08-24 12:45:32 == propagando membros da cadeia (sem esperar o cron) ==
 2026-08-24 12:45:32 'Setor Teste Single': 2 da cadeia (simulacao)
 2026-08-24 12:45:32 OK -- 1 nivel(is) provisionado(s).
+2026-08-24 13:08:42 -- REMOVER /SITDS/DIT/ST e o espaco 'Setor de Tecnologia' (id 59, identificado por registro)
+2026-08-24 13:08:42 ERRO: DELETE /portal/rest/v1/social/spaceGroupBindings/removeGroupSpaceBinding/102 JSON invalido: Expecting value: line 1 column 1 (char 0)
+2026-08-24 13:09:08 -- REMOVER /SITDS/DIT/ST e o espaco 'Setor de Tecnologia' (id 59, identificado por registro)
+2026-08-24 13:09:22 espaco apagado: Setor de Tecnologia
+2026-08-24 13:09:23 grupo apagado: /SITDS/DIT/ST
+2026-08-24 13:09:23 -- REMOVER /SITDS/DIT e o espaco 'Divisão de Inovação Tecnológica' (id 58, identificado por registro)
+2026-08-24 13:09:23 vinculo /SITDS/DIT retirado de 'Divisão de Inovação Tecnológica'
+2026-08-24 13:09:35 espaco apagado: Divisão de Inovação Tecnológica
+2026-08-24 13:09:36 grupo apagado: /SITDS/DIT
+2026-08-24 13:09:36 -- REMOVER /SITDS e o espaco 'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável' (id 57, identificado por registro)
+2026-08-24 13:09:37 vinculo /SITDS retirado de 'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável'
+2026-08-24 13:09:47 espaco apagado: Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável
+2026-08-24 13:09:47 grupo apagado: /SITDS
+2026-08-24 13:09:47 OK -- 3 removido(s).
+2026-08-24 13:09:53 == SECRETARIA: Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável  ->  grupo /SITDS
+2026-08-24 13:09:53 1. grupo    criado: /SITDS
+2026-08-24 13:10:09 2. espaco   criado: Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável (id 71)
+2026-08-24 13:10:09 3. aninhar  dentro de 'Lobby Prefeitura' (id 13)
+2026-08-24 13:10:10 4. cadeia   'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável' <- /SITDS
+2026-08-24 13:10:11 5. perfil   'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável': descricao, imagens
+2026-08-24 13:10:13 6. gestores: 1 em /SITDS -> wilson.franca
+2026-08-24 13:10:13 6. gestor do espaco: 1 em /spaces/secretaria_de_inovac_a_o4_tecnologia_e_desenvolvimento_sustenta_vel -> wilson.franca
+2026-08-24 13:10:13 == DIVISAO: Divisão de Inovação Tecnológica  ->  grupo /SITDS/DIT
+2026-08-24 13:10:14 1. grupo    criado: /SITDS/DIT
+2026-08-24 13:10:31 2. espaco   criado: Divisão de Inovação Tecnológica (id 72)
+2026-08-24 13:10:31 3. aninhar  dentro de 'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável' (id 71)
+2026-08-24 13:10:31 4. cadeia   'Divisão de Inovação Tecnológica' <- /SITDS, /SITDS/DIT
+2026-08-24 13:10:34 5. perfil   'Divisão de Inovação Tecnológica': descricao, imagens
+2026-08-24 13:10:35 6. gestores: 1 em /SITDS/DIT -> isabela.feitosa
+2026-08-24 13:10:36 6. gestor do espaco: 1 em /spaces/divisa_o_de_inovac_a_o_tecnolo_gica -> isabela.feitosa
+2026-08-24 13:10:36 == SETOR: Setor de Tecnologia  ->  grupo /SITDS/DIT/ST
+2026-08-24 13:10:36 1. grupo    criado: /SITDS/DIT/ST
+2026-08-24 13:10:55 2. espaco   criado: Setor de Tecnologia (id 73)
+2026-08-24 13:10:55 3. aninhar  dentro de 'Divisão de Inovação Tecnológica' (id 72)
+2026-08-24 13:10:55 4. cadeia   'Setor de Tecnologia' <- /SITDS, /SITDS/DIT, /SITDS/DIT/ST
+2026-08-24 13:10:56 5. perfil   'Setor de Tecnologia': descricao, imagens
+2026-08-24 13:10:57 6. gestores: 1 em /SITDS/DIT/ST -> anderson.polizel
+2026-08-24 13:10:58 6. gestor do espaco: 1 em /spaces/setor_de_tecnologia -> anderson.polizel
+2026-08-24 13:10:59 6. membros: 1 em /SITDS/DIT/ST -> kaua.ferri
+2026-08-24 13:10:59 == consolidando perfis (ultima escrita) ==
+2026-08-24 13:10:59 'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável': perfil integro
+2026-08-24 13:10:59 'Divisão de Inovação Tecnológica': perfil integro
+2026-08-24 13:10:59 'Setor de Tecnologia': perfil integro
+2026-08-24 13:10:59 == propagando membros da cadeia (sem esperar o cron) ==
+2026-08-24 13:10:59 'Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável': todos os 1 da cadeia ja estao dentro
+2026-08-24 13:11:00 'Divisão de Inovação Tecnológica': 1 entraram agora -> wilson.franca
+2026-08-24 13:11:01 'Setor de Tecnologia': 2 entraram agora -> isabela.feitosa, wilson.franca
+2026-08-24 13:11:01 OK -- 3 nivel(is) provisionado(s).
