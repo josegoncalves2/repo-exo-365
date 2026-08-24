@@ -1,0 +1,35 @@
+{
+  "secretarias": [
+    {
+      "nome": "SITDS",
+      "rotulo": "Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável",
+      "descricao": "Espaço central da Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável. Reúne as divisões e setores subordinados: quem participa deste espaço acompanha tudo o que acontece nos níveis abaixo. Publicações, agenda e documentos de alcance geral da Secretaria ficam aqui.",
+      "gestores": "wilson.franca",
+      "usuarios": "",
+      "divisoes": [
+        {
+          "nome": "DIT",
+          "rotulo": "Divisão de Inovação Tecnológica",
+          "descricao": "Divisão de Inovação Tecnológica, subordinada à Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável. Coordena os setores técnicos, prioriza projetos de modernização e acompanha a execução das ações de tecnologia da Secretaria.",
+          "gestores": "isabela.feitosa",
+          "usuarios": "",
+          "setores": [
+            {
+              "nome": "ST",
+              "rotulo": "Setor de Tecnologia",
+              "descricao": "Setor de Tecnologia, subordinado à Divisão de Inovação Tecnológica. Responsável pela operação diária: infraestrutura, suporte ao usuário, sistemas internos e atendimento dos chamados da Secretaria.",
+              "gestores": "anderson.polizel",
+              "usuarios": "kaua.ferri",
+              "avatar": "conf/estrutura/img/ST-avatar.png",
+              "banner": "conf/estrutura/img/ST-banner.png"
+            }
+          ],
+          "avatar": "conf/estrutura/img/DIT-avatar.png",
+          "banner": "conf/estrutura/img/DIT-banner.png"
+        }
+      ],
+      "avatar": "conf/estrutura/img/SITDS-avatar.png",
+      "banner": "conf/estrutura/img/SITDS-banner.png"
+    }
+  ]
+}

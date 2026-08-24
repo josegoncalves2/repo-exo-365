@@ -3136,3 +3136,326 @@ dashboard-depois.png).
 **Erro cometido e corrigido no meio do caminho:** a primeira tentativa derivou `EXO_HTTP_PORT` de `grep port= server.xml | head -1`, que capturou **8005** — a porta de SHUTDOWN do Tomcat. Conferindo o uso real no compose (`"${EXO_HTTP_PORT:-80}:80"`), a variavel e' a porta publicada do **nginx**, nao do Tomcat. Corrigido para derivar do mapeamento `80/tcp` do `exo-web` -> **80**.
 **Prova:** `docker compose config` resolve publicando 80, 443, 8443, 8025 e 10000 — identico aos containers vivos.
 **Status:** OK — zero valores fixados a mao no `.env`.
+
+---
+
+### [125] 2026-08-24 09:30 -03 — ESTRUTURA SITDS provisionada e 4 defeitos do `estrutura-organizacional.py` corrigidos
+**Pedido:** criar Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável (`/SITDS`) > Divisão de Inovação Tecnológica (`/SITDS/DIT`) > Setor de Tecnologia (`/SITDS/DIT/ST`), com Wilson França (secretário), Isabela Feitosa (diretora de divisão), Anderson Polizel (chefe de setor) e Kaua Ferri (estagiário).
+
+**Credencial:** a senha do `root` registrada em [2096] (`pmotiadm`) **não é mais válida** — `DefaultLoginModule` recusou (`WARN | Login failed for root`, 09:16:13). A senha em vigor foi fornecida pelo operador. Registrado aqui porque a doc antiga induz ao erro; corrigir a entrada [2096] ao revisar.
+
+**Defeitos encontrados e corrigidos (todos medidos, nenhum presumido):**
+
+1. **Aninhamento no espaço errado.** A Divisão estava pendurada no `Lobby Prefeitura` (id 13) em vez da Secretaria (id 19). Causa: `espaco_por_grupo_organizacional()` casa espaço-com-grupo **pelo nome**, e com `--rotulo` o grupo chama-se `/SITDS` enquanto o espaço chama-se "Secretaria de Inovação..." — o casamento falha e o desempate era "o espaço com menos bindings", que é palpite. Trocado por regra determinística vinda da própria cascata do passo 4: **dono(G) = espaço onde G está nos bindings E todo binding é G ou descendente de G**. O Lobby é recusado porque carrega `/platform/users`, que não é descendente de `/SITDS`. Quando não há dono legítimo, devolve `None` em vez de chutar.
+2. **Passo 3 falhava em silêncio.** Sem espaço-pai, caía no ramo `else` e imprimia "nível raiz: nada a fazer" — o nível ficava solto na árvore. Agora aborta com mensagem dizendo qual nível criar primeiro.
+3. **`--gestores` não era idempotente nem validado.** (a) O bulk do eXo é tudo-ou-nada: um gestor repetido derrubava o lote inteiro com `400 MEMBERSHIP:ALREADY_EXISTS` e um gestor novo no mesmo lote seria perdido em silêncio. (b) Ao contrário de `--usuarios`, não checava se a conta existe/está habilitada — gestor inexistente passava batido e o log registrava "N como MANAGER" para um vínculo que nunca existiu. Ambos corrigidos; a triagem virou função única (`_triar`) usada pelos dois fluxos.
+4. **Gestor de nível não era gestor do espaço.** `manager` no grupo organizacional (`/SITDS`) **não dá poder nenhum sobre o espaço** — o eXo guarda isso na membership manager do grupo técnico (`/spaces/<prettyName>`). Medido: wilson.franca tinha `manager:/SITDS` + `member:/spaces/secretaria_de_...` e a lista de managers do espaço continha **só `root`**. O secretário não administrava a própria secretaria. Criado o passo **5b**, que promove o gestor também no grupo técnico do espaço. O texto de ajuda do `--gestores`, que prometia "pode administrar o espaço", foi ajustado para descrever o que de fato acontece.
+5. **Log cego.** Os passos 2 (espaço), 3 (aninhamento) e 4 (bindings) usavam `print`, não `log` — o `estrutura-organizacional.log` não tinha registro nenhum de espaço criado ou cascata montada. Passaram todos para `log`.
+
+**Prova — DUPLA ABORDAGEM, caminhos de dados independentes:**
+
+*1ª abordagem — modelo Organization (`/v1/groups`, `/v1/users/<u>/memberships`, `/v1/social/spaceGroupBindings`):*
+```
+aninhamento:  19 -> 13 (Lobby) | 20 -> 19 (Secretaria) | 21 -> 20 (Divisão)
+bindings:     13 [/SITDS, /SITDS/DIT, /SITDS/DIT/ST, /platform/users]
+              19 [/SITDS, /SITDS/DIT, /SITDS/DIT/ST]
+              20 [/SITDS/DIT, /SITDS/DIT/ST]
+              21 [/SITDS/DIT/ST]
+memberships:  wilson.franca manager+member:/SITDS
+              isabela.feitosa manager+member:/SITDS/DIT
+              anderson.polizel manager+member:/SITDS/DIT/ST
+              kaua.ferri member:/SITDS/DIT/ST
+membros reais do espaço (cascata funcionando):
+              19 -> wilson, isabela, anderson, kaua   (4/4)
+              20 -> isabela, anderson, kaua           (3/3)
+              21 -> anderson, kaua                    (2/2)
+```
+
+*2ª abordagem — modelo Social (`/v1/social/spaces/<id>?expand=managers`), que é o que a UI consome:*
+```
+espaco 19  private/closed  parentSpaceId=13  managers=[root, wilson.franca]     OK
+espaco 20  private/closed  parentSpaceId=19  managers=[root, isabela.feitosa]   OK
+espaco 21  private/closed  parentSpaceId=20  managers=[root, anderson.polizel]  OK
+RESULTADO: TODOS OS PONTOS OK
+```
+
+**Idempotência comprovada:** 5 execuções consecutivas dos três níveis. A partir da correção, nenhuma linha `FALHOU` e nenhum `!` de erro HTTP — só `ja existe` / `ja sincroniza` / `ja eram MANAGER` / `ja eram GESTOR DO ESPACO`.
+
+**Testes offline (funções puras, sem tocar na plataforma):** `slug_grupo` com acento e vírgula; `le_usuarios` com lista por vírgula e com CSV `;`+cabeçalho (Excel pt-BR); CSV inexistente aborta; `--tipo divisao` sem `--pai` aborta; `--tipo` inválido rejeitado. Todos OK, antes e depois dos patches.
+
+**Comando/Arquivo:** `scripts/estrutura-organizacional.py` (5 correções), `estrutura-organizacional.log`
+**Status:** OK — árvore SITDS completa, cascata de membros funcionando nos 3 níveis, cada chefe é gestor do seu próprio espaço, script idempotente.
+
+---
+
+### [126] 2026-08-24 10:15 -03 — CASCATA INVERTIDA: visibilidade passa a DESCER a hierarquia
+**Pedido do operador:** "o secretário deve enxergar tudo em divisões e setores, assim como divisões deve enxergar os setores. não vice-versa."
+
+**Problema:** a cascata de bindings do passo 4 subia. O grupo do nível novo era empurrado para o próprio espaço **e para todos os ancestrais**, então o vazamento era de baixo para cima. Medido antes da correção:
+```
+espaco 19 (Secretaria) -> wilson, isabela, anderson, kaua   <- estagiario dentro da Secretaria
+espaco 20 (Divisao)    -> isabela, anderson, kaua
+espaco 21 (Setor)      -> anderson, kaua                    <- secretario NAO enxergava o Setor
+```
+Exatamente o inverso do pedido: quem estava embaixo subia, e quem estava em cima não descia.
+
+**Correção:** o passo 4 passou a montar, no espaço do nível, a **cadeia de cima até ele**, e não toca mais em espaço de nível superior:
+```
+espaco da Secretaria <- [/SITDS]
+espaco da Divisao    <- [/SITDS, /SITDS/DIT]
+espaco do Setor      <- [/SITDS, /SITDS/DIT, /SITDS/DIT/ST]
+```
+O `espaco_por_grupo_organizacional()` acompanhou: com a cascata descendente, o **dono de G é o espaço cujo vínculo mais fundo é exatamente G** (a Divisão contém `/SITDS`, mas o mais fundo dela é `/SITDS/DIT`, então não é confundida com a dona da Secretaria). Espaços que misturam vínculos de fora da árvore — o Lobby carrega `/platform/users` — são descartados de saída.
+
+**DEFEITO GRAVE encontrado no meio do caminho — `saveGroupsSpaceBindings` é ADD-ONLY.** A primeira tentativa de migração falhou em silêncio: enviar `['/SITDS']` a um espaço que tinha os três níveis devolveu **200 e não removeu nada**; o `GET` seguinte continuou com os três e o `QueueGroupSpaceBindingJob` registrou `No GroupSpaceBindingQueue or UserBindingsQueue to process` — nem enfileirou. O endpoint só adiciona.
+
+Endpoint real de remoção descoberto por sondagem:
+```
+DELETE /v1/social/spaceGroupBindings/23                          -> 405
+DELETE /v1/social/spaceGroupBindings/binding/23                  -> 404
+DELETE /v1/social/spaceGroupBindings/removeGroupSpaceBinding/23  -> 200  <- este
+```
+Isso expôs um segundo bug, latente desde sempre: o **`--remover` usava o mesmo POST add-only** para "retirar binding" e imprimia `binding removido de '<espaço>'` **sem remover coisa alguma**. Corrigido junto — agora ambos usam `DELETE removeGroupSpaceBinding/<id>`, via os novos helpers `bindings_detalhados()` e `remover_binding()`.
+
+**Prova — DUPLA ABORDAGEM:**
+
+*1ª — modelo Organization (membros reais de cada espaço):*
+```
+espaco 19 (Secretaria) -> wilson.franca                                    (1)
+espaco 20 (Divisao)    -> wilson.franca, isabela.feitosa                   (2)
+espaco 21 (Setor)      -> wilson.franca, isabela.feitosa, anderson, kaua   (4)
+```
+Secretário nos três níveis; diretora na divisão e no setor; chefe e estagiário só no setor. **Kaua saiu dos espaços 19 e 20.** Sem vazamento para cima.
+
+*2ª — modelo Social (`spaces/<id>?expand=managers`, o que a UI consome):* aninhamento `19→13`, `20→19`, `21→20` e gestor correto em cada nível. `TODOS OS PONTOS OK`.
+
+**Idempotência:** 2 passadas extras nos três níveis após a migração — só `ja sincroniza a cadeia`, nenhum `RETIRADO`, nenhum `FALHOU`, nenhum erro HTTP.
+
+**PREMISSA REGISTRADA:** a descida vincula o **grupo do nível inteiro**, não só o chefe. Ou seja, quem entrar em `/SITDS` amanhã enxergará todas as divisões e setores. É a leitura por unidade organizacional ("a Divisão enxerga os Setores"). Se a intenção for mais estrita — só os gestores descerem — a mudança é trocar, no passo 4, o binding do grupo do nível por membership individual dos gestores nos espaços de baixo.
+
+**Comando/Arquivo:** `scripts/estrutura-organizacional.py` (passo 4 invertido, resolver, `bindings_detalhados()`, `remover_binding()`, `--remover`), `estrutura-organizacional.log`
+**Status:** OK — visibilidade desce e não sobe, comprovado nos dois modelos de dados.
+
+---
+
+### [127] 2026-08-24 10:40 -03 — TESTE DE CICLO DE VIDA: criar do zero e remover. 4 defeitos novos
+**Motivo:** o operador perguntou se o script já serve para criar nova secretaria/divisão/setor. Até aqui **todas as execuções haviam caído nos caminhos "já existe"** — a criação do zero e o `--remover` nunca tinham sido exercitados com a cascata descendente. Teste feito com árvore descartável (`/QATESTE` e depois `/QA2`), criada e removida.
+
+**Criação do zero: OK na primeira tentativa.** Grupo, espaço, aninhamento, cadeia de bindings, gestor de nível + gestor de espaço, triagem de usuário inexistente (`naoexiste.fulano` avisado e ignorado). Descida comprovada:
+```
+22 Secretaria QA -> prova.binding
+23 Divisao QA    -> prova.binding
+24 Setor QA      -> prova.binding, tela.binding
+```
+
+**Defeito 6 — propagação NÃO é imediata.** O membro do nível de cima só aparece nos espaços de baixo quando o `QueueGroupSpaceBindingJob` roda (cron `0 0/5 * * * ?`). Medido: árvore criada 10:12, `prova.binding` ainda ausente dos espaços 23/24 às 10:13; job das 10:15 fez `Proceeding binding ... Bound Users(1)` e completou. Comportamento do eXo, não do script — mas registrado porque **parece falha** para quem confere logo depois de rodar.
+
+**Defeito 7 — `--remover` deixava o espaço órfão.** A trava de segurança só apagava o espaço quando ele era identificado **pelo nome**, e com `--rotulo` isso nunca acontece (grupo `/QATESTE/QADIV/QASET` vs. espaço "Setor de Qualidade QA"). Resultado medido: grupo e bindings removidos, **três espaços órfãos** deixados para trás. Pior, ao remover `/QATESTE` o critério por binding apontou para `'Divisão de Qualidade QA'` — durante uma remoção em cadeia vários espaços ficam com o mesmo vínculo restante e o desempate vira sorteio.
+
+**Correção (defeito 7) — MARCA de grupo no espaço.** A descrição do espaço passa a carregar `[grupo:/CAMINHO]`, gravada na criação. O resolvedor consulta a marca **antes** de qualquer outro critério — é exata e não depende de nome. O `--remover` passou a apagar o espaço quando a identificação vem da marca ou do nome, e continua recusando quando vem de binding (que é palpite em árvore meio-removida). Espaços antigos são auto-corrigidos: se o nível já existe e está sem marca, o passo 2 grava.
+
+**Defeito 8 — `PUT /social/spaces/<id>` ignora `description` em silêncio.** A primeira versão do auto-conserto reportou `marca gravada` nos três espaços do SITDS e **não gravou nada** — o `GET` seguinte mostrava a descrição antiga. Sondagem:
+```
+PUT {"description": ...}                        -> 200, NÃO grava
+PUT {"displayName": ..., "description": ...}    -> 200, grava
+```
+`displayName` é obrigatório no corpo. Mesma classe do defeito do `saveGroupsSpaceBindings` (add-only, [126]): **status 2xx que mente**. Por isso a gravação da marca agora é **conferida com um GET** em vez de confiar no código HTTP.
+
+**Defeito 9 — código órfão.** A função `ancestrais()` ficou sem uso após a inversão da cascata e a mensagem `"(entram em todos os niveis acima, na hora)"` passou a afirmar o oposto do que o script faz. Ambas removidas/corrigidas.
+
+**Prova final — ciclo completo em `/QA2`:**
+```
+CRIAR:   grupo+espaco+aninhamento+cadeia nos 3 niveis, gestor de espaco OK
+REMOVER: espaco apagado: Setor QA Dois / Divisão QA Dois / Secretaria QA Dois
+         grupo apagado:  /QA2/QA2DIV/QA2SET, /QA2/QA2DIV, /QA2
+SOBROU:  grupos QA = NENHUM | espacos QA = NENHUM
+         lobby = [/SITDS, /SITDS/DIT, /SITDS/DIT/ST, /platform/users]  intacto
+```
+
+**Regressão do SITDS após tudo:** aninhamento `19→13`, `20→19`, `21→20`; marcas `/SITDS`, `/SITDS/DIT`, `/SITDS/DIT/ST`; membros `19→wilson`, `20→wilson+isabela`, `21→wilson+isabela+anderson+kaua`; 2ª abordagem `TODOS OS PONTOS OK`; 2 passadas extras sem nenhuma escrita.
+
+**Comando/Arquivo:** `scripts/estrutura-organizacional.py` (marca de grupo, `--remover`, gravação conferida, limpeza de código morto)
+**Status:** OK — criação e remoção comprovadas de ponta a ponta em árvore descartável, sem resíduo.
+
+---
+
+### [128] 2026-08-24 11:20 -03 — REESCRITA: motor + CLI + interface web, perfil de espaço e rollback
+**Pedido do operador:** apagar tudo e recriar; o script deve criar e remover; ter rollback em caso de erro; ter interface web com campos e botões de executar/parar/remover; popular o perfil de cada espaço (estava vazio na tela); e permitir várias secretarias, divisões e setores com nomenclatura própria.
+
+**DEFEITO MEU, VISÍVEL NA TELA DO OPERADOR:** a marca `[grupo:/SITDS]` que a [127] gravou na descrição do espaço estava **aparecendo para o usuário final** no painel "Descrição". Removida. O vínculo grupo→espaço passou para `conf/estrutura-registro.json`, fora de qualquer campo visível, com dois critérios de fallback (cadeia de bindings e nome).
+
+**Entrega:**
+
+| Arquivo | Papel |
+|---|---|
+| `scripts/exo_estrutura.py` (936 l.) | motor: cliente REST, provisionamento, perfil, rollback, remoção |
+| `scripts/estrutura-organizacional.py` (130 l.) | CLI, agora também com `--arquivo` para a árvore inteira |
+| `scripts/estrutura-web.py` (382 l.) | interface web, só biblioteca padrão |
+| `scripts/gerar-imagens-espaco.py` (83 l.) | avatar e banner PNG escritos à mão (sem Pillow na stack) |
+
+**Sondagens da API — três descobertas, todas medidas:**
+1. `POST /social/spaces/<id>/avatar` e `/banner` respondem **405**: são GET-only. O caminho real é subir em `POST /portal/upload?uploadId=<uuid>&action=upload` (multipart, campo `file`) e referenciar o uuid em `avatarId`/`bannerId`.
+2. Os nomes dos campos são `avatarId`/`bannerId`, **não** `avatarUploadId` — confirmado lendo o bundle da própria UI (`$spaceService.updateSpace({id,displayName,description,avatarId,bannerId})`).
+3. O `PUT` só persiste se o corpo trouxer **`id` E `displayName`**. Sem `id`, devolve 200 e ignora avatar/banner. Sem `displayName`, devolve 200 e ignora a descrição. Terceiro caso nesta série de **2xx que mente** (os outros: `saveGroupsSpaceBindings` add-only, `PUT` sem `displayName`). Toda escrita de perfil passou a ser conferida com um GET.
+
+**Defeito 10 — descrição da DIVISÃO sumia depois de gravada.** Medido: os três níveis gravavam (a conferência do passo 5 passava), mas ao fim da execução a Divisão vinha com 0 caracteres. Secretaria e Setor sobreviviam — o nível do meio era o único atingido, porque a Secretaria era regravada e o Setor, sendo o último, nunca chegava a ser tocado por um nível seguinte. Algum listener do eXo re-salva o espaço por cima. Em vez de caçar qual, **o perfil passou a ser a última escrita da árvore**: uma passada de consolidação no fim reconfere cada nível e regrava o que tiver se perdido.
+
+**Defeito 11 — simulação quebrava em árvore multinível.** Como nada é criado de verdade, o nível de baixo acusava "grupo pai não existe" e a árvore inteira falhava. Corrigido com registro de grupos e espaços simulados; os ids fictícios passaram a ser únicos (com `<simulacao>` para todos, o passo 3 achava que o filho era o próprio pai).
+
+**Rollback:** diário de ações com função de desfazer, aplicado na ordem inversa. Só desfaz o que **aquele run** criou. Comprovado duas vezes: (a) erro real na simulação desfez 4 ações; (b) botão **Parar** no meio de uma execução real desfez 9 — memberships, vínculo, espaço, grupo e registro dos dois níveis já feitos. Estado após: `grupos: NENHUM | espacos: NENHUM | registro: VAZIO`.
+
+**Lobby:** o motor deixou de empurrar os grupos organizacionais para o espaço raiz. É redundante — todo mundo já entra por `/platform/users`. Conferido depois da mudança: os 4 usuários continuam no Lobby, 13 membros no total.
+
+**PROVA — ciclo pedido (apagar tudo e recriar):**
+```
+REMOVER  3 níveis: espaços 19/20/21 e grupos /SITDS, /SITDS/DIT, /SITDS/DIT/ST
+CRIAR    espaços 31/32/33 com perfil completo
+```
+Verificação após o `QueueGroupSpaceBindingJob` rodar (7 bindings processados):
+```
+PERFIL       Secretaria 278 car. | Divisao 238 car. | Setor 197 car.
+             marcador_vazando=nao   avatar=OK   banner=OK   (nos três)
+ANINHAMENTO  31→13 (Lobby) | 32→31 | 33→32
+CADEIA       /SITDS [/SITDS] | /SITDS/DIT [/SITDS,/SITDS/DIT]
+             /SITDS/DIT/ST [/SITDS,/SITDS/DIT,/SITDS/DIT/ST]
+PESSOAS      Secretaria: wilson
+             Divisao:    wilson, isabela
+             Setor:      wilson, isabela, anderson, kaua
+GESTORES     wilson / isabela / anderson, cada um no seu nível (modelo Social)
+>>> TUDO OK
+```
+
+**PROVA — interface web (`http://127.0.0.1:8781`, exercitada por HTTP real):**
+- `GET /` → 200, 9679 bytes, com os botões Executar/Parar/Remover
+- simulação de árvore de 3 níveis → `estado: ok`
+- execução real → criou; segundo POST simultâneo recusado com `"ja ha um trabalho em andamento"`
+- **Parar** no meio → rollback de 9 ações, nada deixado para trás
+- criação completa e **Remover** pela web → 3 níveis apagados, `grupos: NENHUM | espacos: NENHUM | registro: VAZIO`
+
+**PROVA — várias secretarias:** simulação com 2 secretarias, 3 divisões e 4 setores (`/SEMED` com DEINF→SPED,SMER e DADM→SRH; `/SESAU` com DVIG→SEPI). Os 9 níveis aninharam no pai certo e cada um recebeu a cadeia correta.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py`, `scripts/estrutura-organizacional.py`, `scripts/estrutura-web.py`, `scripts/gerar-imagens-espaco.py`, `conf/estrutura/sitds.json`, `conf/estrutura/img/`, `README.md`
+**Status:** OK — criar, parar com rollback e remover, pela CLI e pela web, com perfil de espaço preenchido e comprovado.
+
+---
+
+### [129] 2026-08-24 11:05 -03 — A interface virou SERVIÇO DA STACK, não bancada de teste
+**Reportado pelo operador, com razão:** eu tinha exercitado a interface num servidor solto em `127.0.0.1:8781` e encerrado ao fim. Isso é bancada de teste, não entrega — só existe uma stack e é nela que a funcionalidade tem de estar.
+
+**Feito:**
+- `Dockerfile.estrutura` — Alpine + python3. O servidor usa só a biblioteca padrão, então não há mais nada a instalar. Os scripts entram por **bind mount, não COPY**: corrigir um defeito é `docker compose restart estrutura`, sem rebuild.
+- Serviço `estrutura` (`exo-estrutura`) no `docker-compose.yml`, com healthcheck, `mem_limit`, `restart: unless-stopped`, `depends_on: exo (service_healthy)` e o mesmo padrão de logging dos demais.
+- **Sem porta publicada no host.** Quem entra passa pelo proxy do portal, herdando o TLS da CA interna. Uma porta a menos aberta na máquina.
+- `location ^~ /estrutura/` no `conf/nginx.conf`, com `proxy_read_timeout 600s` (provisionar árvore grande passa de um minuto e o padrão de 60s cortaria a resposta) e `client_max_body_size 64m` (avatar/banner sobem em base64 dentro do JSON). Mais um `location = /estrutura { return 301 /estrutura/; }`.
+
+**Dois ajustes que a publicação atrás de prefixo exigiu:**
+1. A página chamava `/api/log`, `/api/executar`, `/api/parar` em caminho **absoluto** — atrás de `/estrutura/` isso bate na raiz do portal, não no app. Passaram a ser relativos (`api/log`), que resolvem para `/estrutura/api/log` e casam com o `proxy_pass` de barra final, que tira o prefixo.
+2. O campo URL da tela vinha fixo em `https://192.168.1.59`. De dentro do container o caminho certo é `http://exo:8080` — fala direto com o Tomcat e não depende de o IP do host ser resolvível de dentro. O valor agora vem do ambiente do servidor (`EXO_URL`), continuando editável na tela.
+
+**Prova — ciclo completo pela URL da stack, não por loopback:**
+```
+GET  https://192.168.1.59/estrutura   -> 301
+GET  https://192.168.1.59/estrutura/  -> 200
+POST /estrutura/api/executar  -> 3 níveis criados, perfis íntegros, estado ok
+POST /estrutura/api/remover   -> 3 níveis removidos, estado ok
+sobrou: grupos NENHUM | espacos NENHUM | registro só com /SITDS
+```
+
+**Persistência:** `docker compose restart estrutura` → healthy e respondendo 200. O `nginx.conf` e o `docker-compose.yml` são arquivos versionados do projeto, então a rota e o serviço sobrevivem a queda total da stack. O log de auditoria é escrito de dentro do container por bind mount — conferido: as linhas do teste pela stack estão em `estrutura-organizacional.log` no host.
+
+**Regressão do SITDS após tudo:** `>>> TUDO OK` (perfil, aninhamento, cadeia, pessoas e gestores).
+
+**Comando/Arquivo:** `Dockerfile.estrutura`, `docker-compose.yml` (serviço `estrutura`), `conf/nginx.conf` (location), `scripts/estrutura-web.py` (caminhos relativos, URL do ambiente), `README.md`
+**Status:** OK — publicada em https://192.168.1.59/estrutura/, dentro da stack, sem porta extra.
+
+---
+
+### [130] 2026-08-24 11:15 -03 — FALHA DE SEGURANÇA MINHA: interface publicada sem autenticação
+**Reportado pelo operador, com toda a razão.** Publiquei a interface em `/estrutura/` na [129] **sem nenhum controle de acesso**. Qualquer um que alcançasse a máquina tinha:
+
+| Exposto | Consequência |
+|---|---|
+| `GET /estrutura/` | página inteira, revelando a estrutura interna |
+| `GET /estrutura/api/log` | log de execução: nomes de grupos, espaços e **usernames** |
+| `POST /estrutura/api/parar` | sabotar um provisionamento em andamento |
+| `POST /estrutura/api/executar` | **oráculo de senha**: tentativas ilimitadas contra o admin do eXo, sem limite nem registro |
+| campo `url` no corpo | **SSRF**: o servidor conectava no host que o pedido mandasse |
+
+Primeira ação: `docker compose stop estrutura` — fora do ar antes de qualquer análise.
+
+**Correção — a identidade passa a ser a da própria plataforma, não uma senha nova.**
+
+1. **Portão de autorização.** Toda requisição precisa do cookie de sessão do portal (mesma origem: `/estrutura/` e `/portal/` no mesmo host). O servidor repassa o cookie ao eXo, descobre quem é e exige pertencer a `/platform/administrators`. Cache de 60s para não martelar o backend. O único ponto sem sessão é `/saude`, usado pelo healthcheck do container, que não revela nada.
+   *Como se descobre quem é:* não há endpoint REST de "me" utilizável nesta versão — medido, `/v1/social/users/me` devolve **401 até para sessão válida** e 403 para anônimo. O que funciona é `GET /portal/dw`, que publica `eXo.env.portal.userName` no HTML para sessão válida e não traz o campo para anônimo.
+
+2. **Fim do campo de senha.** O provisionamento passou a rodar com a **sessão de quem chamou**. O servidor nunca vê, guarda nem testa credencial — o oráculo de senha deixou de existir por construção. E cada execução fica atribuída: o log abre com `operador: <usuario>`.
+
+3. **Fim do SSRF.** A URL do eXo vem exclusivamente de `EXO_URL` no ambiente do servidor. O campo sumiu da tela e o valor do corpo é ignorado.
+
+4. **CSRF.** O portão confia em cookie, e cookie o navegador manda sozinho — bastaria induzir um administrador logado a abrir uma página qualquer para ela disparar `/api/remover` em nome dele. Toda escrita passou a exigir o cabeçalho `X-Estrutura: 1`, que formulário cross-site e fetch simples não conseguem enviar sem preflight CORS, que este servidor não responde.
+
+**Prova — anônimo:**
+```
+GET  /estrutura/              -> 401    GET  /estrutura/api/log       -> 401
+POST /estrutura/api/executar  -> 401    POST /estrutura/api/remover   -> 401
+POST /estrutura/api/parar     -> 401
+corpo: {"erro": "entre no portal primeiro"}
+árvore SITDS após o POST de remoção anônimo: intacta
+```
+
+**Prova — usuário autenticado que NÃO é administrador.** Criada conta descartável `qa.naoadmin` (grupos: `/platform/users`, `/spaces/lobby_prefeitura`), login real, sessão válida (`/portal/dw` = 200):
+```
+GET  /estrutura/              -> 403    GET  /estrutura/api/log       -> 403
+POST /estrutura/api/remover   -> 403    POST /estrutura/api/parar     -> 403
+detalhe: "'qa.naoadmin' nao esta em /platform/administrators"
+```
+Conta removida ao fim. **Registrado:** o `DELETE` devolve 200 mas a identidade social permanece listada; o que importa foi conferido — a conta **não autentica mais** (`WARN Login failed for qa.naoadmin`) e o eXo já removeu os dados dela.
+
+**Prova — CSRF com sessão de administrador legítima, sem o cabeçalho:**
+```
+POST /estrutura/api/remover  -> 403 "requisicao sem o cabecalho da interface (protecao CSRF)"
+POST /estrutura/api/parar    -> 403
+GET  /estrutura/api/log      -> 200  (leitura segue permitida ao admin)
+árvore SITDS: intacta
+```
+
+**Prova — administrador, caminho feliz:** `GET /estrutura/` como root → 200, página traz "autenticado como **root**" e **não contém campo de senha** (`type="password"` ausente). Criou e removeu 3 níveis pela interface, com `operador: root` no log.
+
+**Regressão:** CLI segue funcionando com senha de ambiente (não passa pela interface). SITDS conferido ao fim: `>>> TUDO OK`.
+
+**Comando/Arquivo:** `scripts/estrutura-web.py` (portão, CSRF, fim dos campos de senha e URL), `scripts/exo_estrutura.py` (`Exo` por cookie de sessão, `conectar()` com URL só do ambiente), `docker-compose.yml` (healthcheck em `/saude`), `README.md`
+**Status:** CORRIGIDO — anônimo 401, usuário comum 403, CSRF barrado, sem senha em formulário e sem SSRF.
+
+---
+
+### [131] 2026-08-24 11:55 -03 — CICLO REFEITO DO ZERO + propagação imediata (fim da espera de 5 min)
+**Pedido:** apagar tudo e recriar, com a regra "se faltar 1 item, comece de novo".
+
+**Dois defeitos encontrados durante o ciclo, ambos corrigidos, e o ciclo reiniciado a cada um:**
+
+**Defeito 12 — `/api/log` quebrava depois de um provisionamento com imagens.** `Provisionador.nivel()` devolvia os **bytes** de avatar/banner no dicionário de resultado; esse dicionário virava o `resumo` do job e era serializado em JSON no `/api/log`. Resultado medido: `TypeError: Object of type bytes is not JSON serializable ... when serializing dict item 'avatar'`, repetido a cada polling — **a interface ficava cega logo após um provisionamento bem-sucedido**, dando a impressão de que tinha travado. Corrigido em dois pontos: o retorno passou a levar só `tem_avatar`/`tem_banner`, e o `json.dumps` do endpoint ganhou `default=str` como cinto de segurança, porque um único valor não serializável derrubava o **único** canal da interface.
+
+**Defeito 13 — relatório de remoção mentia.** `remover_arvore` anunciava `OK -- 3 nivel(is) removido(s)` mesmo quando os três `DELETE` de grupo voltaram **404 ID:NOT_FOUND**, ou seja, quando nada foi removido. Agora `remover_nivel` classifica o desfecho (`removido` / `inexistente` / `bloqueado` / `falhou`) e o resumo diz o que de fato aconteceu, com `ATENCAO` no lugar de `OK` quando houve bloqueio ou falha.
+
+**Defeito 14 — a entrega dependia de o operador esperar 5 minutos.** O vínculo de grupo sozinho não põe ninguém no espaço na hora: quem **já** estava no grupo antes do vínculo existir só entra quando o `QueueGroupSpaceBindingJob` roda (cron de 5 em 5 min). Isso atingia justamente o caso normal desta árvore — quando o espaço do Setor nasce e recebe `/SITDS` na cadeia, o secretário já está em `/SITDS` há segundos, então **não** aparecia no Setor. Eu vinha tratando isso como "detalhe operacional" no README. É defeito: conferir logo após executar acusava gente faltando.
+  Corrigido com um passe final de **propagação imediata**: para cada nível criado, o motor lista os membros de todos os grupos da cadeia e força a entrada no espaço com `POST /v1/social/spacesMemberships {space, user, role:"member"}` — o mesmo endpoint que a UI usa. O job continua rodando como rede de segurança, mas deixou de ser o único caminho.
+  *Armadilha de API registrada:* `GET /v1/users?group=<g>` **parece** listar os membros do grupo e não lista — medido, ignora o filtro e devolve os 17 usuários da plataforma. O endpoint correto é `GET /v1/groups/memberships?groupId=<g>` (devolveu 1 para `/SITDS`, correto).
+
+**Ciclo final, executado inteiro PELA INTERFACE WEB** (sessão do portal, sem senha em formulário, imagens em base64):
+```
+1. APAGAR TUDO  -> 3 níveis removidos
+2. RECRIAR      -> grupos, espaços, aninhamento, cadeia, perfil com imagens,
+                   gestores de nível e de espaço, membros
+                   consolidação de perfis: 3 íntegros
+                   propagação da cadeia: forçada, sem esperar o cron
+```
+
+**Verificação independente** (`scripts/verificar-estrutura.py`, novo — mede pelo modelo Social, que é o que a UI consome, e não pelo mesmo endpoint usado para escrever), rodada **imediatamente após** a criação:
+```
+36 verificacoes, 0 falha(s)
+>>> TUDO CONFORME O PEDIDO
+```
+Cobre: 3 grupos; 3 espaços com nome exato, descrição preenchida, sem lixo técnico vazando, privado/fechado, avatar e banner servindo HTTP 200; aninhamento 57→13, 58→57, 59→58; cadeia de visibilidade exata em cada nível; pessoas exatamente como esperado nos três espaços (incluindo wilson e isabela dentro do Setor, que antes dependiam do cron); e os três gestores com poder real sobre o próprio espaço.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (propagação imediata, `membros_do_grupo`, `membros_do_espaco`, relatório de remoção), `scripts/estrutura-web.py` (`/api/log` blindado), `scripts/verificar-estrutura.py` (novo)
+**Status:** OK — ciclo completo pela web, 36/36 verificações sem esperar cron.

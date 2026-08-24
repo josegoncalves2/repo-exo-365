@@ -200,3 +200,98 @@ deixando ~2.265 MB para o sistema, o daemon Docker e o cache de página:
 > **Não aumentar sem verificar a RAM física do hipervisor.** Em três ocasiões
 > (AUDIT [022], [025], [029]) o host Proxmox sofreu OOM e matou esta VM inteira.
 > `mem_limit` é **teto**, não reserva.
+
+## Estrutura organizacional (Secretaria / Divisão / Setor)
+
+Provisiona a hierarquia no eXo: grupo, espaço, aninhamento, cadeia de
+visibilidade, perfil (descrição, avatar, banner) e pessoas.
+
+**A visibilidade desce, não sobe.** Quem está na Secretaria enxerga as Divisões
+e os Setores; quem está na Divisão enxerga os Setores; quem está no Setor
+enxerga apenas o Setor.
+
+### Interface web
+
+Faz parte da stack. Sobe com os demais serviços e é publicada pelo mesmo proxy
+do portal, no mesmo TLS da CA interna — sem porta extra no host:
+
+**https://192.168.1.59/estrutura/**
+
+**Acesso restrito.** Só entra quem já está autenticado no portal **e** pertence
+a `/platform/administrators`. Anônimo recebe 401; usuário comum autenticado
+recebe 403 — inclusive na leitura do log. Não há senha a digitar: a execução
+usa a própria sessão do administrador, então o servidor nunca vê nem guarda
+credencial, e cada execução fica atribuída a quem a disparou (`operador:` no
+log). As ações de escrita exigem o cabeçalho `X-Estrutura`, que requisição
+cross-site não consegue enviar — proteção contra CSRF.
+
+A URL do eXo é fixada pelo servidor (`EXO_URL` no compose) e não é aceita do
+navegador: se viesse do pedido, qualquer um escolheria para qual host o
+backend se conecta (SSRF).
+
+```bash
+docker compose up -d estrutura      # container exo-estrutura
+docker compose restart estrutura    # aplica correções nos scripts (bind mount)
+docker compose logs -f estrutura
+```
+
+Monta a árvore na tela (várias secretarias, cada uma com suas divisões e
+setores, com nomenclatura própria em cada nível), aceita imagens de avatar e
+banner, e traz os botões **Executar**, **Parar**, **Remover** e **Baixar JSON**,
+com o log da execução ao vivo. A senha do administrador é digitada na tela,
+fica só em memória e não é gravada em disco.
+
+### Linha de comando
+
+```bash
+export EXO_URL=https://192.168.1.59 EXO_ADMIN_USER=root EXO_ADMIN_PASS=...
+
+# árvore inteira, a partir do mesmo JSON que a interface web gera
+./scripts/estrutura-organizacional.py --arquivo conf/estrutura/sitds.json
+./scripts/estrutura-organizacional.py --arquivo conf/estrutura/sitds.json --remover --sim
+
+# um nível por vez
+./scripts/estrutura-organizacional.py --tipo secretaria --nome SITDS \
+    --rotulo "Secretaria de Inovação" --gestores wilson.franca \
+    --descricao "..." --banner conf/estrutura/img/SITDS-banner.png
+
+# simulação: mostra tudo o que faria, sem gravar
+./scripts/estrutura-organizacional.py --arquivo estrutura.json --dry-run
+```
+
+`--gestores` entra como manager do grupo do nível **e** do grupo técnico do
+espaço — é o segundo que dá o poder de administrar, convidar e editar.
+`--usuarios` entra como membro comum. Ambos aceitam CSV ou lista por vírgula.
+
+### Rollback
+
+Qualquer erro no meio da execução desfaz o que **aquele run** criou, na ordem
+inversa (memberships, vínculos, espaços, grupos). O que já existia antes fica
+intocado. O botão Parar tem o mesmo efeito.
+
+### Imagens de perfil
+
+```bash
+./scripts/gerar-imagens-espaco.py "Setor de Tecnologia" ST conf/estrutura/img
+```
+
+Gera banner e avatar em PNG com cor estável derivada do nome, sem dependência
+externa.
+
+### Detalhe operacional
+
+A entrada de quem **já estava** nos grupos só aparece nos espaços quando o
+`QueueGroupSpaceBindingJob` do eXo roda — cron a cada 5 minutos. Conferir logo
+depois de executar dá a falsa impressão de que faltou gente.
+
+### Arquivos
+
+| Arquivo | Papel |
+|---|---|
+| `scripts/exo_estrutura.py` | motor: cliente REST, provisionamento, rollback, remoção |
+| `scripts/estrutura-organizacional.py` | CLI |
+| `scripts/estrutura-web.py` | interface web |
+| `scripts/gerar-imagens-espaco.py` | avatar e banner PNG |
+| `conf/estrutura/*.json` | árvores versionadas |
+| `conf/estrutura-registro.json` | mapa grupo → espaço (gerado, não editar) |
+| `estrutura-organizacional.log` | auditoria de cada execução |

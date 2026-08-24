@@ -427,6 +427,47 @@ services:
     logging: *default-logging
 
   # ----------------------------------------------------------------
+  # Interface web da estrutura organizacional (Secretaria/Divisao/Setor).
+  # Provisiona grupo + espaco + aninhamento + cadeia de visibilidade +
+  # perfil + pessoas, com rollback. Publicada pelo nginx em /estrutura/.
+  #
+  # Nao publica porta no host: quem entra passa pelo mesmo proxy do portal,
+  # entao herda o TLS da CA interna e nao abre mais uma porta na maquina.
+  #
+  # Os scripts entram por bind mount, nao COPY: corrigir um defeito aqui e'
+  # 'docker compose restart estrutura', sem rebuild de imagem.
+  # ----------------------------------------------------------------
+  estrutura:
+    build:
+      context: .
+      dockerfile: Dockerfile.estrutura
+    image: exo-estrutura:1.0
+    container_name: exo-estrutura
+    environment:
+      TZ: ${TZ}
+      # Dentro da rede do compose fala direto com o Tomcat: evita dar a volta
+      # pelo nginx e nao depende do IP do host estar resolvivel de dentro.
+      EXO_URL: ${EXO_ESTRUTURA_URL:-http://exo:8080}
+      EXO_ESTRUTURA_LOG: /app/estrutura-organizacional.log
+      EXO_ESTRUTURA_REGISTRO: /app/conf/estrutura-registro.json
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./conf:/app/conf
+      - ./estrutura-organizacional.log:/app/estrutura-organizacional.log
+    depends_on:
+      exo:
+        condition: service_healthy
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:878/saude"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    logging: *default-logging
+
+  # ----------------------------------------------------------------
   # Matrix / Synapse — servidor de chat (equivalente ao Teams)
   # NÃO faz parte do docker-compose.yml oficial do eXo. Foi acrescentado
   # porque na linha 7.x o eXo substituiu o chat nativo pela integração

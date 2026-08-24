@@ -1,0 +1,13 @@
+# ---------------------------------------------------------------------------
+# Interface web da estrutura organizacional.
+#
+# Imagem minima de proposito: o servidor usa so' a biblioteca padrao do
+# Python, entao nao ha o que instalar alem do interpretador. Os scripts
+# entram por bind mount (nao COPY) para que uma correcao no host valha com
+# um restart do container, sem rebuild.
+# ---------------------------------------------------------------------------
+FROM alpine:latest
+RUN apk add --no-cache python3 tzdata curl
+WORKDIR /app
+EXPOSE 878
+CMD ["python3", "/app/scripts/estrutura-web.py", "--host", "0.0.0.0", "--porta", "878"]
