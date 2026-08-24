@@ -135,22 +135,43 @@ def le_usuarios(valor):
     if not valor:
         return []
     if os.path.isfile(valor):
-        achados = []
+        # Rotulos que identificam uma linha de cabecalho.
+        CABECALHOS = ("username", "usuario", "usuário", "login", "user",
+                      "nome", "name", "cargo", "email", "e-mail", "funcao", "função")
         with open(valor, newline="", encoding="utf-8-sig") as fh:
-            amostra = fh.read(4096); fh.seek(0)
-            tem_cab = csv.Sniffer().has_header(amostra) if amostra.strip() else False
-            if tem_cab:
-                for linha in csv.DictReader(fh):
-                    chave = next((k for k in linha
-                                  if k and k.strip().lower() in
-                                  ("username", "usuario", "usuário", "login", "user")), None)
-                    v = (linha.get(chave) if chave else list(linha.values())[0]) or ""
-                    if v.strip():
-                        achados.append(v.strip())
-            else:
-                for linha in csv.reader(fh):
-                    if linha and linha[0].strip():
-                        achados.append(linha[0].strip())
+            texto = fh.read()
+        if not texto.strip():
+            return []
+        linhas = [l for l in texto.splitlines() if l.strip()]
+
+        # Delimitador: Excel em portugues salva com ';'. Escolhe o que mais
+        # aparece na primeira linha; ',' desempata.
+        cab = linhas[0]
+        delim = ";" if cab.count(";") > cab.count(",") else ","
+
+        # Cabecalho: decide pela PRIMEIRA CELULA, nao pelo csv.Sniffer.
+        # O Sniffer erra nos dois sentidos em arquivos curtos -- num teste ele
+        # deixou de ver 'username,cargo' como cabecalho e, noutro, tratou uma
+        # lista pura de logins como se a primeira linha fosse titulo,
+        # engolindo um usuario em silencio.
+        primeira = (next(csv.reader([cab], delimiter=delim), [""])[0] or "").strip().lower()
+        tem_cab = primeira in CABECALHOS
+
+        achados, corpo = [], linhas[1:] if tem_cab else linhas
+        col = 0
+        if tem_cab:
+            titulos = [(c or "").strip().lower()
+                       for c in next(csv.reader([cab], delimiter=delim), [])]
+            for i, t in enumerate(titulos):
+                if t in ("username", "usuario", "usuário", "login", "user"):
+                    col = i
+                    break
+        for linha in csv.reader(corpo, delimiter=delim):
+            if not linha:
+                continue
+            v = (linha[col] if col < len(linha) else linha[0]).strip()
+            if v:
+                achados.append(v)
         return list(dict.fromkeys(achados))
     return list(dict.fromkeys(x.strip() for x in valor.split(",") if x.strip()))
 
