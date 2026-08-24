@@ -39,9 +39,27 @@
 #
 # Credenciais: EXO_URL, EXO_ADMIN_USER, EXO_ADMIN_PASS (ou --url/--user/--pass)
 # ============================================================================
-import argparse, csv, json, os, sys, urllib.parse, urllib.request, ssl, http.cookiejar, time
+import argparse, csv, json, os, re, sys, unicodedata
+import urllib.parse, urllib.request, ssl, http.cookiejar, time
 
 TIPOS = ("secretaria", "divisao", "setor")
+
+
+def slug_grupo(nome):
+    """Nome de grupo seguro para virar segmento de caminho.
+
+    O eXo aceita criar um grupo chamado 'Saude e Bem Estar', mas o id vira
+    '/Saude e Bem Estar' -- com espacos e acentos dentro de um caminho que
+    entra em URL e no id de membership ('member:<user>:<grupo>'). Isso quebra
+    de forma dificil de diagnosticar. Aqui o nome e' normalizado:
+    acentos removidos, espacos e pontuacao viram '-', tudo em maiuscula.
+      'Saude e Bem Estar'                -> 'SAUDE-E-BEM-ESTAR'
+      'Divisao de Inovacao Tecnologica'  -> 'DIVISAO-DE-INOVACAO-TECNOLOGICA'
+    Quem quiser o nome bonito usa --rotulo, que vai para o espaco.
+    """
+    sem_acento = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode()
+    limpo = re.sub(r"[^A-Za-z0-9]+", "-", sem_acento).strip("-").upper()
+    return limpo or "GRUPO"
 
 
 class Exo:
@@ -134,6 +152,12 @@ def le_usuarios(valor):
     """Aceita CSV (com/sem cabecalho) ou lista separada por virgula."""
     if not valor:
         return []
+    # Um caminho que PARECE arquivo (tem barra ou termina em .csv) mas nao
+    # existe e' erro, nao lista de usuarios. Antes o script seguia calado e
+    # ninguem era adicionado.
+    parece_arquivo = valor.endswith(".csv") or "/" in valor or os.sep in valor
+    if parece_arquivo and not os.path.isfile(valor):
+        sys.exit(f"ERRO: arquivo de usuarios nao encontrado: {valor}")
     if os.path.isfile(valor):
         # Rotulos que identificam uma linha de cabecalho.
         CABECALHOS = ("username", "usuario", "usuário", "login", "user",
@@ -208,6 +232,7 @@ def espaco_por_grupo_organizacional(exo, group_id, mapa=None):
         pretty = (esp.get("prettyName") or "").strip().lower()
         display = (esp.get("displayName") or "").strip().lower()
         if alvo == pretty or alvo == display:
+            esp = dict(esp); esp["_casou_por"] = "nome"
             return esp
     candidatos = []
     for esp in mapa.values():
@@ -216,7 +241,8 @@ def espaco_por_grupo_organizacional(exo, group_id, mapa=None):
             candidatos.append((len(b), esp))
     if candidatos:
         candidatos.sort(key=lambda x: x[0])
-        return candidatos[0][1]
+        esp = dict(candidatos[0][1]); esp["_casou_por"] = "binding"
+        return esp
     return None
 
 
@@ -233,6 +259,10 @@ def main():
     p.add_argument("--url", default=os.environ.get("EXO_URL", "https://192.168.1.59"))
     p.add_argument("--user", default=os.environ.get("EXO_ADMIN_USER", "root"))
     p.add_argument("--senha", default=os.environ.get("EXO_ADMIN_PASS", ""))
+    p.add_argument("--remover", action="store_true",
+                   help="DESFAZ o nivel: tira o grupo dos bindings de todos os espacos, "
+                        "apaga o espaco e apaga o grupo. Pede confirmacao.")
+    p.add_argument("--sim", action="store_true", help="responde sim a confirmacao do --remover")
     p.add_argument("--revincular", action="store_true",
                    help="tira do grupo e poe de volta quem ja' estava, forcando a propagacao "
                         "para os espacos (use quando a pessoa esta no grupo mas nao nos espacos)")
@@ -244,13 +274,78 @@ def main():
     if not a.senha:
         sys.exit("ERRO: informe a senha em EXO_ADMIN_PASS ou --senha")
 
-    nome = a.nome.strip().strip("/")
-    rotulo = a.rotulo or nome
+    nome_bruto = a.nome.strip().strip("/")
+    nome = slug_grupo(nome_bruto)
+    rotulo = a.rotulo or nome_bruto
+    if nome != nome_bruto:
+        print(f"   nome do grupo normalizado: '{nome_bruto}' -> '{nome}'")
     pai = ("/" + a.pai.strip("/")) if a.pai else ""
     caminho = f"{pai}/{nome}" if pai else f"/{nome}"
 
     exo = Exo(a.url, a.user, a.senha, a.dry_run)
     print(f"\n== {a.tipo.upper()}: {rotulo}  ->  grupo {caminho}")
+
+    # ---------------- ROLLBACK / REMOCAO ----------------
+    # Desfaz na ordem inversa da criacao. Tirar o grupo dos bindings ANTES de
+    # apagar o espaco importa: quem entrou pelo vinculo sai junto, e quem ja'
+    # era membro antes (IS_MEMBER_BEFORE=1) permanece -- o eXo nao desfaz o
+    # que nao foi ele que fez.
+    if a.remover:
+        alvo_esp = espaco_por_grupo_organizacional(exo, caminho)
+        if alvo_esp and alvo_esp.get("_casou_por") != "nome":
+            print(f" -- ATENCAO: nao ha espaco com nome correspondente a '{caminho}'.")
+            print(f"    O mais parecido e '{alvo_esp.get('displayName')}', achado por palpite --")
+            print( "    ele NAO sera apagado. Sera' apenas retirado o vinculo do grupo.")
+        print(f" -- REMOVER {caminho}"
+              + (f" e o espaco '{alvo_esp.get('displayName')}' (id {alvo_esp.get('id')})"
+                 if alvo_esp and alvo_esp.get("_casou_por") == "nome" else " (bindings apenas)"))
+        if not a.sim and not a.dry_run:
+            if input("    confirma? isto tira as pessoas dos espacos [digite SIM]: ").strip() != "SIM":
+                sys.exit("    cancelado.")
+        for esp in espacos(exo).values():
+            atuais = bindings_do_espaco(exo, esp.get("id"))
+            if caminho in atuais:
+                restantes = [g for g in atuais if g != caminho]
+                exo.escreve("POST",
+                            f"/portal/rest/v1/social/spaceGroupBindings/saveGroupsSpaceBindings/{esp.get('id')}",
+                            restantes, "retirar binding")
+                print(f"    binding removido de '{esp.get('displayName')}' (restam {len(restantes)})")
+        # TRAVA DE SEGURANCA. So apaga o espaco se ele foi identificado pelo
+        # NOME. Quando o espaco ja nao existe, a busca cai no criterio de
+        # "menos bindings" e devolve um espaco QUALQUER -- numa execucao real
+        # devolveu 'Lobby Prefeitura' e o script tentou apaga-lo (o DELETE
+        # falhou por acaso, mas os bindings do Lobby ja tinham sido retirados
+        # e 14 pessoas ficaram fora do espaco). Palpite nao apaga nada.
+        if alvo_esp and alvo_esp.get("_casou_por") == "nome":
+            st_e, _ = exo.escreve("DELETE",
+                                  f"/portal/rest/v1/social/spaces/{alvo_esp.get('id')}",
+                                  None, "apagar espaco")
+            if a.dry_run or st_e < 400:
+                print(f"    espaco apagado: {alvo_esp.get('displayName')}")
+            else:
+                print(f"    espaco NAO apagado ({st_e}): {alvo_esp.get('displayName')}")
+        elif alvo_esp:
+            print(f"    espaco PRESERVADO: '{alvo_esp.get('displayName')}' nao casa pelo nome "
+                  f"com '{caminho}'. Nao apago por palpite -- apague pela UI se for o caso.")
+        else:
+            print("    espaco nao encontrado (ja removido?)")
+        # O caminho do grupo vai em QUERY STRING, nao no path -- conferido no
+        # JS da propria UI. Com o caminho embutido a API devolve 404 e o
+        # grupo fica para tras (aconteceu: espaco e bindings sumiam, o grupo
+        # nao). O eXo tambem recusa apagar grupo com filho ("has at least one
+        # child group"), entao a remocao vai do nivel mais fundo para cima.
+        gq = urllib.parse.quote(caminho, safe="")
+        st_g, resp_g = exo.escreve("DELETE", f"/portal/rest/v1/groups?groupId={gq}",
+                                   None, "apagar grupo")
+        if a.dry_run or st_g < 400:
+            print(f"    grupo apagado: {caminho}")
+        elif "child group" in str(resp_g):
+            print(f"    grupo MANTIDO: {caminho} ainda tem subgrupos. "
+                  f"Remova primeiro os niveis de baixo.")
+        else:
+            print(f"    grupo NAO apagado ({st_g}): {caminho}")
+        print("\nOK (removido)." if not a.dry_run else "\nOK (dry-run).")
+        return
     if a.dry_run:
         print("   (dry-run: nada sera gravado)")
 
