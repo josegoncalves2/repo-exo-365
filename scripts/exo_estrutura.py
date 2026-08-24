@@ -758,12 +758,21 @@ class Provisionador:
             if str(esp.get("parentSpaceId") or "") == str(pai_esp.get("id")):
                 self.log(f" 3. aninhar  ja esta dentro de '{pai_esp.get('displayName')}'")
             else:
+                # O PUT SUBSTITUI o objeto: sem 'description' no corpo, este
+                # aninhamento ZERARIA a descricao do nivel (defeito da mesma
+                # classe do passo 5, so' que aqui e mais cedo). Por isso a
+                # descricao viva vai junto: a desejada quando informada, senao
+                # a que o espaco ja' tem, senao o padrao do tipo. Fecha o furo
+                # em TODOS os PUT que substituem o espaco, nao so' no perfil.
+                desc_ninho = (descricao if descricao is not None
+                              else (esp.get("description") or f"{tipo} {rotulo}"))
                 self.exo.escreve("PUT", f"/portal/rest/v1/social/spaces/{space_id}",
                                  {"id": str(space_id),
                                   "displayName": esp.get("displayName") or rotulo,
                                   "parentSpaceId": str(pai_esp.get("id")),
                                   "visibility": "private",
-                                  "subscription": "closed"}, "aninhar")
+                                  "subscription": "closed",
+                                  "description": desc_ninho}, "aninhar")
                 self.log(f" 3. aninhar  dentro de '{pai_esp.get('displayName')}' "
                          f"(id {pai_esp.get('id')})")
         else:

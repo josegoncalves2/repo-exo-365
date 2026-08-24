@@ -3516,3 +3516,31 @@ A verificação mede pelo modelo Social (o que a UI consome), não pelo mesmo en
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (D1-D6), `scripts/estrutura-web.py` (D7)
 **Status:** OK — 7 defeitos corrigidos e provados. Redisparando os 5 fiscais para o ciclo 2.
+
+---
+
+### [134] 2026-08-24 13:55 -03 — CICLO 2 dos fiscais: 3 APROVA + REJEIÇÃO do Técnico -> D8 (mesma classe de PUT no aninhamento)
+
+**Votos parciais do ciclo 2:** Estético APROVA (honestidade registrada; banner humano lastreado por rollback real), Leigo APROVA (4 motivos sanados, achou a prova do bloqueio de gestor no log de hoje), Cético APROVA (7 correções conferidas no código, segurança 401/403 intacta), Especialista pendente.
+
+**Técnico REJEITA — defeito D8, da MESMA classe do ciclo 1, migrado para outro PUT.** Corrigi `aplicar_perfil` (passo 5) para sempre mandar `description`, mas o **PUT de aninhamento (passo 3, exo_estrutura.py:761)** gravava o espaço SEM `description`. Como o PUT substitui o objeto, isso ZERAVA a descrição de todo nível aninhado; e um nível criado sem descrição explícita (`descricao=None`) não era restaurado pelo passo 5, porque `desc_alvo` recaía sobre a descrição já zerada. O teste 36/36 mascarava: o `sitds.json` informa descrição nos três níveis.
+
+**Correção D8 (fecha a classe em TODOS os PUT que substituem o espaço):** o PUT de aninhamento passou a incluir `description` viva — a desejada quando informada, senão a atual, senão o padrão `f"{tipo} {rotulo}"`.
+
+**Prova D8:** provisionada árvore com Divisão e Setor SEM descrição explícita. Resultado do GET após criar:
+```
+/D8SEC              desc=8   'tem desc'                  ok
+/D8SEC/D8DIV        desc=27  'divisao D8 Divisao SEM desc'  ok  (antes: VAZIA)
+/D8SEC/D8DIV/D8SET  desc=23  'setor D8 Setor SEM desc'      ok  (antes: VAZIA)
+```
+
+**Prova ao vivo pedida pelo Cético — delete/recreate medido por GET /groups independente:**
+```
+ANTES do delete:  ['/SITDS', '/SITDS/DIT', '/SITDS/DIT/ST']
+APOS o delete:    []
+APOS recriar:     ['/SITDS', '/SITDS/DIT', '/SITDS/DIT/ST']
+verificacao independente: 36/36, TUDO CONFORME
+```
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (PUT de aninhamento com description)
+**Status:** OK — D8 corrigido e provado; ciclo real 36/36. Aguardando voto do Especialista; depois, ciclo 3 para 5/5 no código final.
