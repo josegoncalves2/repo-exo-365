@@ -302,21 +302,40 @@ def paginar(exo, base, chave, passo=100):
     sep = "&" if "?" in base else "?"
     itens, offset, total, giros = [], 0, None, 0
     while True:
-        st, d = exo.get(f"{base}{sep}offset={offset}&limit={passo}")
+        # Limite da pagina limitado ao que resta: este servidor devolve HTTP
+        # 500 ('Try to get more than ... can retrieve') quando offset+limit
+        # passa do que existe -- inclusive porque o 'size' as vezes conta 1 a
+        # mais do que da' para listar. Cobrir so' o que resta evita provocar o
+        # 500 de proposito.
+        lim = passo
+        if total is not None and total >= 0:
+            if offset >= total:
+                break
+            lim = max(1, min(passo, total - offset))
+        # _raw, nao get: get() LEVANTA em HTTP>=400 e um 500 de paginacao
+        # abortaria o provisionamento/remocao inteiro. Aqui um erro so' encerra
+        # a coleta com o que ja' se tem -- nunca derruba o run.
+        st, t = exo._raw("GET", f"{base}{sep}offset={offset}&limit={lim}")
+        if st >= 400:
+            break
+        try:
+            d = json.loads(t) if t.strip() else {}
+        except json.JSONDecodeError:
+            break
         if isinstance(d, list):
             itens.extend(d)
             break
         if not isinstance(d, dict):
             break
-        itens.extend(d.get(chave, []) or [])
+        lote = d.get(chave, []) or []
+        itens.extend(lote)
         if total is None:
             total = d.get("size")
-        offset += passo
+        offset += lim
         giros += 1
-        if total is not None and total >= 0:
-            if offset >= total:
-                break
-        elif not (d.get(chave) or []):
+        if not lote:                  # pagina vazia = fim de verdade
+            break
+        if total is not None and total >= 0 and offset >= total:
             break
         if giros > 100000:            # trava contra loop infinito
             break

@@ -3544,3 +3544,21 @@ verificacao independente: 36/36, TUDO CONFORME
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (PUT de aninhamento com description)
 **Status:** OK — D8 corrigido e provado; ciclo real 36/36. Aguardando voto do Especialista; depois, ciclo 3 para 5/5 no código final.
+
+---
+
+### [135] 2026-08-24 14:05 -03 — CICLO 2 fechou 3x2; Especialista REJEITA -> D9 (paginacao que abortava no HTTP 500 de offset)
+
+**Especialista REJEITA com achado empirico real.** Confirmado por curl: o endpoint de grupos deste servidor devolve **HTTP 500** quando o offset passa do que existe (`offset=51&limit=2` -> 500; `offset=100&limit=100` -> 500; a mensagem e' "Try to get more than groups can retrieve"), e o `size` conta 52 para 51 grupos realmente listaveis. Meu `paginar()` usava `exo.get()`, que LEVANTA em HTTP>=400 -- logo, numa colecao > passo(100), o segundo GET (offset=100) dispararia 500 e ABORTARIA o run inteiro. Latente nesta instalacao (51 grupos cabem numa pagina), mas defeito.
+
+Registrado tambem: o Especialista rodou `verificar-estrutura.py` e viu "6 FALHA / NAO CONFORME" -- foi CORRIDA: ele mediu exatamente na janela do meu delete/recreate ao vivo (prova do Cetico). Conferido logo apos: 36/36, SITDS intacto.
+
+**Correcao D9 (paginacao a prova do servidor):** `paginar()` passou a (1) usar `_raw` em vez de `get`, para um erro de pagina ENCERRAR a coleta com o que ja' se tem, nunca derrubar o run; (2) limitar cada pagina ao que resta (`min(passo, total-offset)`), para nao provocar o 500 de proposito; (3) parar em pagina vazia, em `offset>=size`, ou em qualquer status>=400.
+
+**Provas:**
+- `grupos_existentes()` colhe os 51 grupos, com `/SITDS`, `/SITDS/DIT`, `/SITDS/DIT/ST` presentes; nao aborta apesar do 500 em offset alto.
+- **Idempotencia (contraprova pedida pelo Especialista):** criar a arvore SITDS 2x seguidas -> ambas "ja existe" em grupo e espaco, "perfil integro", SEM erro nem rollback. A previsao de falha/rollback no 2o run esta refutada.
+- Verificacao independente: 36/36, TUDO CONFORME.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (paginar com _raw, parada graciosa e limite por resto)
+**Status:** OK — D9 corrigido e provado. Todos os defeitos dos ciclos 1 e 2 (D1-D9) fechados. Indo para o ciclo 3 (5/5 no codigo final).
