@@ -252,7 +252,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
   <div class="card">
     <div class="topo"><h2 style="margin:0">Hierarquia</h2>
-      <button class="mini" onclick="addSec()">+ Secretaria</button></div>
+      <span><button class="mini" onclick="carregarArvore()">&#8635; Recarregar</button>
+      <button class="mini" onclick="addSec()">+ Secretaria</button></span></div>
+    <div style="font-size:12px;color:var(--suave);margin:2px 0 8px">
+      A estrutura que ja' existe carrega aqui. Para <b>acrescentar</b> uma divisao/setor,
+      clique em "+ Divisao"/"+ Setor" no nivel desejado. Para <b>renomear</b>, edite o
+      "Nome que aparece na tela" (a sigla e' fixa). Depois clique em Executar.</div>
     <div id="arvore"></div>
     <div class="acoes">
       <button class="p" id="bExec" onclick="acao(false)">Executar</button>
@@ -277,7 +282,26 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <script>
 let arv = [];
 const vazio = () => ({nome:"",rotulo:"",descricao:"",gestores:"",usuarios:"",
-                      avatar:null,banner:null,divisoes:[],setores:[]});
+                      avatar:null,banner:null,divisoes:[],setores:[],existe:false});
+// Carrega a estrutura JA existente do servidor, para acrescentar filho ou
+// renomear sem remontar tudo. Nos existentes vem com existe:true (sigla fixa).
+async function carregarArvore(){
+  try{
+    const r=await fetch("api/arvore"); const j=await r.json();
+    arv=(j.arvore||[]).map(s=>({
+      nome:s.nome,rotulo:s.rotulo,descricao:s.descricao||"",gestores:"",usuarios:"",
+      avatar:null,banner:null,existe:true,
+      divisoes:(s.divisoes||[]).map(d=>({
+        nome:d.nome,rotulo:d.rotulo,descricao:d.descricao||"",gestores:"",usuarios:"",
+        avatar:null,banner:null,existe:true,
+        setores:(d.setores||[]).map(t=>({
+          nome:t.nome,rotulo:t.rotulo,descricao:t.descricao||"",gestores:"",usuarios:"",
+          avatar:null,banner:null,existe:true,setores:[]}))
+      }))
+    }));
+    pinta();
+  }catch(e){ pinta(); }
+}
 function addSec(){arv.push(vazio());pinta()}
 function addDiv(i){arv[i].divisoes.push(vazio());pinta()}
 function addSet(i,j){arv[i].divisoes[j].setores.push(vazio());pinta()}
@@ -286,14 +310,20 @@ function delDiv(i,j){arv[i].divisoes.splice(j,1);pinta()}
 function delSet(i,j,k){arv[i].divisoes[j].setores.splice(k,1);pinta()}
 
 function campos(no,cam){
+  const trava = no.existe
+    ? `readonly title="Sigla fixa: o eXo nao renomeia grupo. Para renomear, edite o 'Nome que aparece na tela' ao lado." style="background:#eceff1;color:var(--suave)"`
+    : `title="Codigo curto e unico do nivel (vira o identificador do grupo). Ex.: SITDS, DIT, ST"`;
+  const dicaSigla = no.existe
+    ? `<small style="color:var(--suave)">sigla fixa (ja existe). renomeie pelo nome ao lado &rarr;</small>`
+    : `<small style="color:var(--suave)">codigo curto e unico (vira o grupo). ex.: SITDS</small>`;
   return `
+  ${no.existe?`<div style="font-size:11px;color:var(--verde);font-weight:600;margin-bottom:4px">JA EXISTE &mdash; editavel: nome, descricao, pessoas, imagens</div>`:``}
   <div class="linha">
-    <div><label>Sigla curta <b style="color:var(--vermelho)">*obrigatorio</b></label>
-      <input value="${esc(no.nome)}" oninput="set('${cam}','nome',this.value)"
-             placeholder="ex: SITDS"
-             title="Codigo curto e unico do nivel (vira o identificador do grupo). Ex.: SITDS, DIT, ST">
-      <small style="color:var(--suave)">codigo curto e unico (vira o grupo). ex.: SITDS</small></div>
-    <div><label>Nome que aparece na tela</label>
+    <div><label>Sigla curta ${no.existe?``:`<b style="color:var(--vermelho)">*obrigatorio</b>`}</label>
+      <input value="${esc(no.nome)}" ${no.existe?``:`oninput="set('${cam}','nome',this.value)"`}
+             placeholder="ex: SITDS" ${trava}>
+      ${dicaSigla}</div>
+    <div><label>Nome que aparece na tela ${no.existe?`(renomear aqui)`:``}</label>
       <input value="${esc(no.rotulo)}" oninput="set('${cam}','rotulo',this.value)"
              placeholder="ex: Secretaria de Inovacao...">
       <small style="color:var(--suave)">titulo por extenso do espaco</small></div>
@@ -430,10 +460,15 @@ async function poll(){
     if(M[j.estado]){h.style.display="block";h.textContent=M[j.estado][0];
       h.style.background=M[j.estado][1];h.style.color=M[j.estado][2];}
     else{h.style.display="none";}
+    // ao terminar com sucesso, recarrega a arvore para refletir o novo estado
+    // (nivel novo aparece como 'ja existe', rename atualizado).
+    if((j.estado==="ok"||j.estado==="parado")&&ultimoEstado==="rodando"){carregarArvore();}
+    ultimoEstado=j.estado;
   }catch(e){}
   setTimeout(poll,900);
 }
-addSec(); poll();
+let ultimoEstado="";
+carregarArvore(); poll();
 </script>
 """
 
@@ -527,6 +562,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._envia(200, json.dumps(
                 {"linhas": linhas, "total": total, "estado": estado, "resumo": resumo},
                 default=str))
+        if self.path.startswith("/api/arvore"):
+            # a estrutura JA existente, para a tela carregar e permitir
+            # acrescentar filho / renomear sem remontar tudo.
+            try:
+                exo = E.conectar(cookie=self.headers.get("Cookie"))
+                return self._envia(200, json.dumps(
+                    {"arvore": E.arvore_atual(exo)}, default=str))
+            except Exception as e:
+                return self._envia(200, json.dumps({"arvore": [], "erro": str(e)}))
         return self._envia(404, json.dumps({"erro": "nao encontrado"}))
 
     def do_POST(self):

@@ -3654,3 +3654,30 @@ Regressao SITDS: 36/36. Contas de teste todas removidas ao fim.
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (`_existe_usuario` no store org; deteccao de fantasma; rename no `aplicar_perfil`)
 **Status:** OK -- criacao de usuario correta (store org), fantasma com erro claro, rename funcional, incremento pontual pela CLI. SADS deixado criado como demonstracao.
+
+---
+
+### [140] 2026-08-25 — WEB agora CARREGA a estrutura existente: acrescentar divisao/setor e renomear inline
+
+**Cobranca do operador (repetida):** a web obrigava a remontar a arvore inteira; nao dava para adicionar so' uma divisao/setor a algo existente, nem renomear, pela tela. Arquitetura incompleta -- com razao.
+
+**Feito:**
+- `arvore_atual(exo)` (motor): reconstroi a arvore provisionada (secretaria>divisao>setor) do registro grupo->espaco, com o displayName e a descricao ATUAIS de cada espaco.
+- `GET /api/arvore` (web, autorizado, sessao do portal): devolve essa arvore.
+- A tela **carrega sozinha** a estrutura existente ao abrir (`carregarArvore()`), e depois de cada execucao. Nos existentes vem marcados: sigla **fixa** (o eXo nao renomeia grupo), com aviso "JA EXISTE -- editavel: nome, descricao, pessoas, imagens".
+- **Acrescentar:** "+ Divisao"/"+ Setor" no nivel existente cria um filho editavel; Executar manda a arvore e o motor (idempotente) cria so' o novo (existentes viram "ja existe").
+- **Renomear:** editar o "Nome que aparece na tela" de um nivel existente e Executar -> `aplicar_perfil` atualiza o displayName (defeito D11c ja corrigido).
+- Botao "Recarregar" e um aviso curto explicando o fluxo.
+
+**Prova (e2e Chromium real, tests/e2e_incremental.py):**
+```
+1) estrutura existente carregou na tela (SADS visivel, 'JA EXISTE')
+2) renomeei SADS no campo de nome de exibicao
+3) adicionei a divisao nova DPS a' SADS existente, gestor por NOME 'Solange Ramos'
+4) Executar -> ok
+5) servidor: /SADS/DPS criada; /SADS renomeada para '...e Cidadania'; conta solange.ramos criada
+6) limpeza: divisao nova e conta de teste removidas (SADS mantido)
+```
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (`arvore_atual`), `scripts/estrutura-web.py` (`/api/arvore`, `carregarArvore`, sigla travada em no existente, recarrega apos executar), `tests/e2e_incremental.py` (novo)
+**Status:** OK — pela web: carrega o existente, acrescenta divisao/setor a estrutura existente, e renomeia inline. Provado ponta a ponta com Chromium.

@@ -289,6 +289,47 @@ def registro_ler():
         return {}
 
 
+def arvore_atual(exo):
+    """Reconstroi a arvore provisionada (secretaria > divisao > setor) a partir
+    do registro grupo->espaco, com o displayName ATUAL de cada espaco.
+
+    Serve a interface web para CARREGAR o que ja' existe e permitir acrescentar
+    um filho ou renomear, sem o operador remontar a arvore inteira.
+    """
+    reg = registro_ler()
+    mapa = espacos(exo)
+    grupos = grupos_existentes(exo)
+
+    def info(cam):
+        sid = reg.get(cam)
+        esp = mapa.get(str(sid)) if sid else None
+        return {"nome": cam.strip("/").split("/")[-1], "caminho": cam,
+                "rotulo": (esp.get("displayName") if esp else "") or "",
+                "descricao": (esp.get("description") if esp else "") or "",
+                "existe": bool(esp) and cam in grupos}
+
+    secs = {}
+    for cam in sorted(reg):
+        p = cam.strip("/").split("/")
+        if len(p) == 1:
+            secs[cam] = dict(info(cam), divisoes={})
+    for cam in sorted(reg):
+        p = cam.strip("/").split("/")
+        if len(p) == 2 and f"/{p[0]}" in secs:
+            secs[f"/{p[0]}"]["divisoes"][cam] = dict(info(cam), setores=[])
+    for cam in sorted(reg):
+        p = cam.strip("/").split("/")
+        if len(p) == 3:
+            sec, div = f"/{p[0]}", f"/{p[0]}/{p[1]}"
+            if sec in secs and div in secs[sec]["divisoes"]:
+                secs[sec]["divisoes"][div]["setores"].append(info(cam))
+    saida = []
+    for s in secs.values():
+        s["divisoes"] = list(s["divisoes"].values())
+        saida.append(s)
+    return saida
+
+
 def registro_gravar(mapa):
     try:
         os.makedirs(os.path.dirname(REGISTRO_PATH), exist_ok=True)
