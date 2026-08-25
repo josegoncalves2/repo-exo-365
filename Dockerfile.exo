@@ -173,6 +173,14 @@ RUN set -eux; \
       | grep -q '^agenda.timeline.seeMore.tooltip=Ver mais$'; \
     unzip -p /opt/exo/webapps/task-management.war WEB-INF/classes/locale/portlet/taskManagement_pt_BR.properties \
       | grep -q '^label.seeAll=Ver mais$'; \
+    unzip -p /opt/exo/webapps/app-center.war WEB-INF/classes/locale/portlet/MyApplications_pt_BR.properties \
+      | grep -q '^myApplications.seeMore.label=Ver mais$'; \
+    unzip -p /opt/exo/webapps/app-center.war WEB-INF/classes/locale/portlet/MyApplications_pt_BR.properties \
+      | grep -q '^myApplications.seeMore.tooltip=Ver mais$'; \
+    unzip -p /opt/exo/webapps/content.war WEB-INF/classes/locale/portlet/Links_pt_BR.properties \
+      | grep -q '^links.label.seeMore=Ver mais$'; \
+    ! unzip -p /opt/exo/webapps/app-center.war WEB-INF/classes/locale/portlet/MyApplications_pt_BR.properties \
+      | grep -q 'Ver mais comentários'; \
     test "$(unzip -l /opt/exo/webapps/agenda.war | tail -1 | awk '{print $2}')" -ge 600; \
     test "$(unzip -l /opt/exo/webapps/agenda.war | tail -1 | awk '{print $2}')" -le 640; \
     test "$(unzip -l /opt/exo/webapps/task-management.war | tail -1 | awk '{print $2}')" -ge 520; \

@@ -70,10 +70,27 @@ IDIOMA_OBRIGATORIO = "pt_BR"   # idioma da instalacao: falta aqui reprova o buil
 # cujo valor em ingles e' exatamente "See more" e que a eXo traduziu em 36 de 36
 # idiomas. Alvos (todos com valor ingles "See more"):
 SEE_MORE_ORIGEM = ("layout.war", "SiteNavigation", "siteNavigation.label.seeMore")
+# ATUALIZADO (2026-08-25): a lista cobria 2 webapps e o defeito estava em 6.
+# O widget "Atalhos" do painel exibia "Ver mais comentarios" -- num quadro que
+# nao tem comentario nenhum. Nao era dado nosso: e' a traducao oficial pt-BR do
+# app-center que verte "See more" como "Ver mais comentarios", e o mesmo erro se
+# repete em outras tres webapps. Varredura que encontrou todas (rode de novo
+# apos cada upgrade da imagem):
+#
+#   for f in /opt/exo/webapps/*/WEB-INF/classes/locale/portlet/*_pt_BR.properties;
+#     do grep -H "Ver mais comentarios" "$f"; done | grep -viE "comment|reaction"
+#
+# Como a correcao vem da traducao oficial de siteNavigation.label.seeMore, ela
+# vale para os 39 idiomas -- nao so' para o pt-BR onde o erro foi notado.
 SEE_MORE_ALVOS = [
-    ("agenda.war",          "Agenda",         ["agenda.timeline.seeMore",
-                                               "agenda.timeline.seeMore.tooltip"]),
-    ("task-management.war", "taskManagement", ["label.seeAll"]),
+    ("agenda.war",              "Agenda",                      ["agenda.timeline.seeMore",
+                                                                "agenda.timeline.seeMore.tooltip"]),
+    ("task-management.war",     "taskManagement",              ["label.seeAll"]),
+    ("app-center.war",          "MyApplications",              ["myApplications.seeMore.label",
+                                                                "myApplications.seeMore.tooltip"]),
+    ("content.war",             "Links",                       ["links.label.seeMore"]),
+    ("gamification-github.war", "GitHubWebHookManagement",     ["githubConnector.admin.label.seeMore"]),
+    ("gamification-crowdin.war", "CrowdinWebHookManagement",   ["crowdinConnector.admin.label.seeMore"]),
 ]
 PORTLET_DIR = "WEB-INF/classes/locale/portlet/"
 
@@ -214,7 +231,13 @@ def gera_myworkspace(destino):
             ausente = atual is None
             # so' mexe onde a eXo NAO traduziu: chave ausente, ou valor ainda
             # identico ao ingles num idioma que nao e' o ingles
-            nao_traduzida = ausente or (locale != "en" and atual == ingles.get(chave))
+            # Marcador do Crowdin no valor ATUAL conta como "nao traduzida":
+            # 'crwdns7167104:0crwdne7167104:0' nao e' texto, e' um resto de
+            # ferramenta que vazou para dentro do pacote oficial. Sem esta
+            # clausula ele passava por traducao valida (nao e' igual ao ingles)
+            # e ia intacto para a tela.
+            lixo = bool(atual) and bool(re.search(r"crwdn[se]\d+:\d+", atual))
+            nao_traduzida = ausente or lixo or (locale != "en" and atual == ingles.get(chave))
             if not nao_traduzida:
                 continue
             valor = glob.get(origem)
@@ -226,8 +249,41 @@ def gera_myworkspace(destino):
                 continue
             if valor == atual:
                 continue
+            # Mesmo cuidado do bloco see-more: em alguns idiomas o valor
+            # "oficial" e' um marcador do Crowdin que vazou do empacotamento
+            # (ex.: 'crwdns101764:0crwdne101764:0' em albanes). Trocar o texto
+            # ingles por isso seria piorar -- em ingles ao menos se le.
+            if re.search(r"crwdn[se]\d+:\d+", valor):
+                # A origem "oficial" e' um marcador do Crowdin que vazou do
+                # empacotamento (sq: 'crwdns101764:0crwdne101764:0'). Nao se
+                # copia isso -- mas tambem nao se deixa a chave VAZIA: o
+                # navigation.xml declara #{portal.myworkspace.notes} e a tela
+                # mostraria o literal da chave. Cai para o INGLES, que ao menos
+                # se le, e continua sendo texto da propria eXo.
+                # O fallback certo NAO e' o myworkspace ingles: a chave nao
+                # existe em nenhum dos 39 arquivos (e' justamente o defeito que
+                # este script conserta). E' o bundle GLOBAL em ingles, mesma
+                # origem, so' que no idioma que a eXo sempre preenche.
+                alternativa = bundle_global("en")[0].get(origem)
+                relatorio.append("      %-7s %-30s CROWDIN na origem -> ingles global (%s)"
+                                 % (locale, chave, alternativa))
+                if not alternativa:
+                    continue
+                valor = alternativa
             novo[chave] = valor
             trocas.append((chave, origem, motivo, atual, valor))
+
+        # As chaves SEM_EQUIVALENTE ficam como a imagem entrega -- exceto quando
+        # o que a imagem entrega e' marcador do Crowdin. Ai vale o ingles do
+        # PROPRIO arquivo: continua texto da eXo, e ao menos e' legivel.
+        for chave in SEM_EQUIVALENTE:
+            atual = novo.get(chave)
+            if atual and re.search(r"crwdn[se]\d+:\d+", atual) and ingles.get(chave):
+                relatorio.append("      %-7s %-30s CROWDIN no proprio arquivo -> ingles (%s)"
+                                 % (locale, chave, ingles[chave]))
+                novo[chave] = ingles[chave]
+                trocas.append((chave, "myworkspace_en", "origem oficial e' marcador do Crowdin",
+                               atual, ingles[chave]))
 
         # chaves sem origem mecanica, escritas por nos e identificadas como tal
         for (bundle, loc, chave), (valor, porque) in ESCRITAS_POR_NOS.items():
@@ -272,7 +328,11 @@ def gera_myworkspace(destino):
         proprias = {c for c, _, _, _ in escritas}
         for chave in sorted(novo):
             if chave in derivadas:
-                linhas.append("# [derivada de %s]" % MAPA_MYWORKSPACE[chave][0])
+                # Nem toda derivada vem do MAPA: as SEM_EQUIVALENTE que caem
+                # para o ingles tambem entram aqui, e nao tem entrada no mapa.
+                origem_doc = (MAPA_MYWORKSPACE[chave][0] if chave in MAPA_MYWORKSPACE
+                              else "myworkspace_en (origem oficial e' marcador do Crowdin)")
+                linhas.append("# [derivada de %s]" % origem_doc)
             elif chave in proprias:
                 linhas.append("# [ESCRITA POR NOS -- sem origem oficial na imagem]")
             linhas.append("%s=%s" % (chave, escapa(novo[chave])))
@@ -383,12 +443,29 @@ def gera_see_more(destino_raiz):
                 for chave in chaves:
                     if chave not in atual:
                         continue
-                    # so' mexe onde a eXo NAO traduziu (valor ainda igual ao ingles)
-                    if atual[chave] != en.get(chave):
-                        continue
                     valor = origem.get(locale)
                     if not valor or valor == ingles_origem:
                         continue          # origem tambem sem traducao nesse idioma
+                    # A traducao "oficial" as vezes e' um marcador do Crowdin que
+                    # escapou do empacotamento -- em sq (albanes),
+                    # siteNavigation.label.seeMore vale 'crwdns101764:0crwdne101764:0'.
+                    # Copiar isso trocaria um erro por outro, e mais feio.
+                    if re.search(r"crwdn[se]\d+:\d+", valor):
+                        continue
+                    if atual[chave] == valor:
+                        continue          # ja' esta correto
+                    # REGRA (revisada em 2026-08-25): antes so' se mexia onde o
+                    # valor ainda estava em INGLES -- "a eXo nao traduziu". Isso
+                    # deixou passar o caso pior: chave TRADUZIDA, e traduzida
+                    # ERRADO. No pt-BR, myApplications.seeMore.label diz "Ver
+                    # mais comentarios" num widget de atalhos que nao tem
+                    # comentario nenhum, e o mesmo erro se repete em quatro
+                    # webapps. Como estas chaves significam exatamente "See
+                    # more", a regra agora e' direta: elas recebem a traducao
+                    # que a PROPRIA eXo deu a essa frase em
+                    # siteNavigation.label.seeMore, no idioma correspondente.
+                    # Continua nao havendo string escrita por nos -- so'
+                    # reaproveitamento da traducao oficial.
                     bruto = substitui_linha(bruto, chave, valor)
                     mudou.append((chave, atual[chave], valor))
                 if not mudou:
