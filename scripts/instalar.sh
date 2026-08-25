@@ -81,7 +81,18 @@ else
 fi
 
 # ---------------------------------------------------------------- 4. stack
-azul "4/7  Containers"
+azul "4/7  Imagem do eXo e containers"
+# A imagem do eXo e' CUSTOMIZADA (Dockerfile.exo: idioma pt-BR, branding, CSS,
+# JS e o addon do Jitsi). Num servidor novo ela nao existe, e o compose a
+# construiria sozinho no meio da subida ordenada -- varios minutos de silencio
+# que parecem travamento. Aqui a construcao e' um passo explicito e anunciado.
+set -a; source .env; set +a
+if docker image inspect "${EXO_IMAGE}" >/dev/null 2>&1; then
+  jaha "imagem ${EXO_IMAGE}"
+else
+  ok "construindo ${EXO_IMAGE} (Dockerfile.exo) -- pode levar varios minutos"
+  docker compose build exo && ok "imagem construida" || erro "docker compose build exo"
+fi
 if [ -d data ] && [ -n "$(ls -A data 2>/dev/null)" ]; then
   jaha "./data com conteudo -- NAO reconstruo (isso apagaria o banco); apenas subo"
   ./scripts/subir-ordenado.sh || erro "subir-ordenado.sh"
