@@ -192,285 +192,32 @@ def executar(payload, remover=False, operador=""):
     return JOB.iniciar(alvo, operador)
 
 
-PAGINA = r"""<!doctype html>
-<meta charset="utf-8"><title>Estrutura organizacional - eXo</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-:root{--bg:#f4f6f8;--card:#fff;--linha:#dfe3e8;--txt:#1f2733;--suave:#5b6672;
-      --azul:#1565c0;--verde:#2e7d32;--vermelho:#c62828;--amarelo:#f9a825}
-*{box-sizing:border-box}
-body{margin:0;font:14px/1.45 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
-header{background:var(--amarelo);padding:14px 20px;font-weight:700;font-size:16px}
-main{max-width:1180px;margin:18px auto;padding:0 16px;display:grid;
-     grid-template-columns:1fr 460px;gap:16px}
-@media(max-width:980px){main{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--linha);border-radius:8px;padding:16px;margin-bottom:16px}
-h2{margin:0 0 12px;font-size:15px}
-h3{margin:0 0 8px;font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:.4px}
-label{display:block;font-size:12px;color:var(--suave);margin:8px 0 3px}
-input,textarea,select{width:100%;padding:7px 9px;border:1px solid var(--linha);
-  border-radius:5px;font:inherit;background:#fff;color:var(--txt)}
-textarea{min-height:52px;resize:vertical}
-.linha{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.nivel{border-left:3px solid var(--azul);padding:10px 12px;margin:10px 0;background:#fafbfc;border-radius:0 6px 6px 0}
-.nivel.div{border-left-color:var(--verde);margin-left:18px}
-.nivel.set{border-left-color:var(--amarelo);margin-left:36px}
-.topo{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.tag{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--suave)}
-button{font:inherit;padding:7px 14px;border-radius:5px;border:1px solid var(--linha);
-  background:#fff;cursor:pointer}
-button:hover{background:#f0f2f4}
-button.p{background:var(--azul);color:#fff;border-color:var(--azul)}
-button.perigo{background:var(--vermelho);color:#fff;border-color:var(--vermelho)}
-button.mini{padding:3px 9px;font-size:12px}
-button:disabled{opacity:.45;cursor:not-allowed}
-.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-#log{background:#10151b;color:#d4dae1;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;
-  padding:12px;border-radius:6px;height:460px;overflow:auto;white-space:pre-wrap}
-#estado{font-size:12px;padding:3px 10px;border-radius:20px;background:#eceff1;color:var(--suave)}
-#estado.rodando{background:#e3f2fd;color:var(--azul)}
-#estado.ok{background:#e8f5e9;color:var(--verde)}
-#estado.erro{background:#ffebee;color:var(--vermelho)}
-#estado.parado{background:#fff8e1;color:#8d6e00}
-.aviso{font-size:12px;color:var(--suave);margin-top:8px}
-</style>
-<header>Estrutura organizacional &mdash; eXo Platform</header>
-<main>
-<div>
-  <div class="card">
-    <h2>Acesso</h2>
-    <p class="aviso" style="margin:0">
-      Voce esta autenticado como <b>__USUARIO__</b>, administrador da plataforma.
-      A execucao usa a sua propria sessao do portal &mdash; nao ha senha a digitar
-      aqui, e nada e' gravado em disco. Servidor: <code>__EXO_URL__</code>.
-    </p>
-    <label style="display:flex;align-items:center;gap:7px;margin-top:12px">
-      <input type="checkbox" id="simulacao" style="width:auto">
-      <span>Simulacao (mostra o que faria, sem gravar nada)</span>
-    </label>
-  </div>
+# ---------------------------------------------------------------------------
+# A PAGINA
+#
+# Vive em scripts/portal.html, nao numa string aqui dentro. Motivo pratico: a
+# versao anterior eram ~350 linhas de HTML/CSS/JS dentro de uma string Python
+# -- sem realce, sem lint, sem formatador -- e foi assim que virou uma tela que
+# mostrava caixinhas vazias e nao dizia nada de util sobre o que existia.
+#
+# Le do disco a cada request, com cache invalidado por mtime: corrigir a tela
+# e' salvar o arquivo e dar F5, sem reiniciar o servico. Leitura de disco e'
+# permitida; e' a ESCRITA que esta bloqueada pelo systemd.
+# ---------------------------------------------------------------------------
+PORTAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "portal.html")
+_pagina_cache = {"mtime": None, "txt": ""}
 
-  <div class="card">
-    <div class="topo"><h2 style="margin:0">Hierarquia</h2>
-      <span><button class="mini" onclick="carregarArvore()">&#8635; Recarregar</button>
-      <button class="mini" onclick="addSec()">+ Secretaria</button></span></div>
-    <div style="font-size:12px;color:var(--suave);margin:2px 0 8px">
-      A estrutura que ja' existe carrega aqui. Para <b>acrescentar</b> uma divisao/setor,
-      clique em "+ Divisao"/"+ Setor" no nivel desejado. Para <b>renomear</b>, edite o
-      "Nome que aparece na tela" (a sigla e' fixa). Depois clique em Executar.</div>
-    <div id="arvore"></div>
-    <div class="acoes">
-      <button class="p" id="bExec" onclick="acao(false)">Executar</button>
-      <button id="bParar" onclick="parar()" disabled>Parar</button>
-      <button class="perigo" id="bRem" onclick="acao(true)">Remover</button>
-      <button onclick="baixarJson()">Baixar JSON</button>
-    </div>
-    <div class="aviso">Remover tira as pessoas dos espacos e apaga grupos e espacos.
-      Qualquer erro durante a execucao desfaz automaticamente o que aquele run criou.</div>
-  </div>
-</div>
 
-<div>
-  <div class="card">
-    <div class="topo"><h2 style="margin:0">Execucao</h2><span id="estado">ocioso</span></div>
-    <div id="humano" style="display:none;padding:10px 12px;border-radius:8px;
-         margin-bottom:8px;font-weight:600"></div>
-    <div id="log"></div>
-  </div>
-</div>
-</main>
-<script>
-let arv = [];
-const vazio = () => ({nome:"",rotulo:"",descricao:"",gestores:"",usuarios:"",
-                      avatar:null,banner:null,divisoes:[],setores:[],existe:false});
-// Carrega a estrutura JA existente do servidor, para acrescentar filho ou
-// renomear sem remontar tudo. Nos existentes vem com existe:true (sigla fixa).
-async function carregarArvore(){
-  try{
-    const r=await fetch("api/arvore"); const j=await r.json();
-    arv=(j.arvore||[]).map(s=>({
-      nome:s.nome,rotulo:s.rotulo,descricao:s.descricao||"",gestores:"",usuarios:"",
-      avatar:null,banner:null,existe:true,
-      divisoes:(s.divisoes||[]).map(d=>({
-        nome:d.nome,rotulo:d.rotulo,descricao:d.descricao||"",gestores:"",usuarios:"",
-        avatar:null,banner:null,existe:true,
-        setores:(d.setores||[]).map(t=>({
-          nome:t.nome,rotulo:t.rotulo,descricao:t.descricao||"",gestores:"",usuarios:"",
-          avatar:null,banner:null,existe:true,setores:[]}))
-      }))
-    }));
-    pinta();
-  }catch(e){ pinta(); }
-}
-function addSec(){arv.push(vazio());pinta()}
-function addDiv(i){arv[i].divisoes.push(vazio());pinta()}
-function addSet(i,j){arv[i].divisoes[j].setores.push(vazio());pinta()}
-function delSec(i){arv.splice(i,1);pinta()}
-function delDiv(i,j){arv[i].divisoes.splice(j,1);pinta()}
-function delSet(i,j,k){arv[i].divisoes[j].setores.splice(k,1);pinta()}
-
-function campos(no,cam){
-  const trava = no.existe
-    ? `readonly title="Sigla fixa: o eXo nao renomeia grupo. Para renomear, edite o 'Nome que aparece na tela' ao lado." style="background:#eceff1;color:var(--suave)"`
-    : `title="Codigo curto e unico do nivel (vira o identificador do grupo). Ex.: SITDS, DIT, ST"`;
-  const dicaSigla = no.existe
-    ? `<small style="color:var(--suave)">sigla fixa (ja existe). renomeie pelo nome ao lado &rarr;</small>`
-    : `<small style="color:var(--suave)">codigo curto e unico (vira o grupo). ex.: SITDS</small>`;
-  return `
-  ${no.existe?`<div style="font-size:11px;color:var(--verde);font-weight:600;margin-bottom:4px">JA EXISTE &mdash; editavel: nome, descricao, pessoas, imagens</div>`:``}
-  <div class="linha">
-    <div><label>Sigla curta ${no.existe?``:`<b style="color:var(--vermelho)">*obrigatorio</b>`}</label>
-      <input value="${esc(no.nome)}" ${no.existe?``:`oninput="set('${cam}','nome',this.value)"`}
-             placeholder="ex: SITDS" ${trava}>
-      ${dicaSigla}</div>
-    <div><label>Nome que aparece na tela ${no.existe?`(renomear aqui)`:``}</label>
-      <input value="${esc(no.rotulo)}" oninput="set('${cam}','rotulo',this.value)"
-             placeholder="ex: Secretaria de Inovacao...">
-      <small style="color:var(--suave)">titulo por extenso do espaco</small></div>
-  </div>
-  <label>Descricao do espaco (perfil)</label>
-  <textarea oninput="set('${cam}','descricao',this.value)"
-            placeholder="Aparece na tela do espaco">${esc(no.descricao)}</textarea>
-  <div class="linha">
-    <div><label>Gestores (nome ou login, virgula)</label>
-      <input value="${esc(no.gestores)}" oninput="set('${cam}','gestores',this.value)"
-             placeholder="Wilson França, wilson.franca"
-             title="Nome ('Wilson França') ou login ('wilson.franca'). A conta e' CRIADA se nao existir.">
-      <small style="color:var(--suave)">nome ou login &mdash; a conta e' criada se nao existir</small></div>
-    <div><label>Membros (nome ou login, virgula)</label>
-      <input value="${esc(no.usuarios)}" oninput="set('${cam}','usuarios',this.value)"
-             placeholder="Kaua Ferri, kaua.ferri">
-      <small style="color:var(--suave)">nome ou login &mdash; a conta e' criada se nao existir</small></div>
-  </div>
-  <div class="linha">
-    <div><label>Importar membros de CSV</label>
-      <input type="file" accept=".csv,text/csv,text/plain" onchange="csvUsers('${cam}',this)">
-      <small class="csvinfo" style="color:var(--suave)">colunas: nome, email, senha, login (qualquer ordem; ',' ou ';')</small></div>
-    <div><label>&nbsp;</label>
-      <small style="color:var(--suave)">o CSV substitui a lista de membros digitada acima. Contas ausentes sao criadas.</small></div>
-  </div>
-  <div class="linha">
-    <div><label>Avatar (imagem)</label>
-      <input type="file" accept="image/*" onchange="img('${cam}','avatar',this)"></div>
-    <div><label>Banner (imagem)</label>
-      <input type="file" accept="image/*" onchange="img('${cam}','banner',this)"></div>
-  </div>`;
-}
-function csvUsers(cam, el){
-  const f=el.files[0];
-  const info=el.parentNode.querySelector('.csvinfo');
-  if(!f){return}
-  const r=new FileReader();
-  r.onload=()=>{
-    no(cam).usuarios = r.result;              // CSV cru; o servidor faz ler_pessoas
-    const linhas = r.result.split(/\\r?\\n/).filter(x=>x.trim()).length;
-    info.textContent = f.name+": ~"+linhas+" linha(s). O servidor cria quem faltar.";
-    info.style.color = "var(--verde)";
-  };
-  r.readAsText(f);
-}
-const esc = s => String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function no(cam){let o=arv;for(const p of cam.split(".")){o=o[p==+p?+p:p]}return o}
-function set(cam,k,v){no(cam)[k]=v}
-function img(cam,k,el){
-  const f=el.files[0]; if(!f){no(cam)[k]=null;return}
-  const r=new FileReader();
-  r.onload=()=>{no(cam)[k]=r.result.split(",")[1]};
-  r.readAsDataURL(f);
-}
-function pinta(){
-  document.getElementById("arvore").innerHTML = arv.map((s,i)=>`
-    <div class="nivel">
-      <div class="topo"><span class="tag">Secretaria ${i+1}</span>
-        <span><button class="mini" onclick="addDiv(${i})">+ Divisao</button>
-        <button class="mini" onclick="delSec(${i})">remover</button></span></div>
-      ${campos(s,`${i}`)}
-      ${s.divisoes.map((d,j)=>`
-        <div class="nivel div">
-          <div class="topo"><span class="tag">Divisao ${j+1}</span>
-            <span><button class="mini" onclick="addSet(${i},${j})">+ Setor</button>
-            <button class="mini" onclick="delDiv(${i},${j})">remover</button></span></div>
-          ${campos(d,`${i}.divisoes.${j}`)}
-          ${d.setores.map((t,k)=>`
-            <div class="nivel set">
-              <div class="topo"><span class="tag">Setor ${k+1}</span>
-                <button class="mini" onclick="delSet(${i},${j},${k})">remover</button></div>
-              ${campos(t,`${i}.divisoes.${j}.setores.${k}`)}
-            </div>`).join("")}
-        </div>`).join("")}
-    </div>`).join("") || '<p class="aviso">Nenhuma secretaria. Clique em "+ Secretaria".</p>';
-}
-function limpa(n){
-  const o={nome:n.nome,rotulo:n.rotulo,descricao:n.descricao,
-           gestores:n.gestores,usuarios:n.usuarios};
-  if(n.avatar) o.avatar=n.avatar;
-  if(n.banner) o.banner=n.banner;
-  if(n.divisoes&&n.divisoes.length) o.divisoes=n.divisoes.map(limpa);
-  if(n.setores&&n.setores.length) o.setores=n.setores.map(limpa);
-  return o;
-}
-function corpo(){
-  return {simulacao:document.getElementById("simulacao").checked,
-          secretarias:arv.map(limpa)};
-}
-const val = id => document.getElementById(id).value;
-function baixarJson(){
-  const c=corpo();
-  const b=new Blob([JSON.stringify(c,null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(b); a.download="estrutura.json"; a.click();
-}
-async function acao(remover){
-  if(!arv.length){alert("Monte ao menos uma secretaria.");return}
-  if(remover && !confirm("Remover apaga grupos e espacos e tira as pessoas. Confirma?"))return;
-  const r=await fetch(remover?"api/remover":"api/executar",
-    {method:"POST",headers:{"Content-Type":"application/json","X-Estrutura":"1"},
-     body:JSON.stringify(corpo())});
-  const j=await r.json();
-  if(!j.ok){alert(j.erro||"nao foi possivel iniciar");return}
-  n=0; document.getElementById("log").textContent="";
-}
-async function parar(){await fetch("api/parar",{method:"POST",headers:{"X-Estrutura":"1"}})}
-let n=0;
-async function poll(){
-  try{
-    const r=await fetch("api/log?desde="+n);
-    const j=await r.json();
-    if(j.linhas.length){
-      const el=document.getElementById("log");
-      el.textContent += j.linhas.join("\n")+"\n";
-      el.scrollTop=el.scrollHeight;
-    }
-    n=j.total;
-    const e=document.getElementById("estado");
-    e.textContent=j.estado; e.className=j.estado;
-    const r_=j.estado==="rodando";
-    document.getElementById("bExec").disabled=r_;
-    document.getElementById("bRem").disabled=r_;
-    document.getElementById("bParar").disabled=!r_;
-    // Mensagem HUMANA: o leigo nao deve precisar ler REST cru para saber
-    // se deu certo. Cores e texto claros por estado.
-    const h=document.getElementById("humano");
-    const M={
-      rodando:["Trabalhando... aguarde.","#e3f2fd","#0d47a1"],
-      ok:["Tudo pronto! A estrutura foi gravada com sucesso.","#e8f5e9","#1b5e20"],
-      erro:["Algo falhou — e NADA foi deixado pela metade: o que este run criou foi desfeito automaticamente. Veja o detalhe abaixo.","#ffebee","#b71c1c"],
-      parado:["Parado a seu pedido — o que este run tinha criado foi desfeito.","#fff8e1","#8d6e00"]
-    };
-    if(M[j.estado]){h.style.display="block";h.textContent=M[j.estado][0];
-      h.style.background=M[j.estado][1];h.style.color=M[j.estado][2];}
-    else{h.style.display="none";}
-    // ao terminar com sucesso, recarrega a arvore para refletir o novo estado
-    // (nivel novo aparece como 'ja existe', rename atualizado).
-    if((j.estado==="ok"||j.estado==="parado")&&ultimoEstado==="rodando"){carregarArvore();}
-    ultimoEstado=j.estado;
-  }catch(e){}
-  setTimeout(poll,900);
-}
-let ultimoEstado="";
-carregarArvore(); poll();
-</script>
-"""
+def pagina_html():
+    try:
+        mt = os.path.getmtime(PORTAL)
+    except OSError:
+        raise FileNotFoundError(f"pagina nao encontrada: {PORTAL}")
+    if _pagina_cache["mtime"] != mt:
+        with open(PORTAL, encoding="utf-8") as fh:
+            _pagina_cache["txt"] = fh.read()
+        _pagina_cache["mtime"] = mt
+    return _pagina_cache["txt"]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -543,7 +290,12 @@ class Handler(BaseHTTPRequestHandler):
                          "<p>Pe&ccedil;a a um administrador ou entre com uma conta "
                          "administrativa.</p></body>")
                 return self._envia(403, aviso, "text/html; charset=utf-8")
-            pagina = PAGINA.replace(
+            try:
+                bruto = pagina_html()
+            except FileNotFoundError as e:
+                return self._envia(500, f"<pre>{html.escape(str(e))}</pre>",
+                                   "text/html; charset=utf-8")
+            pagina = bruto.replace(
                 "__EXO_URL__",
                 html.escape(os.environ.get("EXO_URL", "https://192.168.1.59"), quote=True)
             ).replace("__USUARIO__", html.escape(usuario))
@@ -562,13 +314,81 @@ class Handler(BaseHTTPRequestHandler):
             return self._envia(200, json.dumps(
                 {"linhas": linhas, "total": total, "estado": estado, "resumo": resumo},
                 default=str))
+        if self.path.startswith("/api/modelo.csv"):
+            # Modelo de importacao. Gerado em memoria a partir do proprio leitor
+            # (E.modelo_csv le _CSV_MAPA), entao nao ha arquivo de exemplo em
+            # disco para envelhecer -- nem escrita em disco, que aqui e' proibida.
+            corpo = ("\ufeff" + E.modelo_csv()).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="modelo-membros.csv"')
+            self.send_header("Content-Length", str(len(corpo)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            return self.wfile.write(corpo)
+        if self.path.startswith("/api/nivel"):
+            # Quem esta dentro de UM nivel. Fica fora de /api/arvore de
+            # proposito: sao 2 chamadas por nivel, e a tela so' precisa disso
+            # para o nivel que o operador abriu.
+            q = urllib_parse_qs(self.path)
+            caminho = (q.get("caminho") or "").strip()
+            espaco = (q.get("espaco") or "").strip()
+            # Por ID de espaco atende TODO espaco do eXo, inclusive os que nao
+            # tem grupo da estrutura (o Lobby) -- que a tela agora mostra porque
+            # eles existem em SOC_SPACES e sao pais de niveis nossos.
+            if not espaco.isdigit() and not caminho.startswith("/"):
+                return self._envia(400, json.dumps({"erro": "informe espaco=<id> ou caminho=/GRUPO"}))
+            try:
+                exo = E.conectar(cookie=self.headers.get("Cookie"))
+                d = (E.detalhe_espaco(exo, espaco) if espaco.isdigit()
+                     else E.detalhe_nivel(exo, caminho))
+                return self._envia(200, json.dumps(d, default=str))
+            except Exception as e:
+                return self._envia(200, json.dumps({"existe": False, "erro": str(e)}))
+        if self.path.startswith("/api/pessoas"):
+            # Sugestao a partir do diretorio REAL. Sem isso o operador digita de
+            # cabeca e um erro de digitacao vira conta nova em silencio.
+            q = urllib_parse_qs(self.path)
+            try:
+                exo = E.conectar(cookie=self.headers.get("Cookie"))
+                return self._envia(200, json.dumps(
+                    {"pessoas": E.buscar_pessoas(exo, q.get("q", ""))}, default=str))
+            except Exception as e:
+                return self._envia(200, json.dumps({"pessoas": [], "erro": str(e)}))
         if self.path.startswith("/api/arvore"):
             # a estrutura JA existente, para a tela carregar e permitir
             # acrescentar filho / renomear sem remontar tudo.
             try:
                 exo = E.conectar(cookie=self.headers.get("Cookie"))
+                arvore = E.arvore_atual(exo)
+                # PESSOAS DISTINTAS, nao a soma das contagens de cada nivel.
+                # Somar dava 10 numa organizacao de 5 contas: pela cascata, quem
+                # esta na Secretaria tambem esta na Divisao e no Setor, e era
+                # contado tres vezes. Numero que nao existe em lugar nenhum do
+                # banco -- e a tela inteira perde a credibilidade por causa dele.
+                # DOIS escopos, porque sao duas perguntas diferentes:
+                #   'pessoas'      -> quem esta nos niveis do ORGANOGRAMA
+                #   'pessoas_todas'-> quem esta em qualquer espaco listado
+                # Um numero so' misturava as duas: o indicador dizia 13 (com o
+                # Lobby dentro) para uma organizacao cujos niveis somam 5.
+                do_organograma, de_todos = set(), set()
+
+                def anda(no):
+                    sid = (no.get("espaco") or {}).get("id")
+                    if sid:
+                        quem = E.membros_do_espaco(exo, sid)
+                        de_todos.update(quem)
+                        if no.get("daEstrutura"):
+                            do_organograma.update(quem)
+                    for f in (no.get("filhos") or []):
+                        anda(f)
+
+                for raiz in arvore:
+                    anda(raiz)
                 return self._envia(200, json.dumps(
-                    {"arvore": E.arvore_atual(exo)}, default=str))
+                    {"arvore": arvore, "pessoas": sorted(do_organograma),
+                     "pessoas_todas": sorted(de_todos)}, default=str))
             except Exception as e:
                 return self._envia(200, json.dumps({"arvore": [], "erro": str(e)}))
         return self._envia(404, json.dumps({"erro": "nao encontrado"}))

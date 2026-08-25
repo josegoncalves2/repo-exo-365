@@ -48,21 +48,36 @@
 # * DELETE de grupo leva o caminho em QUERY STRING, nao no path. E o eXo
 #   recusa apagar grupo que tenha subgrupo: remova de baixo para cima.
 # ============================================================================
-import csv, io, json, os, re, secrets, ssl, sys, time, unicodedata, uuid
+import collections, csv, io, json, os, re, secrets, ssl, sys, time, unicodedata, uuid
 import http.cookiejar, urllib.error, urllib.parse, urllib.request
+
+# Anel de memoria do diario: ultimas 5000 linhas, para a interface web
+# oferecer historico sem que nada toque o disco. deque com maxlen descarta o
+# mais antigo sozinho -- nao ha como estourar memoria.
+DIARIO = collections.deque(maxlen=5000)
 
 TIPOS = ("secretaria", "divisao", "setor")
 FILHOS = {"secretaria": "divisoes", "divisao": "setores", "setor": None}
 TIPO_FILHO = {"secretaria": "divisao", "divisao": "setor"}
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG_PATH = os.environ.get("EXO_ESTRUTURA_LOG",
-                          os.path.join(RAIZ, "estrutura-organizacional.log"))
-# Registro grupo->espaco. Fica FORA da descricao do espaco de proposito: a
-# primeira versao gravava uma marca "[grupo:/SITDS]" no proprio texto da
-# descricao e ela aparecia para o usuario final na tela do espaco.
-REGISTRO_PATH = os.environ.get("EXO_ESTRUTURA_REGISTRO",
-                               os.path.join(RAIZ, "conf", "estrutura-registro.json"))
+# ---------------------------------------------------------------------------
+# ESTADO EM DISCO: NENHUM. Regra dura deste modulo.
+#
+# Existia um registro grupo->espaco em conf/estrutura-registro.json e um log
+# em arquivo. Os dois foram REMOVIDOS, nao desativados. O motivo nao e' gosto:
+# um cache em disco e' uma SEGUNDA verdade, e duas verdades divergem. Foi
+# exatamente o que aconteceu -- a tela desenhou uma arvore que o banco nao
+# tinha mais, porque lia o arquivo. Agora a unica fonte e' a API do eXo: se o
+# banco nao tem, a tela nao mostra; se o banco tem, a tela mostra. Sempre.
+#
+# O diario de execucao vai para a SAIDA PADRAO (journald, via systemd) e para
+# a memoria do processo -- observabilidade sem estado persistente.
+#
+# O bloqueio nao depende de disciplina: a unidade systemd roda com
+# ProtectSystem=strict e ZERO ReadWritePaths, entao o kernel recusa qualquer
+# escrita. Um 'open(..., "w")' aqui nao vira arquivo: vira EROFS.
+# ---------------------------------------------------------------------------
 
 
 class Cancelado(Exception):
@@ -229,8 +244,60 @@ _CSV_MAPA = {"login": "login", "username": "login", "usuario": "login",
              "senha": "senha", "password": "senha"}
 
 
+def modelo_csv():
+    """Modelo de importacao GERADO A PARTIR DO PROPRIO LEITOR (_CSV_MAPA).
+
+    Nao e' um arquivo de exemplo escrito a mao e esquecido: os titulos saem do
+    mapa que o importador consulta, entao modelo e leitor nao tem como divergir.
+    Se alguem aceitar uma coluna nova la em cima, ela aparece aqui sozinha.
+
+    Sai com ';' porque e' o que o Excel em portugues grava e o que o operador
+    vai reabrir; o leitor aceita os dois. Sai com BOM para o Excel nao comer os
+    acentos, e o leitor ignora o BOM.
+    """
+    # um titulo canonico por destino, na ordem em que o formulario pede
+    ordem = ["nome", "email", "login", "senha"]
+    exemplos = [
+        ["Wilson França", "wilson.franca@olimpia.sp.gov.br", "", ""],
+        ["Isabela Feitosa", "isabela.feitosa@olimpia.sp.gov.br", "isabela.feitosa", ""],
+        ["Kaua Ferri", "", "", ""],
+    ]
+    saida = io.StringIO()
+    w = csv.writer(saida, delimiter=";", lineterminator="\r\n")
+    w.writerow(ordem)
+    for linha in exemplos:
+        w.writerow(linha)
+    saida.write("\r\n")
+    for c in (
+        "# COMO ESTE ARQUIVO E' LIDO",
+        "# . apague estas linhas de comentario e os exemplos antes de usar",
+        "# . separador: ';' ou ',' -- o leitor detecta pelo cabecalho",
+        f"# . colunas aceitas: {', '.join(sorted(set(_CSV_MAPA)))}",
+        "# . 'nome' basta: o login sai dele (Wilson França -> wilson.franca)",
+        "# . 'login' preenchido usa a conta existente, sem criar outra",
+        "# . 'senha' vazia => senha forte sorteada e mostrada no log da execucao",
+        "# . sem cabecalho, a 1a coluna e' tratada como nome",
+    ):
+        saida.write(c + "\r\n")
+    return saida.getvalue()
+
+
+def _linhas_uteis_csv(texto):
+    """Linhas que valem gente: sem vazias e SEM COMENTARIO.
+
+    O modelo que a tela oferece traz instrucoes no rodape. Sem esta filtragem,
+    quem baixasse o modelo, preenchesse e esquecesse de apagar as instrucoes
+    criaria oito contas chamadas 'como.este.arquivo.e.lido',
+    'apague.estas.linhas...' -- medido, era exatamente o que acontecia. '#' no
+    inicio da linha e' comentario em qualquer CSV que se preze; aqui tambem.
+    """
+    return [l for l in texto.splitlines()
+            if l.strip() and not l.lstrip().startswith("#")]
+
+
 def _tem_cabecalho_csv(texto):
-    linha = texto.splitlines()[0] if texto.strip() else ""
+    uteis = _linhas_uteis_csv(texto)
+    linha = uteis[0] if uteis else ""
     delim = ";" if linha.count(";") > linha.count(",") else ","
     titulos = [(c or "").strip().lower() for c in next(csv.reader([linha], delimiter=delim), [])]
     return any(t in _CSV_MAPA for t in titulos)
@@ -239,7 +306,9 @@ def _tem_cabecalho_csv(texto):
 def _pessoas_de_csv(texto):
     if not texto.strip():
         return []
-    linhas = [l for l in texto.splitlines() if l.strip()]
+    linhas = _linhas_uteis_csv(texto)
+    if not linhas:
+        return []
     cab = linhas[0]
     # Excel em portugues salva com ';'. Escolhe o que mais aparece; ',' desempata.
     delim = ";" if cab.count(";") > cab.count(",") else ","
@@ -271,89 +340,182 @@ def _dedup_pessoas(pessoas):
 
 
 def senha_forte():
-    """Senha aleatoria que cumpre a politica do eXo (maiuscula, minuscula,
-    digito e simbolo). Usada quando o CSV nao traz senha -- e reportada no log
-    para o admin distribuir (nada de senha fixa no codigo)."""
-    return "Exo@" + secrets.token_urlsafe(9)
+    """Senha aleatoria que CUMPRE a politica do eXo, garantidamente: >=1
+    maiuscula, >=1 minuscula, >=1 digito, >=1 simbolo e >=9 chars.
 
-
-# ---------------------------------------------------------------------------
-# registro grupo -> espaco (em disco, invisivel ao usuario final)
-# ---------------------------------------------------------------------------
-def registro_ler():
-    try:
-        with open(REGISTRO_PATH, encoding="utf-8") as fh:
-            d = json.load(fh)
-        return d if isinstance(d, dict) else {}
-    except Exception:
-        return {}
+    Antes era 'Exo@'+token_urlsafe(9) -- e o token as vezes vinha SEM digito ou
+    SEM minuscula, e o eXo recusava com HTTP 400 ('Minimo de 1 digito...'). Aqui
+    cada classe e' garantida por construcao. Reportada no log; nada fixo."""
+    import string
+    obrig = [secrets.choice(string.ascii_uppercase),
+             secrets.choice(string.ascii_lowercase),
+             secrets.choice(string.digits),
+             secrets.choice("@#$%&!")]
+    resto = [secrets.choice(string.ascii_letters + string.digits) for _ in range(8)]
+    chars = obrig + resto
+    # embaralha sem viés (Fisher-Yates com secrets)
+    for i in range(len(chars) - 1, 0, -1):
+        j = secrets.randbelow(i + 1)
+        chars[i], chars[j] = chars[j], chars[i]
+    return "".join(chars)
 
 
 def arvore_atual(exo):
-    """Reconstroi a arvore provisionada (secretaria > divisao > setor) a partir
-    do registro grupo->espaco, com o displayName ATUAL de cada espaco.
+    """A FLORESTA REAL DE ESPACOS, do jeito que o banco guarda.
 
-    Serve a interface web para CARREGAR o que ja' existe e permitir acrescentar
-    um filho ou renomear, sem o operador remontar a arvore inteira.
+    A versao anterior desenhava so' os espacos que tinham grupo organizacional
+    e plantava a Secretaria na raiz. Isso NAO condiz com o banco: em SOC_SPACES
+    a Secretaria tem PARENT_SPACE_ID = 13, ou seja, ela mora DENTRO do 'Lobby
+    Prefeitura' -- e o Lobby simplesmente nao aparecia na tela. Quem comparava
+    a tela com "Seus Espacos" do proprio eXo via 4 espacos la' e 3 aqui, com
+    uma raiz diferente. Uma tela que edita hierarquia nao pode inventar a
+    hierarquia.
+
+    Agora entra TODO espaco que existe, aninhado por parentSpaceId, e cada no
+    diz que grupo organizacional carrega (se carregar):
+
+        tipo 'secretaria' | 'divisao' | 'setor'  -> profundidade do grupo
+        tipo 'espaco'                            -> espaco sem grupo da estrutura
+                                                    (o Lobby e' um destes)
+
+    So' quem tem grupo pode ser editado/removido por esta ferramenta; os demais
+    sao mostrados porque EXISTEM, com um aviso de que nao pertencem a arvore.
     """
-    reg = registro_ler()
-    mapa = espacos(exo)
-    grupos = grupos_existentes(exo)
+    mapa = espacos(exo)                       # id -> espaco, direto da API
+    SISTEMA = ("/platform", "/spaces", "/organization", "/developers", "/administrators")
 
-    def info(cam):
-        sid = reg.get(cam)
-        esp = mapa.get(str(sid)) if sid else None
-        return {"nome": cam.strip("/").split("/")[-1], "caminho": cam,
-                "rotulo": (esp.get("displayName") if esp else "") or "",
-                "descricao": (esp.get("description") if esp else "") or "",
-                "existe": bool(esp) and cam in grupos}
+    def de_sistema(g):
+        return any(g == x or g.startswith(x + "/") for x in SISTEMA)
 
-    secs = {}
-    for cam in sorted(reg):
-        p = cam.strip("/").split("/")
-        if len(p) == 1:
-            secs[cam] = dict(info(cam), divisoes={})
-    for cam in sorted(reg):
-        p = cam.strip("/").split("/")
-        if len(p) == 2 and f"/{p[0]}" in secs:
-            secs[f"/{p[0]}"]["divisoes"][cam] = dict(info(cam), setores=[])
-    for cam in sorted(reg):
-        p = cam.strip("/").split("/")
-        if len(p) == 3:
-            sec, div = f"/{p[0]}", f"/{p[0]}/{p[1]}"
-            if sec in secs and div in secs[sec]["divisoes"]:
-                secs[sec]["divisoes"][div]["setores"].append(info(cam))
-    saida = []
-    for s in secs.values():
-        s["divisoes"] = list(s["divisoes"].values())
-        saida.append(s)
-    return saida
+    def no_de(esp):
+        sid = str(esp.get("id") or "")
+        pn = esp.get("prettyName") or ""
+        # grupo do nivel = o vinculo MAIS FUNDO que nao e' de sistema. Com a
+        # cascata descendente o Setor carrega /SITDS, /SITDS/DIT e /SITDS/DIT/ST;
+        # o que identifica o nivel e' o ultimo.
+        proprios = [g for g in bindings_do_espaco(exo, sid) if g and not de_sistema(g)]
+        grupo = max(proprios, key=lambda g: g.count("/")) if proprios else ""
+        prof = grupo.strip("/").count("/") + 1 if grupo else 0
+        tipo = {1: "secretaria", 2: "divisao", 3: "setor"}.get(prof, "espaco")
+        return {"nome": grupo.strip("/").split("/")[-1] if grupo else pn,
+                "caminho": grupo, "tipo": tipo,
+                "rotulo": esp.get("displayName") or "",
+                "descricao": esp.get("description") or "",
+                "daEstrutura": bool(grupo),
+                "vinculos": sorted(proprios),
+                "filhos": [],
+                "espaco": {
+                    "id": sid, "prettyName": pn,
+                    "url": f"/portal/g/:spaces:{pn}/" if pn else "",
+                    "avatar": esp.get("avatarUrl") or "",
+                    "banner": esp.get("bannerUrl") or "",
+                    "membros": int(esp.get("membersCount") or 0),
+                    "gestores": int(esp.get("managersCount") or 0),
+                    "visibilidade": esp.get("visibility") or "",
+                    "inscricao": esp.get("subscription") or "",
+                    "criado": esp.get("createdTime") or "",
+                    "pai": str(esp.get("parentSpaceId") or ""),
+                }}
+
+    nos = {sid: no_de(esp) for sid, esp in mapa.items()}
+    raizes = []
+    for sid, no in nos.items():
+        pai = no["espaco"]["pai"]
+        if pai and pai in nos:
+            nos[pai]["filhos"].append(no)
+        else:
+            raizes.append(no)
+
+    ordem = {"secretaria": 0, "divisao": 1, "setor": 2, "espaco": 3}
+
+    def ordena(lista):
+        lista.sort(key=lambda n: (ordem.get(n["tipo"], 9), n["rotulo"].lower()))
+        for n in lista:
+            ordena(n["filhos"])
+    ordena(raizes)
+    return raizes
 
 
-def registro_gravar(mapa):
+def detalhe_espaco(exo, space_id):
+    """Pessoas de um espaco identificado pelo ID -- serve inclusive para os
+    espacos que nao pertencem a' estrutura (o Lobby), que antes nao tinham como
+    ser abertos porque a consulta exigia um caminho de grupo."""
+    return _pessoas_do_espaco(exo, space_id, "")
+
+
+def detalhe_nivel(exo, caminho):
+    """Quem esta dentro de um nivel, com nome e papel. Chamado sob demanda.
+
+    Nao entra na arvore inteira de proposito: sao duas chamadas POR NIVEL, e
+    numa Secretaria com 40 setores isso seria 80 requisicoes para desenhar uma
+    tela que o operador nem olhou ainda. Aqui e' so' o nivel que ele abriu.
+    """
+    esp = espaco_do_grupo(exo, caminho)
+    if not esp:
+        return {"existe": False}
+    return _pessoas_do_espaco(exo, esp.get("id"), caminho)
+
+
+def _pessoas_do_espaco(exo, sid, caminho):
+    def gente(papel=None):
+        base = f"/portal/rest/v1/social/spaces/{sid}/users"
+        if papel:
+            base += f"?role={papel}"
+        fora = []
+        for e in paginar(exo, base, "users"):
+            if not isinstance(e, dict):
+                continue
+            login = (e.get("username") or e.get("userName")
+                     or str(e.get("remoteId") or "").split("/")[-1])
+            if login:
+                fora.append({"login": login,
+                             "nome": e.get("fullname") or e.get("fullName") or login,
+                             "avatar": e.get("avatar") or e.get("avatarUrl") or ""})
+        return fora
+
+    gestores = gente("manager")
+    logins_g = {g["login"] for g in gestores}
+    # ATENCAO a esta subtracao: no eXo o gestor consta DUAS vezes em
+    # SOC_SPACES_MEMBERS (STATUS=0 membro e STATUS=1 gestor). Somar as duas
+    # listas conta cada gestor duas vezes -- foi assim que a tela chegou a
+    # anunciar 7 pessoas num espaco de 5. Aqui a lista sai sem repetido.
+    membros = [m for m in gente() if m["login"] not in logins_g]
+    return {"existe": True, "caminho": caminho, "espacoId": str(sid),
+            "gestores": gestores, "membros": membros,
+            "no_grupo": sorted(membros_do_grupo(exo, caminho)) if caminho else [],
+            "vinculos": sorted(bindings_do_espaco(exo, sid))}
+
+
+def buscar_pessoas(exo, termo, limite=8):
+    """Contas que ja existem no eXo, para a tela sugerir em vez de adivinhar.
+
+    Digitar 'wilson.franca' de cabeca e' como o operador criava conta duplicada:
+    um erro de digitacao virava uma conta NOVA silenciosamente. Sugerindo o que
+    existe, o caminho normal passa a ser reaproveitar a conta certa.
+    """
+    termo = (termo or "").strip()
+    if len(termo) < 2:
+        return []
+    q = urllib.parse.quote(termo, safe="")
+    st, t = exo._raw("GET", f"/portal/rest/v1/users?q={q}&limit={int(limite)}")
+    if st >= 400 or not t.strip():
+        return []
     try:
-        os.makedirs(os.path.dirname(REGISTRO_PATH), exist_ok=True)
-        tmp = REGISTRO_PATH + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(mapa, fh, indent=2, ensure_ascii=False, sort_keys=True)
-        os.replace(tmp, REGISTRO_PATH)   # troca atomica: nunca deixa arquivo pela metade
-    except Exception as e:
-        print(f"ERRO ao gravar registro {REGISTRO_PATH}: {e}", file=sys.stderr)
-        raise FalhaEtapa(f"registro indisponível: {e}")
-
-
-def registro_por(caminho, space_id):
-    m = registro_ler()
-    if str(m.get(caminho) or "") != str(space_id):
-        m[caminho] = str(space_id)
-        registro_gravar(m)
-
-
-def registro_tirar(caminho):
-    m = registro_ler()
-    if caminho in m:
-        m.pop(caminho, None)
-        registro_gravar(m)
+        d = json.loads(t)
+    except json.JSONDecodeError:
+        return []
+    fora = []
+    for e in (d.get("users") or d.get("entities") or (d if isinstance(d, list) else [])):
+        if not isinstance(e, dict):
+            continue
+        login = e.get("userName") or e.get("username")
+        if not login:
+            continue
+        fora.append({"login": login,
+                     "nome": e.get("fullName") or e.get("fullname") or login,
+                     "email": e.get("email") or "",
+                     "ativo": bool(e.get("enabled", True))})
+    return fora[:limite]
 
 
 # ---------------------------------------------------------------------------
@@ -598,10 +760,15 @@ def membros_do_espaco(exo, space_id):
 
 
 def espaco_do_grupo(exo, group_id, mapa=None):
-    """Espaco DONO de um nivel. Tres criterios, do mais firme ao mais fraco.
+    """Espaco DONO de um nivel, deduzido SO' do que o servidor responde.
 
-    1. REGISTRO em disco (grupo -> spaceId). Exato.
-    2. CADEIA DE BINDINGS: com a cascata descendente, o espaco de um nivel
+    Havia um terceiro criterio antes destes dois: um registro grupo->spaceId
+    em disco. Ele era o mais exato e tambem o mais perigoso -- quando alguem
+    apagava um espaco pela tela do proprio eXo, o arquivo continuava jurando
+    que existia, e o programa acreditava no arquivo. Morreu. O que sobrou nao
+    guarda nada e por isso nao tem como divergir:
+
+    1. CADEIA DE BINDINGS: com a cascata descendente, o espaco de um nivel
        carrega a cadeia inteira de cima ate ele --
          Secretaria [/SITDS] | Divisao [/SITDS, /SITDS/DIT] |
          Setor [/SITDS, /SITDS/DIT, /SITDS/DIT/ST]
@@ -609,15 +776,10 @@ def espaco_do_grupo(exo, group_id, mapa=None):
        Espacos que misturam vinculos de fora da arvore (o Lobby carrega
        /platform/users) sao descartados: foi o Lobby que, num criterio antigo
        por "menos vinculos", roubou o aninhamento da Divisao.
-    3. NOME igual ao ultimo segmento do grupo. So' serve quando nao se usou
+    2. NOME igual ao ultimo segmento do grupo. So' serve quando nao se usou
        rotulo -- com rotulo o grupo e' /SITDS e o espaco "Secretaria de...".
     """
     mapa = mapa if mapa is not None else espacos(exo)
-
-    sid = registro_ler().get(group_id)
-    if sid and str(sid) in mapa:
-        esp = dict(mapa[str(sid)]); esp["_por"] = "registro"
-        return esp
 
     raiz_org = "/" + group_id.strip("/").split("/")[0]
 
@@ -676,13 +838,16 @@ class Provisionador:
 
     # -- infra --------------------------------------------------------------
     def log(self, msg, tela=True):
+        """Diario da execucao: tela (ou interface web) + saida padrao.
+
+        Nao ha arquivo. Quem quiser historico le o journal do servico
+        ('journalctl -u exo-estrutura'), que ja' faz rotacao, carimbo de tempo
+        e retencao melhor do que um .log crescendo sozinho para sempre.
+        """
+        linha = f"{time.strftime('%Y-%m-%d %H:%M:%S')} {str(msg).strip()}"
+        DIARIO.append(linha)
         if tela:
-            self._log(msg)
-        try:
-            with open(LOG_PATH, "a", encoding="utf-8") as fh:
-                fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg.strip()}\n")
-        except Exception:
-            pass
+            self._log(msg)          # quem chamou decide onde sai (tela ou web)
 
     def checa_parada(self):
         if self._cancelado():
@@ -990,9 +1155,9 @@ class Provisionador:
                        lambda sid=sid_novo: self.exo.escreve(
                            "DELETE", f"/portal/rest/v1/social/spaces/{sid}"))
         space_id = esp.get("id")
-        if not self.dry:
-            registro_por(caminho, space_id)
-            self.anota(f"registro {caminho}", lambda c=caminho: registro_tirar(c))
+        # (aqui gravava-se o par grupo->espaco em disco. Nao ha mais o que
+        #  gravar: o vinculo do passo 4 abaixo JA' e' esse registro, dentro do
+        #  banco, e e' ele que espaco_do_grupo() le de volta.)
 
         self.checa_parada()
 
@@ -1376,14 +1541,12 @@ def remover_nivel(prov, caminho, apagar_espaco=True):
                              None, "apagar grupo")
     if prov.dry or st_g < 400:
         prov.log(f"   grupo apagado: {caminho}")
-        registro_tirar(caminho)
         return "removido"
     if st_g == 404 or "NOT_FOUND" in str(resp).upper():
         # Nao existia. Isso NAO e' remocao -- contar como tal fazia o resumo
         # anunciar "3 nivel(is) removido(s)" depois de tres 404 seguidos, ou
         # seja, dando por feito um trabalho que nao aconteceu.
         prov.log(f"   grupo INEXISTENTE: {caminho} (nada a remover)")
-        registro_tirar(caminho)
         return "inexistente"
     if "child group" in str(resp):
         prov.log(f"   grupo MANTIDO: {caminho} ainda tem subgrupos "

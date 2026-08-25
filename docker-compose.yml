@@ -427,45 +427,26 @@ services:
     logging: *default-logging
 
   # ----------------------------------------------------------------
-  # Interface web da estrutura organizacional (Secretaria/Divisao/Setor).
-  # Provisiona grupo + espaco + aninhamento + cadeia de visibilidade +
-  # perfil + pessoas, com rollback. Publicada pelo nginx em /estrutura/.
+  # Interface web da estrutura organizacional (Secretaria/Divisao/Setor):
+  # NAO E' MAIS UM SERVICO DESTE COMPOSE.
   #
-  # Nao publica porta no host: quem entra passa pelo mesmo proxy do portal,
-  # entao herda o TLS da CA interna e nao abre mais uma porta na maquina.
+  # Por decisao operacional (nenhum container novo neste projeto) ela roda no
+  # HOST, como unidade systemd:
   #
-  # Os scripts entram por bind mount, nao COPY: corrigir um defeito aqui e'
-  # 'docker compose restart estrutura', sem rebuild de imagem.
+  #     /etc/systemd/system/exo-estrutura.service
+  #     systemctl status|restart exo-estrutura
+  #     journalctl -u exo-estrutura -f
+  #
+  # Escuta em 172.20.0.1:878 -- o gateway da rede exo_net. Isso mantem o
+  # alcance de antes (o nginx do stack chega) sem abrir a porta para a LAN,
+  # que era o unico ganho real do container. O nginx a publica em /estrutura/
+  # (conf/nginx.conf: proxy_pass http://172.20.0.1:878/).
+  #
+  # O bloco antigo foi REMOVIDO em vez de comentado de proposito: comentado,
+  # um 'docker compose up -d' distraido nao recriaria nada, mas o proximo
+  # leitor descomentaria "para consertar" e teria dois servicos disputando a
+  # porta 878 e o mesmo arquivo de registro.
   # ----------------------------------------------------------------
-  estrutura:
-    build:
-      context: .
-      dockerfile: Dockerfile.estrutura
-    image: exo-estrutura:1.0
-    container_name: exo-estrutura
-    environment:
-      TZ: ${TZ}
-      # Dentro da rede do compose fala direto com o Tomcat: evita dar a volta
-      # pelo nginx e nao depende do IP do host estar resolvivel de dentro.
-      EXO_URL: ${EXO_ESTRUTURA_URL:-http://exo:8080}
-      EXO_ESTRUTURA_LOG: /app/estrutura-organizacional.log
-      EXO_ESTRUTURA_REGISTRO: /app/conf/estrutura-registro.json
-    volumes:
-      - ./scripts:/app/scripts:ro
-      - ./conf:/app/conf
-      - ./estrutura-organizacional.log:/app/estrutura-organizacional.log
-    depends_on:
-      exo:
-        condition: service_healthy
-    mem_limit: 128m
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:878/saude"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-    logging: *default-logging
 
   # ----------------------------------------------------------------
   # Matrix / Synapse — servidor de chat (equivalente ao Teams)
@@ -801,3 +782,17 @@ services:
 networks:
   default:
     name: exo_net
+    # SEM ipam fixo, de proposito -- e ja' tentei o contrario.
+    #
+    # A interface da estrutura roda no HOST e o nginx (container) fala com ela
+    # pelo GATEWAY desta rede. Seria comodo fixar 172.20.0.0/16 aqui para o
+    # gateway ser sempre 172.20.0.1... so' que numa stack JA' EM PE isso muda a
+    # definicao da rede, e o proximo 'docker compose up' tenta RECRIAR a rede:
+    # ele para os containers, falha ao remover a rede em uso e deixa a stack
+    # pela metade. Medido nesta maquina, com a stack de producao rodando.
+    #
+    # Portabilidade, entao, e' resolvida na instalacao e nao aqui:
+    # scripts/instalar.sh LE o gateway real da rede
+    # (docker network inspect exo_net) e escreve esse endereco nos dois lugares
+    # que dependem dele -- a unidade systemd e o proxy_pass de conf/nginx.conf.
+    # Funciona com qualquer faixa que o Docker sortear no servidor novo.

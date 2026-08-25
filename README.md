@@ -8,19 +8,55 @@ Substituição open source da suíte Microsoft 365, provisionada em
 
 ## Instalação do zero (a partir deste repositório)
 
+Um comando. O resto é conferência.
+
 ```bash
-git clone https://github.com/josegoncalves2/repo-exo-365.git
-cd repo-exo-365
-
-# 1. Gera .env com segredos aleatórios (nenhum segredo é versionado)
-./scripts/gerar-segredos.sh 192.168.1.59      # use seu IP/hostname
-
-# 2. Reconstrói tudo do zero, com log limpo desde o primeiro início
-export SUDO_ASKPASS=/caminho/para/askpass.sh   # ver "Requisito de sudo" abaixo
-./scripts/reconstruir-do-zero.sh
-
-# 3. Abra http://SEU_IP/ e crie a conta administrativa na tela inicial
+git clone https://github.com/josegoncalves2/repo-exo-365.git /opt/projetos/exo
+cd /opt/projetos/exo
+./scripts/instalar.sh 192.168.1.59        # use o IP/hostname do servidor novo
 ```
+
+`scripts/instalar.sh` faz, nesta ordem, verificando antes de cada passo:
+
+| Passo | O que faz | Se já existir |
+|---|---|---|
+| 1 | confere docker, compose v2, python3, openssl, sudo e memória (≥ 8 GB) | aborta listando o que falta |
+| 2 | gera `.env` com segredos aleatórios e `conf/exo.properties` | **preserva** — sobrescrever invalidaria as senhas já gravadas no banco |
+| 3 | emite os certificados TLS da CA interna (MySQL, portal, Jitsi) | preserva |
+| 4 | sobe os 13 serviços na ordem, com healthcheck | se `./data` tem conteúdo, apenas inicia — **nunca reconstrói sobre um banco** |
+| 5 | lê o gateway real da rede `exo_net`, aponta o nginx e instala as duas unidades systemd | não reescreve unidade idêntica |
+| 6 | provisiona a hierarquia de `conf/estrutura/*.json` | reaplica sem duplicar (idempotente) |
+| 7 | confere portal, `/estrutura/`, modelo de CSV e saúde dos containers | — |
+
+Rodar de novo num servidor já instalado é seguro: cada passo detecta o que
+existe e não mexe.
+
+### O que o clone reproduz — e o que não reproduz
+
+**Reproduz:** a stack inteira (13 containers), os segredos, os certificados, o
+proxy, as duas unidades systemd, a interface `/estrutura/` e a hierarquia
+organizacional descrita em `conf/estrutura/*.json`.
+
+**Não reproduz — e nenhum repositório poderia:** o *conteúdo* já produzido —
+publicações, arquivos, mensagens do chat, contas criadas à mão. Isso é dado de
+execução, vive em `./data` e no MySQL, e está fora do git de propósito (são
+gigabytes, e conteria senhas). Para levá-lo ao servidor novo, use
+`scripts/backup.sh` no antigo e restaure lá.
+
+**Fora do git por segurança:** `.env`, `conf/exo.properties` e as chaves
+privadas (`conf/mysql-certs/`, `conf/portal-certs/`, `conf/jitsi-certs/`) — todos
+regenerados pelo passo 2 e 3.
+
+### Serviços do host (não são containers)
+
+| Unidade | Modelo versionado | Papel |
+|---|---|---|
+| `exo.service` | `deploy/exo.service` | sobe a stack no boot, ordenada, sem estourar memória |
+| `exo-estrutura.service` | `deploy/exo-estrutura.service` | interface `/estrutura/` no host, com disco **somente-leitura** |
+
+Os modelos usam `@RAIZ@`, `@USUARIO@` e `@GATEWAY@`, substituídos na instalação.
+Edite o modelo e rode `./scripts/instalar.sh` de novo — nunca a cópia em
+`/etc/systemd/system`.
 
 Depois, para validar tudo:
 
@@ -293,5 +329,4 @@ depois de executar dá a falsa impressão de que faltou gente.
 | `scripts/estrutura-web.py` | interface web |
 | `scripts/gerar-imagens-espaco.py` | avatar e banner PNG |
 | `conf/estrutura/*.json` | árvores versionadas |
-| `conf/estrutura-registro.json` | mapa grupo → espaço (gerado, não editar) |
-| `estrutura-organizacional.log` | auditoria de cada execução |
+| _(nenhum estado em disco)_ | a verdade é o banco do eXo; o diário de execução vai para `journalctl -u exo-estrutura` |

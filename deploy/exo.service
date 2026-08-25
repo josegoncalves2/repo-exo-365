@@ -1,0 +1,34 @@
+# ============================================================================
+# exo.service -- sobe a stack no boot, na ordem certa.
+#
+# MODELO. Os campos @RAIZ@ e @USUARIO@ sao substituidos por scripts/instalar.sh;
+# nao edite a copia instalada em /etc/systemd/system, edite ESTA e reinstale.
+#
+# Type=oneshot + RemainAfterExit: quem faz o trabalho e' subir-ordenado.sh, que
+# termina; sem RemainAfterExit o systemd daria o servico como parado logo apos
+# a subida e o ExecStop nunca rodaria no shutdown.
+# ============================================================================
+[Unit]
+Description=eXo Platform Community — suite colaborativa (docker compose em @RAIZ@)
+Documentation=file:@RAIZ@/README.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=@RAIZ@
+User=@USUARIO@
+Group=@USUARIO@
+# Subida ordenada, um servico por vez, com trava de memoria e o proxy por
+# ultimo. NAO usar `docker compose up -d` direto nem politica de reinicio do
+# Docker: ambos sobem tudo ao mesmo tempo e ja causaram OOM nesta VM.
+ExecStart=@RAIZ@/scripts/subir-ordenado.sh
+ExecStop=/usr/bin/docker compose stop
+# O primeiro boot do eXo leva de 10 a 20 min; sem isto o systemd desistiria.
+TimeoutStartSec=0
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target

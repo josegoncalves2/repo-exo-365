@@ -1,0 +1,60 @@
+# ============================================================================
+# exo-estrutura.service -- interface web da estrutura organizacional.
+#
+# MODELO. @RAIZ@, @USUARIO@ e @GATEWAY@ sao substituidos por
+# scripts/instalar.sh.
+#
+# POR QUE NAO E' UM CONTAINER: decisao operacional do projeto -- nenhum
+# container novo. Roda no host e o nginx do stack a alcanca pelo gateway da
+# rede exo_net (@GATEWAY@), que docker-compose.yml fixa em 172.20.0.0/16
+# justamente para este endereco ser previsivel.
+#
+# Bind no gateway e nao em 0.0.0.0: o nginx chega, a LAN nao. Quem entra passa
+# pelo proxy do portal e herda o TLS da CA interna.
+#
+# ESTADO EM DISCO: ZERO, e isso nao depende de boa conduta do codigo.
+# ProtectSystem=strict deixa o sistema de arquivos somente-leitura para este
+# servico e NAO ha um unico ReadWritePaths. Se alguem reintroduzir um cache em
+# disco, o processo recebe EROFS no primeiro teste -- em vez de criar uma
+# segunda verdade que um dia diverge do banco (ja aconteceu: a tela desenhava
+# uma arvore que o banco nao tinha mais).
+#
+# Diario de execucao: journalctl -u exo-estrutura -f
+# ============================================================================
+[Unit]
+Description=Interface web da estrutura organizacional (eXo)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USUARIO@
+Group=@USUARIO@
+WorkingDirectory=@RAIZ@
+Environment=EXO_URL=http://127.0.0.1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 @RAIZ@/scripts/estrutura-web.py --host @GATEWAY@ --porta 878
+Restart=always
+RestartSec=5
+
+# -- 878 e' porta privilegiada (<1024): sem esta capacidade o bind falha com
+#    EACCES rodando como usuario comum. Concede-se exatamente esta, e o teto
+#    impede que qualquer outra seja adquirida.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+
+# -- disco somente-leitura, sem excecao nenhuma.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

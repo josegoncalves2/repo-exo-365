@@ -1,0 +1,992 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Estrutura organizacional — eXo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--
+  ==========================================================================
+  Console da estrutura organizacional.
+
+  Fica em arquivo separado do servidor de proposito: HTML dentro de string
+  Python nao tem realce, nao tem lint, e foi assim que a versao anterior
+  apodreceu. O servidor le este arquivo a cada request (cache por mtime),
+  entao corrigir a tela nao exige reiniciar o servico.
+
+  Sem framework, sem CDN: a pagina e' servida por um processo de biblioteca
+  padrao dentro de uma rede fechada. Toda dependencia externa aqui seria uma
+  requisicao que a rede pode nao deixar sair.
+  ==========================================================================
+-->
+<style>
+:root{
+  --fundo:#f4f6f9; --painel:#ffffff; --painel2:#fafbfd; --linha:#e3e8ef;
+  --txt:#101828; --txt2:#475467; --txt3:#8792a4;
+  --pri:#2563eb; --pri-fraco:#eff4ff; --pri-forte:#1d4ed8;
+  --ok:#0f9257; --ok-fraco:#e8f6ef; --erro:#d92d20; --erro-fraco:#fdecea;
+  --alerta:#b54708; --alerta-fraco:#fef4e6;
+  --sec:#2563eb; --div:#0f9257; --set:#b54708;
+  --sombra:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.10);
+  --sombra-alta:0 12px 32px rgba(16,24,40,.18);
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --fundo:#0d1117; --painel:#161b22; --painel2:#1c2230; --linha:#2a3140;
+    --txt:#e6edf3; --txt2:#9fb0c4; --txt3:#6e7f95;
+    --pri:#4d8bf5; --pri-fraco:#16233c; --pri-forte:#6ea3ff;
+    --ok:#3fb98a; --ok-fraco:#12271f; --erro:#f2756a; --erro-fraco:#2b1715;
+    --alerta:#e3a04a; --alerta-fraco:#2a1f11;
+    --sec:#4d8bf5; --div:#3fb98a; --set:#e3a04a;
+    --sombra:0 1px 2px rgba(0,0,0,.4); --sombra-alta:0 12px 32px rgba(0,0,0,.55);
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--fundo);color:var(--txt);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:var(--pri);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------------- topo ---------------- */
+.topo{position:sticky;top:0;z-index:30;background:var(--painel);
+  border-bottom:1px solid var(--linha);display:flex;align-items:center;gap:14px;
+  padding:0 20px;height:58px}
+.marca{display:flex;align-items:center;gap:10px;font-weight:680;letter-spacing:-.2px}
+.marca .glifo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--pri),#7c3aed);
+  display:grid;place-items:center;color:#fff;font-size:14px;font-weight:800}
+.marca small{display:block;font-weight:500;font-size:11px;color:var(--txt3);letter-spacing:0}
+.topo .espaco{flex:1}
+.selo{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+  color:var(--txt2);background:var(--painel2);border:1px solid var(--linha);
+  border-radius:20px;padding:4px 11px}
+.selo .ponto{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.quem{font-size:12.5px;color:var(--txt2)}
+.quem b{color:var(--txt)}
+
+/* ---------------- indicadores ---------------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.kpi{background:var(--painel);border:1px solid var(--linha);border-radius:var(--r);
+  padding:13px 15px;box-shadow:var(--sombra)}
+.kpi .n{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1.15}
+.kpi .r{font-size:11.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;font-weight:650}
+.kpi.sec .n{color:var(--sec)} .kpi.div .n{color:var(--div)} .kpi.set .n{color:var(--set)}
+
+/* ---------------- estrutura ---------------- */
+.tela{max-width:1400px;margin:0 auto;padding:0 20px 120px}
+.colunas{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:16px;align-items:start}
+@media(max-width:1080px){.colunas{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+.painel{background:var(--painel);border:1px solid var(--linha);border-radius:var(--r);
+  box-shadow:var(--sombra);overflow:hidden}
+.painel>header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--linha);
+  background:var(--painel)}
+.painel>header h2{margin:0;font-size:13.5px;font-weight:680;letter-spacing:-.1px}
+.painel .corpo{padding:12px}
+.grudento{position:sticky;top:74px}
+
+.busca{position:relative;flex:1;max-width:260px}
+.busca input{width:100%;padding:7px 11px 7px 30px;border:1px solid var(--linha);border-radius:8px;
+  background:var(--painel2)}
+.busca svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);opacity:.5}
+.busca input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-fraco)}
+
+/* nos da arvore */
+.no{border:1px solid var(--linha);border-radius:var(--r);margin-bottom:8px;background:var(--painel);
+  overflow:hidden;transition:box-shadow .15s,border-color .15s}
+.no:hover{border-color:#c7d2e0}
+.no.sel{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-fraco)}
+.no .linha{display:flex;align-items:center;gap:11px;padding:11px 12px;cursor:pointer}
+.no .barra{width:3px;align-self:stretch;border-radius:3px;flex:none}
+.no.t-sec .barra{background:var(--sec)} .no.t-div .barra{background:var(--div)} .no.t-set .barra{background:var(--set)}
+.no.t-esp .barra{background:var(--txt3)}
+.av{width:34px;height:34px;border-radius:9px;flex:none;object-fit:cover;background:var(--painel2);
+  border:1px solid var(--linha);display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--txt3)}
+.no .meio{flex:1;min-width:0}
+.no .tit{font-weight:620;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no .sub{display:flex;align-items:center;gap:8px;margin-top:2px;font-size:11.5px;color:var(--txt3);flex-wrap:wrap}
+.cod{font:600 10.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--painel2);
+  border:1px solid var(--linha);border-radius:5px;padding:1px 6px;color:var(--txt2)}
+.tag{font-size:9.5px;font-weight:750;letter-spacing:.7px;text-transform:uppercase;
+  padding:3px 7px;border-radius:5px;color:#fff;flex:none}
+.tag.t-sec{background:var(--sec)} .tag.t-div{background:var(--div)} .tag.t-set{background:var(--set)}
+.tag.t-esp{background:var(--txt3)}
+.cont{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--txt2)}
+.filhos{padding:0 0 4px 22px;border-left:1px dashed var(--linha);margin-left:26px}
+.acoes-no{display:flex;gap:3px;flex:none;opacity:.35;transition:opacity .12s}
+.no:hover .acoes-no,.no.sel .acoes-no{opacity:1}
+
+/* botoes */
+.b{border:1px solid var(--linha);background:var(--painel);border-radius:8px;padding:7px 12px;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:.12s;white-space:nowrap}
+.b:hover:not(:disabled){background:var(--painel2);border-color:#c7d2e0}
+.b:disabled{opacity:.45;cursor:not-allowed}
+.b.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.b.pri:hover:not(:disabled){background:var(--pri-forte);border-color:var(--pri-forte)}
+.b.risco{color:var(--erro);border-color:var(--linha)}
+.b.risco:hover:not(:disabled){background:var(--erro-fraco);border-color:var(--erro)}
+.b.ic{padding:5px 8px;border-color:transparent;background:transparent;color:var(--txt2)}
+.b.ic:hover:not(:disabled){background:var(--painel2);color:var(--txt)}
+.b.pq{padding:4px 9px;font-size:11.5px}
+
+/* interruptor simulacao */
+.chave{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;
+  font-size:12px;font-weight:600;color:var(--txt2)}
+.chave input{display:none}
+.chave .trilho{width:34px;height:19px;border-radius:20px;background:var(--linha);position:relative;transition:.15s}
+.chave .trilho::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+  background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.chave input:checked+.trilho{background:var(--alerta)}
+.chave input:checked+.trilho::after{transform:translateX(15px)}
+
+/* painel de detalhe */
+.abas{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--linha);background:var(--painel)}
+.aba{padding:10px 12px;font-size:12.5px;font-weight:620;color:var(--txt3);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.aba:hover{color:var(--txt)}
+.aba.on{color:var(--pri);border-bottom-color:var(--pri)}
+.capa{height:76px;background:linear-gradient(135deg,var(--pri-fraco),var(--painel2));position:relative;
+  background-size:cover;background-position:center}
+.capa .av{position:absolute;left:14px;bottom:-18px;width:52px;height:52px;border-radius:12px;
+  border:3px solid var(--painel);font-size:16px}
+.perfil{padding:26px 14px 12px}
+.perfil h3{margin:0 0 3px;font-size:15px;font-weight:680;letter-spacing:-.2px}
+.perfil .desc{font-size:12.5px;color:var(--txt2);white-space:pre-wrap;position:relative;
+  max-height:96px;overflow:hidden;transition:max-height .2s}
+.perfil .desc.aberta{max-height:none}
+.perfil .desc.tem-mais::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34px;
+  background:linear-gradient(transparent,var(--painel))}
+.perfil .desc.aberta.tem-mais::after{display:none}
+.vermais{font-size:11.5px;font-weight:650;color:var(--pri);cursor:pointer;margin-top:4px;display:inline-block}
+.dados{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:12.5px;margin-top:12px}
+.dados dt{color:var(--txt3);font-weight:600}
+.dados dd{margin:0;min-width:0;word-break:break-word}
+.pessoa{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px}
+.pessoa:hover{background:var(--painel2)}
+.pessoa .av{width:28px;height:28px;border-radius:50%;font-size:11px}
+.pessoa .nm{flex:1;min-width:0;font-size:12.5px;font-weight:560;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pessoa .lg{font:11px ui-monospace,monospace;color:var(--txt3)}
+.papel{font-size:9.5px;font-weight:750;letter-spacing:.5px;text-transform:uppercase;padding:2px 6px;
+  border-radius:4px;background:var(--pri-fraco);color:var(--pri)}
+.secao-t{font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--txt3);
+  margin:14px 0 6px;padding:0 9px}
+
+/* formulario */
+.campo{margin-bottom:12px}
+.campo>label{display:block;font-size:12px;font-weight:650;margin-bottom:5px}
+.campo .dica{font-size:11.5px;color:var(--txt3);margin-top:4px}
+.campo input[type=text],.campo textarea{width:100%;padding:8px 10px;border:1px solid var(--linha);
+  border-radius:8px;background:var(--painel)}
+.campo textarea{min-height:76px;resize:vertical}
+.campo input:focus,.campo textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-fraco)}
+.campo input[readonly]{background:var(--painel2);color:var(--txt3)}
+.duplo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* seletor de pessoas */
+.pick{border:1px solid var(--linha);border-radius:8px;padding:5px;background:var(--painel);
+  display:flex;flex-wrap:wrap;gap:5px;align-items:center;position:relative}
+.pick:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-fraco)}
+.pick input{border:none;outline:none;background:transparent;flex:1;min-width:110px;padding:4px 5px;font-size:12.5px}
+.ficha{display:inline-flex;align-items:center;gap:5px;background:var(--pri-fraco);color:var(--pri);
+  border-radius:6px;padding:3px 5px 3px 8px;font-size:12px;font-weight:600;max-width:100%}
+.ficha.novo{background:var(--alerta-fraco);color:var(--alerta)}
+.ficha b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ficha button{border:none;background:transparent;cursor:pointer;color:inherit;padding:0 2px;font-size:14px;line-height:1}
+.sugestoes{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--painel);
+  border:1px solid var(--linha);border-radius:8px;box-shadow:var(--sombra-alta);z-index:20;
+  max-height:230px;overflow:auto;display:none}
+.sugestoes.on{display:block}
+.sug{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer}
+.sug:hover,.sug.foco{background:var(--pri-fraco)}
+.sug .nm{flex:1;min-width:0;font-size:12.5px;font-weight:560}
+.sug .lg{font:11px ui-monospace,monospace;color:var(--txt3)}
+.sug .novo{font-size:11px;color:var(--alerta);font-weight:650}
+
+/* zona de imagem */
+.imgzona{border:1.5px dashed var(--linha);border-radius:9px;padding:10px;text-align:center;
+  cursor:pointer;font-size:11.5px;color:var(--txt3);background:var(--painel2);position:relative;overflow:hidden}
+.imgzona:hover{border-color:var(--pri);color:var(--pri)}
+.imgzona img{max-width:100%;max-height:64px;border-radius:6px;display:block;margin:0 auto 4px}
+.imgzona input{display:none}
+
+/* console */
+.console{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--painel);
+  border-top:1px solid var(--linha);box-shadow:0 -6px 24px rgba(16,24,40,.10);transition:transform .22s}
+.console.baixo{transform:translateY(calc(100% - 44px))}
+.console .barra-c{display:flex;align-items:center;gap:10px;padding:0 16px;height:44px;cursor:pointer}
+.console .barra-c h2{margin:0;font-size:12.5px;font-weight:680}
+.console pre{margin:0;height:230px;overflow:auto;padding:12px 16px;background:#0b1220;color:#c6d4e6;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+.console pre .e{color:#ff8b7e} .console pre .o{color:#6ee7a8} .console pre .a{color:#ffd08a}
+.pilula{font-size:10.5px;font-weight:750;letter-spacing:.6px;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;background:var(--painel2);color:var(--txt3);border:1px solid var(--linha)}
+.pilula.rodando{background:var(--pri-fraco);color:var(--pri);border-color:transparent}
+.pilula.ok{background:var(--ok-fraco);color:var(--ok);border-color:transparent}
+.pilula.erro{background:var(--erro-fraco);color:var(--erro);border-color:transparent}
+.pilula.parado{background:var(--alerta-fraco);color:var(--alerta);border-color:transparent}
+.girando{display:inline-block;width:11px;height:11px;border:2px solid var(--pri);border-right-color:transparent;
+  border-radius:50%;animation:gira .7s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+/* modal + avisos */
+.veu{position:fixed;inset:0;background:rgba(16,24,40,.5);display:none;place-items:center;z-index:50;padding:20px}
+.veu.on{display:grid}
+.caixa{background:var(--painel);border-radius:12px;box-shadow:var(--sombra-alta);max-width:480px;width:100%;
+  padding:20px;border:1px solid var(--linha)}
+.caixa h3{margin:0 0 8px;font-size:16px}
+.caixa .txt{font-size:13px;color:var(--txt2);margin-bottom:14px}
+.caixa .impacto{background:var(--erro-fraco);border:1px solid rgba(217,45,32,.25);border-radius:8px;
+  padding:10px 12px;font-size:12.5px;margin-bottom:14px}
+.caixa .impacto b{color:var(--erro)}
+.rodape{display:flex;gap:8px;justify-content:flex-end}
+#avisos{position:fixed;right:18px;top:70px;z-index:60;display:flex;flex-direction:column;gap:8px}
+.aviso{background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--pri);
+  border-radius:9px;padding:10px 14px;box-shadow:var(--sombra-alta);font-size:12.5px;max-width:340px;
+  animation:entra .18s}
+.aviso.erro{border-left-color:var(--erro)} .aviso.ok{border-left-color:var(--ok)}
+.aviso.alerta{border-left-color:var(--alerta)}
+@keyframes entra{from{opacity:0;transform:translateX(12px)}}
+.nada{padding:40px 20px;text-align:center;color:var(--txt3)}
+.nada b{display:block;color:var(--txt);font-size:14.5px;margin-bottom:4px}
+.carregando{padding:28px;text-align:center;color:var(--txt3)}
+</style>
+
+<div class="topo">
+  <div class="marca">
+    <div class="glifo">E</div>
+    <div>Estrutura organizacional<small>Secretarias · Divisões · Setores</small></div>
+  </div>
+  <div class="espaco"></div>
+  <span class="selo" id="selo-amb"><span class="ponto"></span><span id="amb">—</span></span>
+  <span class="quem">autenticado como <b>__USUARIO__</b></span>
+  <a class="b pq" href="/portal/" target="_blank" rel="noopener">Abrir portal ↗</a>
+</div>
+
+<div class="tela">
+  <div class="kpis">
+    <div class="kpi sec"><div class="n" id="k-sec">—</div><div class="r">Secretarias</div></div>
+    <div class="kpi div"><div class="n" id="k-div">—</div><div class="r">Divisões</div></div>
+    <div class="kpi set"><div class="n" id="k-set">—</div><div class="r">Setores</div></div>
+    <div class="kpi"><div class="n" id="k-pes">—</div><div class="r">Pessoas no organograma</div></div>
+  </div>
+
+  <div class="colunas">
+    <section class="painel">
+      <header>
+        <h2>Organograma</h2>
+        <div class="busca">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="busca" type="text" placeholder="Filtrar por nome ou sigla…" oninput="desenhar()">
+        </div>
+        <label class="chave" title="Mostra o que seria feito, sem gravar nada">
+          <input type="checkbox" id="simulacao"><span class="trilho"></span>Simulação
+        </label>
+        <button class="b ic" title="Recarregar do servidor" onclick="carregar(true)">⟳</button>
+        <button class="b pq" onclick="exportarJSON()">Exportar</button>
+        <button class="b pri pq" onclick="acaoNova([])">+ Secretaria</button>
+      </header>
+      <div id="ar-aviso" style="display:none;margin:10px 12px 0;padding:9px 11px;border-radius:8px;
+        background:var(--pri-fraco);color:var(--pri);font-size:12.5px;font-weight:600">
+        <span class="girando"></span> Provisionamento em andamento — a árvore só reflete o resultado
+        quando o trabalho terminar.</div>
+      <div class="corpo" id="arvore"><div class="carregando">carregando estrutura…</div></div>
+    </section>
+
+    <section class="painel grudento" id="lado">
+      <div class="abas">
+        <div class="aba on" data-aba="detalhe" onclick="trocarAba('detalhe')">Detalhe</div>
+        <div class="aba" data-aba="geral" onclick="trocarAba('geral')">Visão geral</div>
+        <div class="aba" data-aba="editar" onclick="trocarAba('editar')">Editar</div>
+      </div>
+      <div id="lado-corpo"><div class="carregando">consultando o servidor…</div></div>
+    </section>
+  </div>
+</div>
+
+<div class="console baixo" id="console">
+  <div class="barra-c" onclick="alternarConsole()">
+    <h2>Console de execução</h2>
+    <span class="pilula" id="pilula">ocioso</span>
+    <span id="cronometro" style="font-size:11.5px;color:var(--txt3)"></span>
+    <div style="flex:1"></div>
+    <button class="b pq risco" id="b-parar" onclick="event.stopPropagation();parar()" disabled>Parar</button>
+    <span id="seta">▲</span>
+  </div>
+  <pre id="log"></pre>
+</div>
+
+<div class="veu" id="veu"><div class="caixa">
+  <h3 id="m-tit">Confirmar</h3>
+  <div class="txt" id="m-txt"></div>
+  <div class="impacto" id="m-impacto"></div>
+  <div class="rodape">
+    <button class="b" onclick="fecharModal()">Cancelar</button>
+    <button class="b risco" id="m-ok">Remover</button>
+  </div>
+</div></div>
+
+<div id="avisos"></div>
+
+<script>
+"use strict";
+/* =========================================================================
+   Estado da tela. ARVORE e' sempre o que o SERVIDOR respondeu -- nunca uma
+   copia editada localmente. Toda acao que grava termina com carregar(), para
+   a tela voltar a espelhar o banco em vez de acreditar no proprio otimismo.
+   ========================================================================= */
+let ARVORE = [], PESSOAS_TOTAL = [], PESSOAS_TODAS = [], SEL = null, ABA = "detalhe", DETALHE = {}, N = 0, ULT = "", T0 = 0;
+const $ = i => document.getElementById(i);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* A descricao do espaco vem do eXo em HTML (o Lobby tem <p>, <strong>, <div>).
+   Jogar isso no painel como texto mostrava a marcacao crua; jogar como HTML
+   seria pior -- conteudo do banco vira codigo dentro da tela de administracao.
+   Entao converte-se para texto limpo, preservando as quebras de paragrafo. */
+const texto = h => {
+  const t = String(h || "")
+    .replace(/<\s*(br|\/p|\/div|\/li|\/h[1-6])\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"')
+    .replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n");
+  return t.trim();
+};
+const iniciais = s => (String(s || "?").trim().split(/\s+/).slice(0, 2).map(p => p[0]).join("") || "?").toUpperCase();
+const NIVEL = ["Secretaria", "Divisão", "Setor"], CLASSE = ["sec", "div", "set"];
+
+/* ---------------------------- avisos ---------------------------- */
+function avisar(txt, tipo = "") {
+  const d = document.createElement("div");
+  d.className = "aviso " + tipo; d.textContent = txt;
+  $("avisos").appendChild(d);
+  setTimeout(() => { d.style.opacity = 0; setTimeout(() => d.remove(), 250); }, 4200);
+}
+
+/* ---------------------------- carregar ---------------------------- */
+async function api(url, opc) {
+  const r = await fetch(url, opc);
+  let j = {};
+  try { j = await r.json(); } catch (e) { }
+  if (r.status === 401) { location.href = "/portal/login?initialURI=%2Festrutura%2F"; throw new Error("sessao"); }
+  if (!r.ok && j.erro) throw new Error(j.erro);
+  return j;
+}
+async function carregar(avisa) {
+  try {
+    const j = await api("api/arvore");
+    ARVORE = j.arvore || [];
+    PESSOAS_TOTAL = j.pessoas || [];            // so' o organograma
+    PESSOAS_TODAS = j.pessoas_todas || [];      // organograma + demais espacos
+    if (j.erro) avisar(j.erro, "erro");
+    if (avisa) avisar("Estrutura recarregada do servidor.", "ok");
+  } catch (e) { ARVORE = []; avisar("Falha ao ler a estrutura: " + e.message, "erro"); }
+  desenhar(); indicadores();
+  if (!SEL) {
+    // abre no primeiro nivel do ORGANOGRAMA; so' cai num espaco sem grupo se
+    // nao houver organograma nenhum.
+    const { raizes, outros } = separar();
+    const inicial = raizes[0] || outros[0];
+    if (inicial) { SEL = inicial.espaco.id; ABA = "detalhe"; }
+  }
+  if (SEL && acharNo(SEL)) abrirDetalhe(SEL, true);
+  else { SEL = null; ABA = "geral"; pintarGeral(); }
+}
+function indicadores() {
+  const n = { secretaria: 0, divisao: 0, setor: 0 };
+  (function anda(l) { l.forEach(x => { if (n[x.tipo] != null) n[x.tipo]++; anda(x.filhos || []); }); })(ARVORE);
+  $("k-sec").textContent = n.secretaria; $("k-div").textContent = n.divisao;
+  $("k-set").textContent = n.setor;
+  $("k-pes").textContent = PESSOAS_TOTAL.length;   // contas distintas nos niveis, sem os demais espacos
+  $("k-pes").title = PESSOAS_TOTAL.join(", ") ||
+    "ninguém nos níveis do organograma";
+}
+
+/* ---------------------------- organograma ----------------------------
+   TUDO e' chaveado pelo ID DO ESPACO, nao pelo caminho do grupo. Motivo: nem
+   todo espaco tem grupo da estrutura (o Lobby nao tem) e mesmo assim precisa
+   aparecer, ser aberto e mostrar sua gente -- ele e' o PAI da Secretaria em
+   SOC_SPACES.PARENT_SPACE_ID, e escondê-lo era desenhar uma arvore que o banco
+   nao tem.
+   ------------------------------------------------------------------------ */
+/* Um espaco recem-criado ainda nao tem vinculo -- ele entra no passo seguinte
+   do provisionamento. Nesse intervalo o no aparecia como orfao "fora da
+   estrutura", no topo da arvore, o que da' a impressao de que o programa criou
+   lixo solto. Enquanto e' novo, ele se anuncia como o que e': em construcao. */
+const novinho = no => {
+  const t = Number(no.espaco.criado || 0);
+  return t > 0 && (Date.now() - t) < 180000;
+};
+const ROTULO = { secretaria: "Secretaria", divisao: "Divisão", setor: "Setor", espaco: "Espaço" };
+const CLS = { secretaria: "sec", divisao: "div", setor: "set", espaco: "esp" };
+const FILHO_DE = { espaco: "secretaria", secretaria: "divisao", divisao: "setor", setor: null };
+
+function casa(no, t) {
+  if (!t) return true;
+  const q = t.toLowerCase();
+  if ((no.rotulo || "").toLowerCase().includes(q) || (no.caminho || "").toLowerCase().includes(q)
+    || (no.espaco.prettyName || "").toLowerCase().includes(q)) return true;
+  return (no.filhos || []).some(f => casa(f, q));
+}
+/* O ORGANOGRAMA e' a arvore de Secretaria > Divisao > Setor, e so' ela. Um
+   espaco sem grupo organizacional (o Lobby) NAO encabeca organograma nenhum --
+   ele e' um espaco do eXo que por acaso e' apontado como pai em SOC_SPACES.
+   Esse fato continua na tela, mas embaixo, na sua propria secao, e no detalhe
+   de quem o aponta. A arvore de cima mostra a organizacao; a lista de baixo
+   mostra os demais espacos que existem no eXo. */
+function separar() {
+  const raizes = [], outros = [];
+  (function anda(lista, temAncestral) {
+    lista.forEach(n => {
+      if (n.daEstrutura) {
+        if (!temAncestral) raizes.push(n);
+        anda(n.filhos || [], true);
+      } else {
+        outros.push(n);
+        anda(n.filhos || [], false);   // o que estiver dentro dele sobe como raiz
+      }
+    });
+  })(ARVORE, false);
+  return { raizes, outros };
+}
+function desenhar() {
+  const termo = $("busca").value.trim(), el = $("arvore");
+  const { raizes, outros } = separar();
+  const vis = raizes.filter(n => casa(n, termo));
+  const visOutros = outros.filter(n => casa(n, termo));
+  let html = "";
+  if (!raizes.length) {
+    html = `<div class="nada"><b>Nenhuma Secretaria cadastrada</b>
+      Não há espaço vinculado a um grupo <code>/SIGLA</code> em SOC_GROUP_SPACE_BINDING.<br><br>
+      <button class="b pri" onclick="acaoNova(null)">+ Criar a primeira Secretaria</button></div>`;
+  } else if (!vis.length && termo) {
+    html = `<div class="nada"><b>Nada encontrado</b>Nenhum nível casa com “${esc(termo)}”.</div>`;
+  } else {
+    html = vis.map(n => noHTML(n, termo)).join("");
+  }
+  if (visOutros.length) {
+    html += `<div class="secao-t" style="margin:16px 0 6px;padding:0 2px">
+        Outros espaços no eXo (${visOutros.length}) — não fazem parte do organograma</div>
+      ${visOutros.map(n => noHTML(n, termo)).join("")}`;
+  }
+  el.innerHTML = html;
+}
+function noHTML(no, termo) {
+  // filhos so' descem dentro do organograma; sob um espaco sem grupo, os filhos
+  // ja' foram promovidos a raiz por separar() e nao se repetem aqui.
+  const filhos = no.daEstrutura ? (no.filhos || []).filter(f => casa(f, termo)) : [];
+  const e = no.espaco, rot = no.rotulo || no.nome, sel = SEL === e.id ? " sel" : "";
+  const podeFilho = FILHO_DE[no.tipo];
+  return `<div class="no t-${CLS[no.tipo]}${sel}">
+    <div class="linha" onclick="selecionar('${esc(e.id)}')">
+      <div class="barra"></div>
+      ${e.avatar ? `<img class="av" src="${esc(e.avatar)}" alt="">`
+      : `<div class="av">${esc(iniciais(rot))}</div>`}
+      <div class="meio">
+        <div class="tit" title="${esc(rot)}">${esc(rot)}</div>
+        <div class="sub">
+          <span class="tag t-${CLS[no.tipo]}">${ROTULO[no.tipo]}</span>
+          <span class="cod">${esc(no.caminho || e.prettyName)}</span>
+          <span class="cont" title="pessoas distintas no espaço">👤 ${e.membros || 0}</span>
+          ${e.gestores ? `<span class="cont" title="destas, ${e.gestores} são gestoras">★ ${e.gestores}</span>` : ""}
+          ${filhos.length ? `<span class="cont">▸ ${filhos.length}</span>` : ""}
+          ${no.daEstrutura ? "" : (novinho(no)
+            ? `<span class="cont" style="color:var(--pri)"
+                 title="espaço criado agora; os vínculos entram no próximo passo do provisionamento">
+                 <span class="girando"></span> criando…</span>`
+            : `<span class="cont" style="color:var(--txt3)"
+                 title="não há linha em SOC_GROUP_SPACE_BINDING ligando este espaço a um grupo /SIGLA">
+                 sem grupo organizacional</span>`)}
+        </div>
+      </div>
+      <div class="acoes-no">
+        ${podeFilho ? `<button class="b ic" title="Acrescentar ${ROTULO[podeFilho]}"
+          onclick="event.stopPropagation();acaoNova('${esc(e.id)}')">+</button>` : ""}
+        ${e.url ? `<a class="b ic" title="Abrir o espaço no portal" target="_blank" rel="noopener"
+          href="${esc(e.url)}" onclick="event.stopPropagation()">↗</a>` : ""}
+        ${no.daEstrutura ? `<button class="b ic" title="Remover" style="color:var(--erro)"
+          onclick="event.stopPropagation();pedirRemover('${esc(e.id)}')">🗑</button>` : ""}
+      </div>
+    </div>
+    ${filhos.length ? `<div class="filhos">${filhos.map(f => noHTML(f, termo)).join("")}</div>` : ""}
+  </div>`;
+}
+
+/* ---------------------------- selecao e detalhe ---------------------------- */
+function acharNo(id, lista) {
+  for (const n of (lista || ARVORE)) {
+    if (n.espaco.id === String(id)) return n;
+    const a = acharNo(id, n.filhos || []);
+    if (a) return a;
+  }
+  return null;
+}
+function selecionar(id) { SEL = String(id); ABA = "detalhe"; desenhar(); abrirDetalhe(SEL); }
+function trocarAba(a) {
+  const no = SEL && acharNo(SEL);
+  if (!no && a !== "geral") return avisar("Selecione um espaço no organograma.", "alerta");
+  if (a === "editar" && no && !no.daEstrutura)
+    return avisar(`“${no.rotulo}” não tem grupo organizacional vinculado — `
+      + "esta tela só edita espaços ligados a um grupo /SIGLA.", "alerta");
+  ABA = a; document.querySelectorAll(".aba").forEach(x => x.classList.toggle("on", x.dataset.aba === a));
+  if (a === "geral") return pintarGeral();
+  if (a === "detalhe") return pintarDetalhe();
+  pintarEditor("editar", SEL);
+}
+async function abrirDetalhe(id, silencioso) {
+  document.querySelectorAll(".aba").forEach(x => x.classList.toggle("on", x.dataset.aba === ABA));
+  if (!silencioso) $("lado-corpo").innerHTML = `<div class="carregando">consultando o servidor…</div>`;
+  try { DETALHE = await api("api/nivel?espaco=" + encodeURIComponent(id)); }
+  catch (e) { DETALHE = { existe: false, erro: e.message }; }
+  if (ABA === "geral") return pintarGeral();
+  ABA === "detalhe" ? pintarDetalhe() : pintarEditor("editar", SEL);
+}
+
+/* Visao geral: lista chapada de TODOS os espacos do banco, com o que falta em
+   cada um. Ocupa o painel quando nada esta selecionado -- antes havia ali um
+   "clique em algo", que gastava um terco da tela sem informar nada. */
+function pintarGeral() {
+  const { raizes, outros } = separar();
+  const org = [], plano = n => { org.push(n); (n.filhos || []).filter(f => f.daEstrutura).forEach(plano); };
+  raizes.forEach(plano);
+  const semGente = org.filter(n => !n.espaco.membros).map(n => n.rotulo);
+  const semPerfil = org.filter(n => !texto(n.descricao)).map(n => n.rotulo);
+  const linha = n => `
+    <div class="pessoa" style="cursor:pointer" onclick="selecionar('${esc(n.espaco.id)}')">
+      ${n.espaco.avatar ? `<img class="av" src="${esc(n.espaco.avatar)}" alt="">`
+        : `<div class="av">${esc(iniciais(n.rotulo))}</div>`}
+      <div class="nm">${esc(n.rotulo)}<div class="lg">${esc(n.caminho || n.espaco.prettyName)}</div></div>
+      <span class="cont">👤 ${n.espaco.membros || 0}</span></div>`;
+  /* Pendencias so' fazem sentido para os niveis do organograma: cobrar perfil
+     ou gente de um espaco que esta tela nem administra e' ruido. E nao se
+     repete aqui o que a lista logo abaixo ja mostra. */
+  const pend = (tit, lista) => lista.length ? `
+    <div style="font-size:12.5px;color:var(--txt2);margin-bottom:6px">
+      <b>${tit}</b> ${lista.map(x => esc(x)).join(" · ")}</div>` : "";
+  $("lado-corpo").innerHTML = `<div style="padding:14px">
+    <div style="font-size:15px;font-weight:680">Visão geral</div>
+    <div style="font-size:12px;color:var(--txt3);margin-bottom:14px">
+      ${org.length} nível(is) no organograma · ${PESSOAS_TOTAL.length} conta(s) distinta(s)</div>
+    ${pend("Sem ninguém dentro:", semGente)}
+    ${pend("Sem descrição no perfil:", semPerfil)}
+    <div class="secao-t" style="padding:0">Organograma (${org.length})</div>
+    ${org.length ? org.map(linha).join("")
+      : `<div style="padding:10px;color:var(--txt3);font-size:12.5px">nenhum nível cadastrado</div>`}
+    ${outros.length ? `<div class="secao-t" style="padding:0">Outros espaços (${outros.length})
+      · ${PESSOAS_TODAS.length} conta(s) no total</div>${outros.map(linha).join("")}` : ""}
+  </div>`;
+}
+function pintarDetalhe() {
+  const no = acharNo(SEL);
+  if (!no) { SEL = null; ABA = "geral"; desenhar(); return pintarGeral(); }
+  const e = no.espaco, d = DETALHE || {}, rot = no.rotulo || no.nome;
+  const noGrupo = new Set(d.no_grupo || []);
+  const todos = (d.gestores || []).map(p => Object.assign({ papel: "gestor" }, p))
+    .concat((d.membros || []).map(p => Object.assign({ papel: "membro" }, p)));
+  const gente = lista => lista.map(p => `
+    <div class="pessoa">
+      ${p.avatar ? `<img class="av" src="${esc(p.avatar)}" alt="">`
+      : `<div class="av">${esc(iniciais(p.nome))}</div>`}
+      <div class="nm">${esc(p.nome)}<div class="lg">${esc(p.login)}</div></div>
+      ${noGrupo.has(p.login) ? `<span class="papel" style="background:var(--painel2);color:var(--txt3)"
+        title="cadastrado no grupo ${esc(no.caminho)}">deste nível</span>` : ""}
+      <span class="papel"${p.papel === "membro" ? ` style="background:var(--ok-fraco);color:var(--ok)"` : ""}>${p.papel}</span>
+    </div>`).join("");
+  const dentro = new Set(todos.map(p => p.login));
+  const soNoGrupo = (d.no_grupo || []).filter(l => !dentro.has(l));
+  const pai = no.espaco.pai && acharNo(no.espaco.pai);
+  const filho = FILHO_DE[no.tipo];
+  $("lado-corpo").innerHTML = `
+    <div class="capa" style="${e.banner ? `background-image:url('${esc(e.banner)}')` : ""}">
+      ${e.avatar ? `<img class="av" src="${esc(e.avatar)}" alt="">`
+      : `<div class="av">${esc(iniciais(rot))}</div>`}
+    </div>
+    <div class="perfil">
+      <h3>${esc(rot)}</h3>
+      <div class="sub" style="margin-bottom:10px">
+        <span class="tag t-${CLS[no.tipo]}">${ROTULO[no.tipo]}</span>
+        <span class="cod">${esc(no.caminho || "sem grupo organizacional")}</span></div>
+      ${no.daEstrutura ? "" : `<div style="background:var(--painel2);
+        border:1px solid var(--linha);border-radius:8px;padding:9px 11px;font-size:12.5px;margin-bottom:10px">
+        <b>Espaço sem grupo organizacional.</b> Ele existe em <span class="cod">SOC_SPACES</span>
+        e aparece aqui porque outros espaços o apontam como pai
+        (<span class="cod">PARENT_SPACE_ID = ${esc(e.id)}</span>). O que ele não tem é uma linha em
+        <span class="cod">SOC_GROUP_SPACE_BINDING</span> ligando-o a um grupo do tipo
+        <span class="cod">/SIGLA</span> — e é esse vínculo que esta tela cria, edita e apaga.
+        Por isso ela lista este espaço, mas não mexe nele.</div>`}
+      <div class="desc" id="desc">${esc(texto(no.descricao)) || '<i style="color:var(--txt3)">sem descrição no perfil</i>'}</div>
+      <span class="vermais" id="vermais" style="display:none"
+        onclick="const d=$('desc');d.classList.toggle('aberta');
+                 this.textContent=d.classList.contains('aberta')?'ver menos':'ver mais'">ver mais</span>
+      <dl class="dados">
+        <dt>Espaço</dt><dd>${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.prettyName)} ↗</a>` : "—"}
+          <span class="cod" title="SOC_SPACES.SPACE_ID">id ${esc(e.id)}</span></dd>
+        <dt>Dentro de</dt><dd>${pai ? esc(pai.rotulo) : "raiz (sem espaço pai)"}</dd>
+        <dt>Acesso</dt><dd>${esc(e.visibilidade || "—")} · ${esc(e.inscricao || "—")}</dd>
+        <dt>Vínculos</dt><dd>${(d.vinculos || no.vinculos || []).map(v =>
+        `<span class="cod">${esc(v)}</span>`).join(" ") || "—"}</dd>
+      </dl>
+      <div class="secao-t">Pessoas no espaço (${todos.length})
+        &middot; ${(d.gestores || []).length} gestor(es)</div>
+      ${todos.length ? gente(todos) : `<div style="padding:10px;border:1px dashed var(--linha);
+        border-radius:8px;font-size:12.5px;color:var(--txt2)">
+        Este espaço está sem ninguém.</div>`}
+      ${soNoGrupo.length ? `<div style="margin-top:10px;background:var(--alerta-fraco);
+        border:1px solid rgba(181,71,8,.25);border-radius:8px;padding:9px 11px;font-size:12.5px">
+        <b style="color:var(--alerta)">No grupo, mas fora do espaço:</b>
+        ${soNoGrupo.map(l => `<span class="cod">${esc(l)}</span>`).join(" ")}<br>
+        <span style="color:var(--txt2)">no eXo isso costuma ser conta desabilitada — entra no grupo
+        e não no espaço, sem erro nenhum.</span></div>` : ""}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        ${no.daEstrutura ? `<button class="b pri" style="flex:1" onclick="trocarAba('editar')">Editar este nível</button>` : ""}
+        ${filho ? `<button class="b" onclick="acaoNova('${esc(e.id)}')">+ ${ROTULO[filho]}</button>` : ""}
+      </div>
+    </div>`;
+  // 'd' ja e' o DETALHE nesta funcao -- outro nome, senao o const colide e a
+  // pagina inteira para de renderizar.
+  const elDesc = $("desc");
+  if (elDesc && elDesc.scrollHeight > elDesc.clientHeight + 4) {
+    elDesc.classList.add("tem-mais");
+    $("vermais").style.display = "inline-block";
+  }
+}
+
+/* ---------------------------- editor ----------------------------
+   PAI e' o ID DO ESPACO onde o novo nivel vai nascer. O caminho do GRUPO sai
+   dele (segs), e nao de um estado paralelo -- foi assim que a versao anterior
+   conseguia criar uma Divisao pendurada na Secretaria errada.
+   ------------------------------------------------------------------------ */
+let MODO = null, PAI = null, PESSOAS = { gestores: [], usuarios: [] }, IMG = {}, CSV_TXT = "";
+const segs = no => (no && no.caminho ? no.caminho.replace(/^\//, "").split("/") : []);
+
+/* Onde um nivel SEM pai vai realmente nascer. Nao e' "no topo": o motor
+   (exo_estrutura.py, passo 3 do provisionamento) aninha todo nivel sem pai
+   dentro do espaco que nao tem pai -- aqui, o Lobby. Dizer "topo da hierarquia"
+   no formulario e ver o espaco nascer dentro do Lobby e' a tela mentindo sobre
+   o que o banco vai registrar. Esta funcao usa a MESMA regra do motor. */
+function ninhoPadrao() {
+  return ARVORE.find(n => !n.espaco.pai) || null;
+}
+
+function acaoNova(idPai) {
+  const pai = idPai ? acharNo(idPai) : null;
+  if (pai && !FILHO_DE[pai.tipo]) return avisar("Setor é o último nível da hierarquia.", "alerta");
+  MODO = "novo"; PAI = pai ? pai.espaco.id : null; SEL = PAI;
+  ABA = "editar"; desenhar(); pintarEditor("novo");
+}
+function pintarEditor(modo, id) {
+  MODO = modo; PESSOAS = { gestores: [], usuarios: [] }; IMG = {}; CSV_TXT = "";
+  document.querySelectorAll(".aba").forEach(x => x.classList.toggle("on", x.dataset.aba === "editar"));
+  const pai = modo === "novo" && PAI ? acharNo(PAI) : null;
+  const no = modo === "editar" ? acharNo(id) : null;
+  const tipo = modo === "novo" ? (pai ? FILHO_DE[pai.tipo] : "secretaria") : no.tipo;
+  const prefixo = "/" + segs(pai).concat("").join("/");
+  $("lado-corpo").innerHTML = `
+    <div style="padding:14px">
+      <div style="font-size:15px;font-weight:680;margin-bottom:2px">
+        ${modo === "novo" ? "Nova " + ROTULO[tipo] : "Editar " + ROTULO[tipo]}</div>
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:16px">
+        ${modo === "novo"
+          ? (pai ? "dentro de <b>" + esc(pai.rotulo) + "</b>"
+             : (ninhoPadrao()
+                ? `o espaço nascerá dentro de <b>${esc(ninhoPadrao().rotulo)}</b> `
+                  + `<span class="cod">SOC_SPACES.PARENT_SPACE_ID = ${esc(ninhoPadrao().espaco.id)}</span>`
+                  + ` — é onde o motor põe todo nível sem pai`
+                : "no topo da hierarquia (não há espaço raiz no eXo)"))
+          : esc(no.caminho) + " — a sigla é fixa (o eXo não renomeia grupo)"}</div>
+
+      <div class="campo"><label>Sigla</label>
+        <input type="text" id="f_sigla" ${modo === "editar" ? "readonly" : ""}
+          value="${modo === "editar" ? esc(no.nome) : ""}" placeholder="ex.: SITDS">
+        <div class="dica">${modo === "editar" ? "identificador do grupo, imutável"
+          : "curta e única — o grupo será <code>" + esc(prefixo) + "SIGLA</code>"}</div></div>
+
+      <div class="campo"><label>Nome de exibição</label>
+        <input type="text" id="f_rotulo" value="${modo === "editar" ? esc(no.rotulo || "") : ""}"
+          placeholder="ex.: Secretaria de Inovação, Tecnologia e Desenvolvimento Sustentável"></div>
+
+      <div class="campo"><label>Descrição do perfil do espaço</label>
+        <textarea id="f_descricao"
+          placeholder="o que este nível faz, quem participa, o que se publica aqui">${modo === "editar" ? esc(no.descricao || "") : ""}</textarea></div>
+
+      <div class="campo"><label>Gestores</label>${pickHTML("gestores")}
+        <div class="dica">gestor do grupo e do espaço; conta inexistente é criada com senha forte</div></div>
+
+      <div class="campo"><label>Membros</label>${pickHTML("usuarios")}
+        <div class="dica">participam deste nível e de todos os níveis abaixo dele</div></div>
+
+      <div class="campo">
+        <label style="display:flex;align-items:center;justify-content:space-between">
+          <span>Importar membros de CSV</span>
+          <a class="b pq" href="api/modelo.csv" download="modelo-membros.csv"
+             title="planilha de exemplo, já no formato que o importador lê">↓ baixar modelo</a>
+        </label>
+        <div class="imgzona" onclick="this.querySelector('input').click()">
+          <input type="file" accept=".csv,text/csv,text/plain" onchange="lerCSV(this)">
+          <span id="csv-rot">arraste ou clique — colunas <code>nome</code>, <code>email</code>,
+            <code>login</code>, <code>senha</code>; separador <code>;</code> ou <code>,</code></span></div>
+        <div class="dica">só <b>nome</b> já basta: o login sai dele (Wilson França →
+          <code>wilson.franca</code>). Linhas iniciadas por <code>#</code> são ignoradas.</div></div>
+
+      <div class="duplo">
+        <div class="campo"><label>Avatar</label>${imgHTML("avatar")}</div>
+        <div class="campo"><label>Banner</label>${imgHTML("banner")}</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="b pri" style="flex:1" onclick="salvar()">
+          ${modo === "novo" ? "Criar " + ROTULO[tipo] : "Salvar alterações"}</button>
+        <button class="b" onclick="cancelar()">Cancelar</button>
+      </div>
+      ${modo === "editar" ? `<div class="dica" style="margin-top:10px">
+        Pessoas informadas aqui são <b>acrescentadas</b>; ninguém é retirado.</div>` : ""}
+    </div>`;
+  ["gestores", "usuarios"].forEach(ligarPick);
+}
+function cancelar() {
+  ABA = SEL && acharNo(SEL) ? "detalhe" : "geral";
+  ABA === "detalhe" ? abrirDetalhe(SEL) : pintarGeral();
+}
+
+/* ------- seletor de pessoas, sugerindo o diretorio REAL do eXo -------
+   Digitar login de cabeca era como nasciam contas duplicadas: um erro de
+   digitacao virava conta nova, em silencio. Aqui o caminho curto e' escolher
+   quem ja existe; criar conta e' uma acao explicita, marcada em laranja. */
+function pickHTML(campo) {
+  return `<div class="pick" id="pick-${campo}">
+      <span id="fichas-${campo}"></span>
+      <input type="text" id="in-${campo}" placeholder="digite um nome…" autocomplete="off">
+      <div class="sugestoes" id="sug-${campo}"></div>
+    </div>`;
+}
+function ligarPick(campo) {
+  const inp = $("in-" + campo), cx = $("sug-" + campo);
+  let t = null, foco = -1, itens = [];
+  const fechar = () => { cx.classList.remove("on"); foco = -1; };
+  const pintar = () => {
+    if (!itens.length) return fechar();
+    cx.innerHTML = itens.map((p, i) => `<div class="sug${i === foco ? " foco" : ""}"
+        onmousedown="event.preventDefault()" onclick='escolher("${campo}",${JSON.stringify(JSON.stringify(p))})'>
+        <div class="av" style="width:26px;height:26px;border-radius:50%;font-size:10px">${esc(iniciais(p.nome))}</div>
+        <div class="nm">${esc(p.nome)}<div class="lg">${esc(p.login || "conta nova")}</div></div>
+        ${p.novo ? `<span class="novo">criar conta</span>`
+          : p.ativo === false ? `<span class="novo">desativada</span>` : ""}
+      </div>`).join("");
+    cx.classList.add("on");
+  };
+  inp.addEventListener("input", () => {
+    clearTimeout(t);
+    const q = inp.value.trim();
+    if (q.length < 2) return fechar();
+    t = setTimeout(async () => {
+      let achados = [];
+      try { achados = (await api("api/pessoas?q=" + encodeURIComponent(q))).pessoas || []; } catch (e) { }
+      itens = achados.slice();
+      if (!achados.some(p => p.nome.toLowerCase() === q.toLowerCase() || p.login === q))
+        itens.push({ login: "", nome: q, novo: true });
+      foco = 0; pintar();
+    }, 220);
+  });
+  inp.addEventListener("keydown", ev => {
+    if (!cx.classList.contains("on")) {
+      if (ev.key === "Enter" && inp.value.trim()) {
+        ev.preventDefault();
+        escolher(campo, JSON.stringify({ nome: inp.value.trim(), login: "", novo: true }));
+      }
+      return;
+    }
+    if (ev.key === "ArrowDown") { foco = Math.min(foco + 1, itens.length - 1); pintar(); ev.preventDefault(); }
+    else if (ev.key === "ArrowUp") { foco = Math.max(foco - 1, 0); pintar(); ev.preventDefault(); }
+    else if (ev.key === "Enter") { ev.preventDefault(); if (itens[foco]) escolher(campo, JSON.stringify(itens[foco])); }
+    else if (ev.key === "Escape") fechar();
+    else if (ev.key === "Backspace" && !inp.value && PESSOAS[campo].length) { PESSOAS[campo].pop(); pintarFichas(campo); }
+  });
+  inp.addEventListener("blur", () => setTimeout(fechar, 120));
+}
+function escolher(campo, json) {
+  const p = JSON.parse(json);
+  if (!PESSOAS[campo].some(x => (x.login || x.nome) === (p.login || p.nome))) PESSOAS[campo].push(p);
+  $("in-" + campo).value = ""; $("sug-" + campo).classList.remove("on"); pintarFichas(campo);
+}
+function tirar(campo, i) { PESSOAS[campo].splice(i, 1); pintarFichas(campo); }
+function pintarFichas(campo) {
+  $("fichas-" + campo).innerHTML = PESSOAS[campo].map((p, i) =>
+    `<span class="ficha${p.novo ? " novo" : ""}" title="${p.novo ? "conta será criada" : esc(p.login)}">
+      <b>${esc(p.nome)}</b><button onclick="tirar('${campo}',${i})">×</button></span>`).join("");
+}
+function lerCSV(el) {
+  const f = el.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    CSV_TXT = r.result;
+    const n = r.result.split(/\r?\n/).filter(x => x.trim()).length;
+    $("csv-rot").innerHTML = `<b>${esc(f.name)}</b> — ${n} linha(s); contas ausentes serão criadas`;
+  };
+  r.readAsText(f);
+}
+function imgHTML(qual) {
+  return `<div class="imgzona" id="z-${qual}" onclick="this.querySelector('input').click()">
+    <input type="file" accept="image/*" onchange="lerImg(this,'${qual}')">
+    <span>escolher imagem</span></div>`;
+}
+function lerImg(el, qual) {
+  const f = el.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    IMG[qual] = String(r.result).split(",")[1];
+    const z = $("z-" + qual);
+    z.innerHTML = `<img src="${r.result}" alt=""><span>${esc(f.name)}</span>`;
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    inp.onchange = e => lerImg(e.target, qual);
+    z.appendChild(inp);
+  };
+  r.readAsDataURL(f);
+}
+
+/* ---------------------------- gravar ---------------------------- */
+const pessoasTxt = campo => PESSOAS[campo].map(p => p.login || p.nome).join(", ");
+function dados() {
+  const v = id => { const e = $(id); return e ? e.value.trim() : ""; };
+  const d = { rotulo: v("f_rotulo"), descricao: v("f_descricao"),
+              gestores: pessoasTxt("gestores"), usuarios: CSV_TXT || pessoasTxt("usuarios") };
+  if (IMG.avatar) d.avatar = IMG.avatar;
+  if (IMG.banner) d.banner = IMG.banner;
+  return d;
+}
+/* O motor recebe sempre secretarias>divisoes>setores; os niveis do caminho que
+   ja existem vao com _existente para nao serem reprocessados. */
+function ramo(caminho, folha) {
+  const p = caminho.filter(Boolean);
+  if (p.length === 1) return { secretarias: [Object.assign({ nome: p[0] }, folha)] };
+  if (p.length === 2) return { secretarias: [{ nome: p[0], _existente: true,
+    divisoes: [Object.assign({ nome: p[1] }, folha)] }] };
+  return { secretarias: [{ nome: p[0], _existente: true,
+    divisoes: [{ nome: p[1], _existente: true, setores: [Object.assign({ nome: p[2] }, folha)] }] }] };
+}
+async function salvar() {
+  const d = dados();
+  let caminho;
+  if (MODO === "novo") {
+    const sig = $("f_sigla").value.trim();
+    if (!sig) return avisar("Informe a sigla.", "alerta");
+    if (!d.rotulo) return avisar("Informe o nome de exibição.", "alerta");
+    caminho = segs(PAI ? acharNo(PAI) : null).concat([sig]);
+    if (caminho.length > 3) return avisar("A hierarquia vai até Setor (3 níveis).", "alerta");
+  } else {
+    const no = acharNo(SEL);
+    if (!no || !no.daEstrutura) return avisar("Este espaço não tem grupo organizacional vinculado.", "alerta");
+    caminho = segs(no);
+  }
+  const payload = ramo(caminho, d);
+  payload.simulacao = $("simulacao").checked;
+  await disparar("api/executar", payload,
+    (MODO === "novo" ? "Criando " : "Salvando ") + (d.rotulo || caminho.join("/")) + "…");
+}
+async function disparar(url, payload, msg) {
+  abrirConsole();
+  try {
+    const j = await api(url, { method: "POST",
+      headers: { "Content-Type": "application/json", "X-Estrutura": "1" },
+      body: JSON.stringify(payload) });
+    if (!j.ok) return avisar(j.erro || "não foi possível iniciar", "erro");
+    N = 0; $("log").textContent = ""; T0 = Date.now();
+    if (msg) avisar(msg + ($("simulacao").checked ? " (simulação)" : ""));
+    cancelar();
+  } catch (e) { avisar(e.message, "erro"); }
+}
+
+/* ---------------------------- remover ---------------------------- */
+let ALVO = null;
+function pedirRemover(id) {
+  const no = acharNo(id); if (!no) return;
+  if (!no.daEstrutura)
+    return avisar(`“${no.rotulo}” não tem grupo organizacional vinculado — esta tela não o remove.`, "alerta");
+  ALVO = no;
+  let niveis = 0, pessoas = no.espaco.membros || 0;
+  (function anda(l) { l.forEach(x => { niveis++; pessoas += x.espaco.membros || 0; anda(x.filhos || []); }); })(no.filhos || []);
+  $("m-tit").textContent = "Remover " + ROTULO[no.tipo];
+  $("m-txt").innerHTML = `<b>${esc(no.rotulo)}</b> <span class="cod">${esc(no.caminho)}</span>`;
+  $("m-impacto").innerHTML = `Apaga <b>${1 + niveis} espaço(s)</b> e <b>${1 + niveis} grupo(s)</b>;
+    <b>${pessoas} vínculo(s)</b> de pessoas serão desfeitos.<br>
+    As contas de usuário <b>permanecem</b> — só saem destes espaços.
+    ${$("simulacao").checked ? "<br><br><b>Simulação ligada:</b> nada será gravado." : ""}`;
+  $("veu").classList.add("on");
+}
+function fecharModal() { $("veu").classList.remove("on"); ALVO = null; }
+$("m-ok").onclick = async () => {
+  const no = ALVO; fecharModal(); if (!no) return;
+  const payload = ramo(segs(no), {});
+  payload.simulacao = $("simulacao").checked;
+  SEL = null;
+  await disparar("api/remover", payload, "Removendo " + no.caminho + "…");
+};
+
+/* ---------------------------- console ---------------------------- */
+function alternarConsole() { $("console").classList.toggle("baixo"); $("seta").textContent = $("console").classList.contains("baixo") ? "▲" : "▼"; }
+function abrirConsole() { $("console").classList.remove("baixo"); $("seta").textContent = "▼"; }
+async function parar() { try { await api("api/parar", { method: "POST", headers: { "X-Estrutura": "1" } }); avisar("Parada pedida — encerrando no próximo passo seguro.", "alerta"); } catch (e) { } }
+function pinta(l) {
+  const c = /ERRO|falhou|! /.test(l) ? "e" : /^OK|integro|criado|apagado|entraram/.test(l.replace(/^\s+/, "")) ? "o" :
+    /PARADO|MANTIDO|INEXISTENTE|simulacao/.test(l) ? "a" : "";
+  return c ? `<span class="${c}">${esc(l)}</span>` : esc(l);
+}
+async function poll() {
+  try {
+    const j = await api("api/log?desde=" + N);
+    if (j.linhas && j.linhas.length) {
+      const el = $("log"), perto = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+      el.innerHTML += j.linhas.map(pinta).join("\n") + "\n";
+      if (perto) el.scrollTop = el.scrollHeight;
+    }
+    N = j.total;
+    const p = $("pilula"); p.className = "pilula " + j.estado;
+    p.innerHTML = (j.estado === "rodando" ? `<span class="girando"></span> ` : "") + j.estado;
+    $("b-parar").disabled = j.estado !== "rodando";
+    $("ar-aviso").style.display = j.estado === "rodando" ? "block" : "none";
+    if (j.estado === "rodando" && T0) $("cronometro").textContent = ((Date.now() - T0) / 1000).toFixed(0) + "s";
+    if (ULT === "rodando" && j.estado !== "rodando") {
+      $("cronometro").textContent = T0 ? "concluído em " + ((Date.now() - T0) / 1000).toFixed(1) + "s" : "";
+      const r = j.resumo || {};
+      if (j.estado === "ok") avisar(r.removidos != null ? `Pronto: ${r.removidos} nível(is) removido(s).` : "Pronto: estrutura aplicada.", "ok");
+      else if (j.estado === "erro") avisar("Falhou — o que este run criou foi desfeito. Veja o console.", "erro");
+      else if (j.estado === "parado") avisar("Parado — o que este run criou foi desfeito.", "alerta");
+      carregar();
+    }
+    ULT = j.estado;
+  } catch (e) { }
+  setTimeout(poll, 900);
+}
+
+/* ---------------------------- exportar ----------------------------
+   Devolve o MESMO JSON que a CLI aceita em --arquivo: o que esta na tela vira
+   arquivo versionavel, e o arquivo versionavel volta a ser esta tela. */
+function exportarJSON() {
+  const nivel = no => {
+    const base = { nome: no.nome, rotulo: no.rotulo, descricao: no.descricao };
+    const fs = (no.filhos || []).filter(f => f.daEstrutura);
+    if (no.tipo === "secretaria") base.divisoes = fs.map(nivel);
+    if (no.tipo === "divisao") base.setores = fs.map(nivel);
+    return base;
+  };
+  const secs = [];
+  (function anda(l) { l.forEach(x => x.tipo === "secretaria" ? secs.push(nivel(x)) : anda(x.filhos || [])); })(ARVORE);
+  const txt = JSON.stringify({ secretarias: secs }, null, 2);
+  navigator.clipboard.writeText(txt).then(
+    () => avisar(`JSON de ${secs.length} secretaria(s) copiado — serve em --arquivo da CLI.`, "ok"),
+    () => { $("log").textContent = txt; abrirConsole(); avisar("Copie o JSON do console.", "alerta"); });
+}
+
+/* ---------------------------- inicio ---------------------------- */
+$("amb").textContent = location.host;   // o host de quem olha, nao o do processo
+document.addEventListener("keydown", e => { if (e.key === "Escape") { fecharModal(); } });
+carregar(); poll();
+</script>
+<!-- COMO LER OS NUMEROS -- verificado contra o MySQL, nao presumido.
+     Em SOC_SPACES_MEMBERS um GESTOR ocupa DUAS linhas: STATUS=0 (membro) e
+     STATUS=1 (gestor). Logo:
+       . membersCount da API  = COUNT(DISTINCT USER_ID) = pessoas de verdade
+       . managersCount da API = subconjunto dessas pessoas
+     Somar os dois conta cada gestor duas vezes -- foi o que esta tela chegou a
+     fazer, mostrando 7 na arvore e 5 no detalhe para o mesmo Setor. A arvore
+     mostra 'membros' (o total) e as estrelas dizem quantos DESSES sao gestores.
+     Conferido: espaco 109 -> 7 linhas, 5 USER_ID distintos, 2 com STATUS=1. -->
