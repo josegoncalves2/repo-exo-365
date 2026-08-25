@@ -3637,3 +3637,20 @@ Regressao SITDS: 36/36. Contas de teste todas removidas ao fim.
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (login_de/nome_de/email_de/_pessoa/ler_pessoas/_pessoas_de_csv/senha_forte; `_garantir_pessoas`, `_criar_usuario` com saneamento; credenciais no resumo), `scripts/estrutura-web.py` (rotulos nome-ou-login, upload CSV `csvUsers`), `tests/e2e_estrutura_web.py` (novo, Chromium real)
 **Status:** OK — cria usuarios (nome->conta) e importa CSV, pela CLI e pela web, com rollback e credenciais reportadas. Loop dos fiscais deve reabrir: o design mudou (D3 revertido).
+
+---
+
+### [139] 2026-08-25 — 3 defeitos reais + rename: store errado, fantasma social, rename que nao pegava
+
+**Reportado pelo operador:** (a) provisionar SADS com edna.marques etc. dava `USER:NOT_FOUND`; (b) como adicionar so' uma divisao/setor a algo existente; (c) como renomear. E, com razao, criticou a arquitetura.
+
+**D11a -- `_existe_usuario` checava o store ERRADO.** Checava `/social/users` (identidade social); as memberships usam o store de ORGANIZACAO (`/portal/rest/v1/users`). Os dois divergem: um usuario excluido some do org mas deixa a identidade social 'deleted' respondendo 200 (FANTASMA). Resultado medido: `_existe_usuario` via social dava 'existe', pulava a criacao, e o bulk de membership falhava com USER:NOT_FOUND. Corrigido para medir no store org.
+
+**D11b -- fantasma social bloqueia recriacao.** Um login excluido antes deixa a identidade social orfa; recriar por cima -> HTTP 500 no `SocialUserEventListener` (medido). `_criar_usuario` passou a detectar esse 500 e dar mensagem clara ("colide com identidade social orfa; use outro login ou purgue"), em vez do 500 cru. Os fantasmas que MEUS testes criaram (edna/fabio/joao/regina, ids 134-139) foram purgados no banco (SOC_IDENTITIES + filhos) e o cache foi limpo reciclando o exo-app. Ambiente conferido: org=404 e social=401 para todos; SADS 3 niveis provisionado com as 6 contas CRIADAS, sem USER:NOT_FOUND.
+
+**D11c -- RENAME nao pegava.** `aplicar_perfil` montava `displayName = esp.get(displayName) or rotulo` -- preservava o nome ANTIGO. Reexecutar com rotulo novo dizia "perfil integro" e nao renomeava. Corrigido: o rotulo desejado VENCE (`nome_alvo = rotulo or atual`), e 'nome' entra em `mudou`. Provado: `/SADS/DAS` renomeado para "...e Cidadania" (displayName mudou de fato). Trocar a SIGLA (id do grupo) continua sendo criar outro grupo -- o eXo nao renomeia grupo.
+
+**Incremental (ja funcionava, agora documentado e provado):** `--tipo divisao --nome DPS --pai /SADS` cria SO' aquela divisao dentro da secretaria existente (aninhou em id 92, cadeia /SADS<-/SADS/DPS). O mesmo vale para setor com `--pai /SADS/DAS`. Pela web ainda se re-informa a arvore (idempotente: niveis existentes viram "ja existe"), mas o CLI faz o incremento pontual.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (`_existe_usuario` no store org; deteccao de fantasma; rename no `aplicar_perfil`)
+**Status:** OK -- criacao de usuario correta (store org), fantasma com erro claro, rename funcional, incremento pontual pela CLI. SADS deixado criado como demonstracao.

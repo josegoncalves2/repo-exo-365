@@ -666,15 +666,22 @@ class Provisionador:
 
     # -- pessoas ------------------------------------------------------------
     def _existe_usuario(self, login):
-        """(existe, habilitado). _raw porque inexistente devolve 404/401 e o
-        get() LEVANTARIA antes de eu poder classificar."""
+        """(existe, habilitado) -- medido no store de ORGANIZACAO, nao no social.
+
+        POR QUE org e nao social: as memberships de grupo/espaco usam o store
+        de organizacao (/portal/rest/v1/users). O store social diverge dele: um
+        DELETE de usuario tira do org mas deixa a identidade social 'deleted'
+        (fantasma) respondendo 200. Se eu checasse o social, veria 'existe' e
+        pularia a criacao -- e o passo de membership falharia com USER:NOT_FOUND
+        (o bug medido). O org e' a autoridade para o que vem depois.
+        """
         st, t = self.exo._raw(
-            "GET", f"/portal/rest/v1/social/users/{urllib.parse.quote(login)}")
+            "GET", f"/portal/rest/v1/users/{urllib.parse.quote(login)}")
         try:
             d = json.loads(t) if t.strip() else {}
         except json.JSONDecodeError:
             d = {}
-        existe = st == 200 and isinstance(d, dict) and bool(d.get("username"))
+        existe = st == 200 and isinstance(d, dict) and bool(d.get("userName"))
         habil = existe and str(d.get("enabled")).lower() not in ("false", "0")
         return existe, habil
 
@@ -702,6 +709,16 @@ class Provisionador:
         st, resp = self.exo.escreve("POST", "/portal/rest/v1/users", corpo,
                                     f"criar usuario {p['login']}")
         if st >= 400:
+            # Fantasma: um login excluido antes deixa a identidade SOCIAL orfa
+            # (o DELETE do eXo tira do org mas nao do social). Recriar por cima
+            # dela devolve 500 no SocialUserEventListener. Mensagem clara e'
+            # melhor que o 500 cru -- e o rollback deixa tudo limpo.
+            if st >= 500 and "SocialUser" in str(resp):
+                raise FalhaEtapa(
+                    f"o login '{p['login']}' colide com uma identidade social "
+                    f"orfa de uma exclusao anterior (limitacao do eXo ao recriar "
+                    f"um usuario ja' excluido). Use outro login, ou peca ao admin "
+                    f"para purgar a identidade. Nada foi mantido.")
             raise FalhaEtapa(f"criar usuario {p['login']}: HTTP {st} {str(resp)[:140]}")
         self.criados["usuarios"].append(p["login"])
         self.credenciais.append((p["login"], senha))
@@ -807,8 +824,15 @@ class Provisionador:
         # vence quando informado; senao preserva-se o que ja' esta la'.
         desc_atual = esp.get("description") or ""
         desc_alvo = descricao if descricao is not None else desc_atual
+        # RENAME: o rotulo desejado VENCE o displayName atual. Antes era o
+        # contrario ('esp.get(displayName) or rotulo'), entao renomear um nivel
+        # existente nao pegava -- reexecutar com um rotulo novo dizia 'perfil
+        # integro' e nao mudava nada. Trocar a SIGLA (id do grupo) e' outra
+        # coisa: o eXo nao renomeia grupo, so' criando outro.
+        nome_atual = esp.get("displayName") or ""
+        nome_alvo = (rotulo or nome_atual).strip()
         corpo = {"id": str(space_id),
-                 "displayName": esp.get("displayName") or rotulo,
+                 "displayName": nome_alvo,
                  "visibility": esp.get("visibility") or "private",
                  "subscription": esp.get("subscription") or "closed",
                  "description": desc_alvo}
@@ -816,6 +840,8 @@ class Provisionador:
             corpo["parentSpaceId"] = str(esp.get("parentSpaceId"))
 
         mudou = []
+        if nome_alvo and nome_alvo != nome_atual:
+            mudou.append("nome")
         if desc_alvo != desc_atual:
             mudou.append("descricao")
         for campo, dados, chave in (("avatar", self._imagem(avatar), "avatarId"),
