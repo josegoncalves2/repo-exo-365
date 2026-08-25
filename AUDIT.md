@@ -3605,3 +3605,35 @@ Os `/api/*` seguem devolvendo 401/403 JSON (o JS trata).
 
 **Comando/Arquivo:** `scripts/estrutura-web.py` (`do_GET` separa pagina de API; `_redir`)
 **Status:** OK — deslogado cai na tela de login e volta sozinho; a interface web abre pelo navegador como esperado.
+
+---
+
+### [138] 2026-08-25 — REQUISITO QUE EU NAO TINHA LIDO: criar usuarios + import de CSV (reverte o D3)
+
+**Reportado pelo operador, com razao:** ao provisionar pela web com "Edna Marques" etc., o script ERRAVA porque essas contas nao existiam. Meu D3 (bloquear gestor inexistente) contrariava o proprio pedido do modelo.md, que lista "Usuarios ... a serem inseridos OU criados" (Wilson França, Isabela Feitosa...). E faltava o "import do csv com lista de usuarios". Reli o prompt: o script deve CRIAR o usuario, nao bloquear.
+
+**D10 — criacao de usuarios + CSV, com rollback:**
+- `login_de('Wilson França')` -> `wilson.franca` (idempotente para logins). `nome_de`, `email_de`, `_pessoa` (normaliza login/nome/email/senha).
+- `ler_pessoas(valor)` aceita: lista Python, lista por virgula, arquivo CSV, e **CSV colado como texto** (mesmo parser p/ CLI, upload web e arquivo). Colunas nome/login/email/senha em qualquer ordem, ',' ou ';'.
+- `Provisionador._garantir_pessoas` substitui `_triar`: quem NAO existe e' CRIADO (`POST /portal/rest/v1/users`), nao bloqueado. Contas criadas entram no diario de rollback (somem se um passo adiante falhar). Idempotente: quem ja' existe nao e' recriado.
+- Senha: vem do CSV ou e' gerada (`senha_forte`, cumpre a politica) e REPORTADA no fim do run ("contas criadas -- guarde as senhas"), nunca gravada em disco.
+- **Saneamento de nome (defeito achado no e2e):** a API so' aceita letras/espaco/'-'/'\'' em Nome/Sobrenome (digito ou '.' -> HTTP 400, medido: "Apenas letras... no campo Sobrenome"). `_criar_usuario` saneia mantendo acento; garante firstName>=3.
+- Remover a ESTRUTURA nao apaga contas (de proposito: um usuario pode servir outras estruturas). So' o rollback de um run que falhou apaga o que aquele run criou.
+
+**CLI:** `--gestores "Wilson França"` e `--usuarios equipe.csv` ja fluem por `ler_pessoas` -> cria quem falta. Provado por dry-run.
+
+**Web:** campos Gestores/Membros passam a aceitar NOME ou login ("a conta e' criada se nao existir"); novo input "Importar membros de CSV" (le o arquivo no navegador e manda o CSV cru; o servidor faz `ler_pessoas`). Deslogado segue 302 -> login.
+
+**Provas (e2e via Chromium/Playwright, tests/e2e_estrutura_web.py):**
+```
+- CLI: criar com gestor 'Edna Marques' + membros 'Fabio Fabinho, joao.joaozinho'
+       -> 3 contas CRIADAS, colocadas no espaco (servidor confirmou HTTP 200 + membros)
+- WEB: gestor por NOME 'Regina Aparecida Nogueira' (inexistente) -> banner 'Tudo pronto!';
+       conta regina.aparecida.nogueira CRIADA (GET 200); no espaco; removido; conta apagada
+- CSV como texto (com/sem cabecalho, ',' e ';', com email/senha) -> pessoas corretas
+- Saneamento: 'Regina E2E Teste' (com digito) nao quebra mais (HTTP 400 -> saneado)
+```
+Regressao SITDS: 36/36. Contas de teste todas removidas ao fim.
+
+**Comando/Arquivo:** `scripts/exo_estrutura.py` (login_de/nome_de/email_de/_pessoa/ler_pessoas/_pessoas_de_csv/senha_forte; `_garantir_pessoas`, `_criar_usuario` com saneamento; credenciais no resumo), `scripts/estrutura-web.py` (rotulos nome-ou-login, upload CSV `csvUsers`), `tests/e2e_estrutura_web.py` (novo, Chromium real)
+**Status:** OK — cria usuarios (nome->conta) e importa CSV, pela CLI e pela web, com rollback e credenciais reportadas. Loop dos fiscais deve reabrir: o design mudou (D3 revertido).

@@ -48,7 +48,7 @@
 # * DELETE de grupo leva o caminho em QUERY STRING, nao no path. E o eXo
 #   recusa apagar grupo que tenha subgrupo: remova de baixo para cima.
 # ============================================================================
-import csv, io, json, os, re, ssl, sys, time, unicodedata, uuid
+import csv, io, json, os, re, secrets, ssl, sys, time, unicodedata, uuid
 import http.cookiejar, urllib.error, urllib.parse, urllib.request
 
 TIPOS = ("secretaria", "divisao", "setor")
@@ -88,6 +88,36 @@ def slug_grupo(nome):
     sem_acento = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode()
     limpo = re.sub(r"[^A-Za-z0-9]+", "-", sem_acento).strip("-").upper()
     return limpo or "GRUPO"
+
+
+def login_de(entrada):
+    """Login a partir de um NOME de exibicao ou de um login ja pronto.
+
+    'Wilson França' -> 'wilson.franca';  'wilson.franca' -> 'wilson.franca'.
+    Idempotente: aplicar de novo num login nao muda nada. Acentos fora, tudo
+    minusculo, separadores viram ponto.
+    """
+    s = unicodedata.normalize("NFKD", str(entrada)).encode("ascii", "ignore").decode()
+    s = re.sub(r"[^a-zA-Z0-9]+", ".", s).strip(".").lower()
+    return s or "usuario"
+
+
+def nome_de(entrada):
+    """Nome de exibicao a partir da entrada.
+
+    Se veio um login ('edna.marques'), vira 'Edna Marques'. Se ja veio um nome
+    ('Edna Marques'), preserva as palavras (so' ajeita a caixa das que vierem
+    todas minusculas). Serve para preencher firstName/lastName ao CRIAR a conta.
+    """
+    base = str(entrada).strip()
+    partes = [p for p in re.split(r"[._\s]+", base) if p]
+    return " ".join(p if (p[:1].isupper() and p != p.upper()) else p.capitalize()
+                    for p in partes) or base
+
+
+def email_de(login, dominio=None):
+    dom = dominio or os.environ.get("EXO_EMAIL_DOMINIO", "olimpia.sp.gov.br")
+    return f"{login}@{dom}"
 
 
 def le_lista(valor):
@@ -133,6 +163,118 @@ def le_lista(valor):
         if v:
             achados.append(v)
     return list(dict.fromkeys(achados))
+
+
+def _pessoa(login=None, nome=None, email=None, senha=None):
+    """Normaliza uma pessoa: sempre com login, nome e email coerentes.
+
+    Aceita ser chamada com so' o login OU so' o nome -- deriva o que faltar.
+    """
+    if not login and nome:
+        login = login_de(nome)
+    login = login_de(login or "")
+    nome = (nome or "").strip()
+    # Um "nome" que na verdade e' um login (sem espaco, minusculo com pontos)
+    # vira nome de exibicao de gente: 'kaua.ferri' -> 'Kaua Ferri'.
+    if not nome or (" " not in nome and nome == nome.lower()):
+        nome = nome_de(login)
+    email = (email or "").strip() or email_de(login)
+    return {"login": login, "nome": nome, "email": email,
+            "senha": (senha or "").strip() or None}
+
+
+def ler_pessoas(valor):
+    """Como le_lista, mas devolve PESSOAS ({login,nome,email,senha}) e nao so'
+    logins -- para poder CRIAR quem nao existe.
+
+    Aceita: lista Python (de strings ou de dicts), string com virgulas, ou
+    arquivo CSV com cabecalho (colunas nome/login/email/senha/cargo, em
+    qualquer ordem; delimitador ',' ou ';'). Uma celula solta e' tratada como
+    NOME de exibicao ('Wilson França') OU login ('wilson.franca') -- os dois
+    convergem para o mesmo login.
+    """
+    if not valor:
+        return []
+    if isinstance(valor, (list, tuple)):
+        fora = []
+        for x in valor:
+            if isinstance(x, dict):
+                fora.append(_pessoa(x.get("login") or x.get("username"),
+                                    x.get("nome") or x.get("name"),
+                                    x.get("email"), x.get("senha") or x.get("password")))
+            elif str(x).strip():
+                fora.append(_pessoa(nome=str(x).strip()))
+        return _dedup_pessoas(fora)
+
+    valor = str(valor)
+    parece_arquivo = valor.endswith(".csv") or "/" in valor or os.sep in valor
+    if parece_arquivo and not os.path.isfile(valor):
+        raise FalhaEtapa(f"arquivo de usuarios nao encontrado: {valor}")
+    if os.path.isfile(valor):
+        with open(valor, newline="", encoding="utf-8-sig") as fh:
+            return _dedup_pessoas(_pessoas_de_csv(fh.read()))
+    # Texto solto: CSV colado (tem quebra de linha ou ';' ou cabecalho) OU uma
+    # simples lista separada por virgula. O mesmo parser serve ao arquivo, ao
+    # upload da web (conteudo do CSV) e ao CSV colado no CLI.
+    if "\n" in valor or ";" in valor or _tem_cabecalho_csv(valor):
+        return _dedup_pessoas(_pessoas_de_csv(valor))
+    return _dedup_pessoas([_pessoa(nome=x.strip())
+                           for x in valor.split(",") if x.strip()])
+
+
+_CSV_MAPA = {"login": "login", "username": "login", "usuario": "login",
+             "usuário": "login", "user": "login",
+             "nome": "nome", "name": "nome",
+             "email": "email", "e-mail": "email",
+             "senha": "senha", "password": "senha"}
+
+
+def _tem_cabecalho_csv(texto):
+    linha = texto.splitlines()[0] if texto.strip() else ""
+    delim = ";" if linha.count(";") > linha.count(",") else ","
+    titulos = [(c or "").strip().lower() for c in next(csv.reader([linha], delimiter=delim), [])]
+    return any(t in _CSV_MAPA for t in titulos)
+
+
+def _pessoas_de_csv(texto):
+    if not texto.strip():
+        return []
+    linhas = [l for l in texto.splitlines() if l.strip()]
+    cab = linhas[0]
+    # Excel em portugues salva com ';'. Escolhe o que mais aparece; ',' desempata.
+    delim = ";" if cab.count(";") > cab.count(",") else ","
+    titulos = [(c or "").strip().lower() for c in next(csv.reader([cab], delimiter=delim), [])]
+    tem_cab = any(t in _CSV_MAPA for t in titulos)
+    corpo = linhas[1:] if tem_cab else linhas
+    cols = {_CSV_MAPA[t]: i for i, t in enumerate(titulos) if t in _CSV_MAPA} if tem_cab else {}
+    fora = []
+    for linha in csv.reader(corpo, delimiter=delim):
+        if not linha or not any(c.strip() for c in linha):
+            continue
+        def cel(chave):
+            i = cols.get(chave)
+            return linha[i].strip() if i is not None and i < len(linha) else ""
+        if tem_cab:
+            fora.append(_pessoa(cel("login"), cel("nome"), cel("email"), cel("senha")))
+        else:                                   # sem cabecalho: 1a celula = nome/login
+            fora.append(_pessoa(nome=linha[0].strip()))
+    return fora
+
+
+def _dedup_pessoas(pessoas):
+    vistos, fora = set(), []
+    for p in pessoas:
+        if p["login"] and p["login"] not in vistos:
+            vistos.add(p["login"])
+            fora.append(p)
+    return fora
+
+
+def senha_forte():
+    """Senha aleatoria que cumpre a politica do eXo (maiuscula, minuscula,
+    digito e simbolo). Usada quando o CSV nao traz senha -- e reportada no log
+    para o admin distribuir (nada de senha fixa no codigo)."""
+    return "Exo@" + secrets.token_urlsafe(9)
 
 
 # ---------------------------------------------------------------------------
@@ -486,7 +628,10 @@ class Provisionador:
         self.grupos_simulados = set()
         self.espacos_simulados = {}
         self.criados = {"grupos": [], "espacos": [], "bindings": [],
-                        "memberships": [], "niveis": []}
+                        "memberships": [], "niveis": [], "usuarios": []}
+        # credenciais das contas CRIADAS neste run, para o admin distribuir
+        # (a senha so' aparece uma vez, aqui; nao fica gravada em lugar nenhum).
+        self.credenciais = []
 
     # -- infra --------------------------------------------------------------
     def log(self, msg, tela=True):
@@ -520,55 +665,78 @@ class Provisionador:
         self.diario = []
 
     # -- pessoas ------------------------------------------------------------
-    def _triar(self, lista, papel, obrigatorio=False):
-        """Descarta quem nao existe, avisa quem esta desabilitado.
+    def _existe_usuario(self, login):
+        """(existe, habilitado). _raw porque inexistente devolve 404/401 e o
+        get() LEVANTARIA antes de eu poder classificar."""
+        st, t = self.exo._raw(
+            "GET", f"/portal/rest/v1/social/users/{urllib.parse.quote(login)}")
+        try:
+            d = json.loads(t) if t.strip() else {}
+        except json.JSONDecodeError:
+            d = {}
+        existe = st == 200 and isinstance(d, dict) and bool(d.get("username"))
+        habil = existe and str(d.get("enabled")).lower() not in ("false", "0")
+        return existe, habil
 
-        Com obrigatorio=True (gestores), quem nao existe BARRA a execucao em
-        vez de ser descartado -- um espaco sem seu gestor humano e' defeito.
+    def _criar_usuario(self, p):
+        """Cria a conta de uma pessoa {login,nome,email,senha} e ANOTA para
+        rollback. firstName exige >=3 chars na API; garanto isso. Idempotente:
+        so' chega aqui quem NAO existe."""
+        # A API so' aceita letras, espaco, '-' e '\'' em Nome/Sobrenome (digito
+        # ou '.' -> HTTP 400). Saneia mantendo acento (França e' valido).
+        def so_nome(s):
+            return re.sub(r"[^A-Za-zÀ-ſ '\-]+", " ", s).strip()
+        limpo = so_nome(p["nome"]) or so_nome(nome_de(p["login"]))
+        partes = limpo.split()
+        first = partes[0] if partes else "Usuario"
+        last = " ".join(partes[1:]) or first
+        if len(first) < 3:                     # API: 'Nome' entre 3 e 255 chars
+            first = (limpo if len(limpo) >= 3 else (first + "aa")[:3])
+        senha = p["senha"] or senha_forte()
+        corpo = {"userName": p["login"], "firstName": first, "lastName": last,
+                 "email": p["email"], "password": senha, "enabled": True}
+        if self.dry:
+            self.log(f"      [simulacao] criaria usuario {p['login']} "
+                     f"({first} {last}, {p['email']})")
+            return
+        st, resp = self.exo.escreve("POST", "/portal/rest/v1/users", corpo,
+                                    f"criar usuario {p['login']}")
+        if st >= 400:
+            raise FalhaEtapa(f"criar usuario {p['login']}: HTTP {st} {str(resp)[:140]}")
+        self.criados["usuarios"].append(p["login"])
+        self.credenciais.append((p["login"], senha))
+        lg = urllib.parse.quote(p["login"], safe="")
+        self.anota(f"usuario {p['login']}",
+                   lambda lg=lg: self.exo.escreve(
+                       "DELETE", f"/portal/rest/v1/users/{lg}"))
+        self.log(f"      usuario CRIADO: {p['login']} ({first} {last}, {p['email']})")
 
-        Conta desabilitada entra no grupo e NAO entra no espaco, sem erro
-        algum -- custou uma investigacao inteira descobrir. E usuario
-        inexistente derruba o lote inteiro (o bulk e' tudo-ou-nada).
+    def _garantir_pessoas(self, entrada, papel):
+        """Resolve a entrada (nomes/logins/CSV) em logins existentes, CRIANDO
+        quem nao existe -- e nao mais bloqueando.
+
+        O prompt lista pessoas a serem 'inseridas OU criadas': 'Wilson França'
+        vira a conta wilson.franca se ainda nao houver. Contas criadas entram
+        no rollback; se qualquer passo adiante falhar, elas somem junto.
+        Devolve a lista de logins para os passos de membership.
         """
-        lista = le_lista(lista)
-        if not lista:
+        pessoas = ler_pessoas(entrada)
+        if not pessoas:
             return []
-        faltam, desabilitados = [], []
-        for u in lista:
-            # _raw (nao get) porque usuario inexistente devolve 401/404 e o
-            # get() LEVANTARIA -- abortando com "HTTP 401" cru antes de eu poder
-            # dar a mensagem util ("informe o login exato"). Aqui eu classifico.
-            st, t = self.exo._raw(
-                "GET", f"/portal/rest/v1/social/users/{urllib.parse.quote(u)}")
-            try:
-                d = json.loads(t) if t.strip() else {}
-            except json.JSONDecodeError:
-                d = {}
-            if st != 200 or not isinstance(d, dict) or not d.get("username"):
-                faltam.append(u)
-            elif str(d.get("enabled")).lower() in ("false", "0"):
-                desabilitados.append(u)
-        if faltam:
-            # GESTOR que nao resolve e' ERRO, nao aviso. Antes, um login errado
-            # ("Wilson Franca" em vez de "wilson.franca") era descartado em
-            # silencio e o espaco nascia SEM gestor humano (so' root) -- e nada
-            # era desfeito. Agora isso barra a execucao e dispara o rollback,
-            # que remove o que este run criou. Membro comum ausente segue como
-            # aviso (nao compromete a governanca do espaco), mas bem visivel.
-            faltam_txt = ", ".join(faltam[:8])
-            if obrigatorio:
-                raise FalhaEtapa(
-                    f"{papel}(es) inexistente(s): {faltam_txt}. Informe o LOGIN "
-                    f"exato (ex.: 'wilson.franca', nao 'Wilson Franca'). Nada foi "
-                    f"mantido -- o espaco nao pode ficar sem seu {papel}.")
-            self.log(f"    AVISO: {len(faltam)} {papel}(es) NAO EXISTEM, ignorados: "
-                     f"{faltam_txt}")
-            lista = [u for u in lista if u not in faltam]
+        logins, desabilitados = [], []
+        for p in pessoas:
+            existe, habil = self._existe_usuario(p["login"])
+            if not existe:
+                self._criar_usuario(p)
+                habil = True                   # nasce habilitado
+            if not habil:
+                desabilitados.append(p["login"])
+            logins.append(p["login"])
         if desabilitados:
             self.log(f"    AVISO: {len(desabilitados)} {papel}(es) com conta "
                      f"DESABILITADA: {', '.join(desabilitados[:8])} -- entram no grupo "
                      f"mas NAO nos espacos ate serem habilitados")
-        return lista
+        return logins
 
     def _tem_membership(self, user, grupo, tipo):
         base = f"/portal/rest/v1/users/{urllib.parse.quote(user)}/memberships"
@@ -849,8 +1017,8 @@ class Provisionador:
         self.checa_parada()
 
         # 6) pessoas --------------------------------------------------------
-        gestores = self._triar(gestores, "gestor", obrigatorio=True)
-        usuarios = self._triar(usuarios, "usuario")
+        gestores = self._garantir_pessoas(gestores, "gestor")
+        usuarios = self._garantir_pessoas(usuarios, "usuario")
         if gestores:
             self._add_memberships(caminho, gestores, "manager", " 6. gestores")
             # Gestor do ESPACO e' outra coisa: manager no grupo tecnico
@@ -1075,8 +1243,14 @@ def provisionar_arvore(prov, payload):
                     prov.log(f"   '{f['rotulo']}': {len(faltam) - len(entraram)} NAO "
                              f"entraram; o job dos 5 min ainda pode resolver")
 
+        if prov.credenciais:
+            prov.log("\n== contas CRIADAS neste run (guarde as senhas -- so' "
+                     "aparecem aqui) ==")
+            for login, senha in prov.credenciais:
+                prov.log(f"   {login}  |  senha: {senha}")
         prov.log(f"\nOK -- {len(feitos)} nivel(is) provisionado(s).")
-        return {"ok": True, "niveis": feitos}
+        return {"ok": True, "niveis": feitos,
+                "credenciais": [{"login": l, "senha": s} for l, s in prov.credenciais]}
     except Cancelado as e:
         prov.log(f"\nPARADO: {e}")
         prov.rollback("parada pedida")

@@ -302,15 +302,22 @@ function campos(no,cam){
   <textarea oninput="set('${cam}','descricao',this.value)"
             placeholder="Aparece na tela do espaco">${esc(no.descricao)}</textarea>
   <div class="linha">
-    <div><label>Gestores (login, virgula)</label>
+    <div><label>Gestores (nome ou login, virgula)</label>
       <input value="${esc(no.gestores)}" oninput="set('${cam}','gestores',this.value)"
-             placeholder="wilson.franca"
-             title="Use o LOGIN, nao o nome. Ex.: wilson.franca (nao 'Wilson Franca')">
-      <small style="color:var(--suave)">o LOGIN, nao o nome. ex.: wilson.franca</small></div>
-    <div><label>Membros (login, virgula)</label>
+             placeholder="Wilson França, wilson.franca"
+             title="Nome ('Wilson França') ou login ('wilson.franca'). A conta e' CRIADA se nao existir.">
+      <small style="color:var(--suave)">nome ou login &mdash; a conta e' criada se nao existir</small></div>
+    <div><label>Membros (nome ou login, virgula)</label>
       <input value="${esc(no.usuarios)}" oninput="set('${cam}','usuarios',this.value)"
-             placeholder="kaua.ferri">
-      <small style="color:var(--suave)">o LOGIN, nao o nome. ex.: kaua.ferri</small></div>
+             placeholder="Kaua Ferri, kaua.ferri">
+      <small style="color:var(--suave)">nome ou login &mdash; a conta e' criada se nao existir</small></div>
+  </div>
+  <div class="linha">
+    <div><label>Importar membros de CSV</label>
+      <input type="file" accept=".csv,text/csv,text/plain" onchange="csvUsers('${cam}',this)">
+      <small class="csvinfo" style="color:var(--suave)">colunas: nome, email, senha, login (qualquer ordem; ',' ou ';')</small></div>
+    <div><label>&nbsp;</label>
+      <small style="color:var(--suave)">o CSV substitui a lista de membros digitada acima. Contas ausentes sao criadas.</small></div>
   </div>
   <div class="linha">
     <div><label>Avatar (imagem)</label>
@@ -318,6 +325,19 @@ function campos(no,cam){
     <div><label>Banner (imagem)</label>
       <input type="file" accept="image/*" onchange="img('${cam}','banner',this)"></div>
   </div>`;
+}
+function csvUsers(cam, el){
+  const f=el.files[0];
+  const info=el.parentNode.querySelector('.csvinfo');
+  if(!f){return}
+  const r=new FileReader();
+  r.onload=()=>{
+    no(cam).usuarios = r.result;              // CSV cru; o servidor faz ler_pessoas
+    const linhas = r.result.split(/\\r?\\n/).filter(x=>x.trim()).length;
+    info.textContent = f.name+": ~"+linhas+" linha(s). O servidor cria quem faltar.";
+    info.style.color = "var(--verde)";
+  };
+  r.readAsText(f);
 }
 const esc = s => String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function no(cam){let o=arv;for(const p of cam.split(".")){o=o[p==+p?+p:p]}return o}
