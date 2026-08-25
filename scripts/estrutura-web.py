@@ -451,11 +451,50 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return usuario
 
+    def _redir(self, destino):
+        self.send_response(302)
+        self.send_header("Location", destino)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_GET(self):
         # /saude e' o unico ponto sem sessao: o healthcheck do container roda
         # de dentro, sem navegador. Nao revela nada alem de estar de pe.
         if self.path == "/saude":
             return self._envia(200, "ok", "text/plain; charset=utf-8")
+
+        # A PAGINA (navegador) e os /api/* (JS) sao tratados diferente quando
+        # nao ha sessao. Um /api/* devolve 401 JSON, que o JS entende. Mas a
+        # PAGINA nao pode devolver JSON cru para um humano: um usuario deslogado
+        # que abre /estrutura/ tem de ser LEVADO ao login do portal e voltar --
+        # senao a tela "nao funciona", so' aparece um blob de erro.
+        if self.path in ("/", "/index.html"):
+            usuario, admin, motivo = identificar(self.headers.get("Cookie"))
+            if not usuario:
+                # manda para o login do portal; o eXo volta para ca' via
+                # initialURI depois que a sessao e' criada.
+                return self._redir("/portal/login?initialURI=%2Festrutura%2F")
+            if not admin:
+                # logado, mas sem poder de admin: pagina HTML clara (nao JSON),
+                # para o humano entender por que nao entra.
+                aviso = ("<!doctype html><meta charset=utf-8>"
+                         "<title>Acesso restrito</title>"
+                         "<body style='font:15px system-ui;max-width:640px;margin:60px auto;"
+                         "padding:0 20px;color:#1f2733'>"
+                         "<h2>Acesso restrito</h2>"
+                         f"<p>Voce entrou como <b>{html.escape(usuario)}</b>, mas esta tela "
+                         "e' exclusiva de administradores da plataforma "
+                         "(<code>/platform/administrators</code>).</p>"
+                         "<p>Pe&ccedil;a a um administrador ou entre com uma conta "
+                         "administrativa.</p></body>")
+                return self._envia(403, aviso, "text/html; charset=utf-8")
+            pagina = PAGINA.replace(
+                "__EXO_URL__",
+                html.escape(os.environ.get("EXO_URL", "https://192.168.1.59"), quote=True)
+            ).replace("__USUARIO__", html.escape(usuario))
+            return self._envia(200, pagina, "text/html; charset=utf-8")
+
+        # dados (JS): exige sessao, responde 401/403 JSON
         if not self._autorizado():
             return
         if self.path.startswith("/api/log"):
@@ -468,16 +507,6 @@ class Handler(BaseHTTPRequestHandler):
             return self._envia(200, json.dumps(
                 {"linhas": linhas, "total": total, "estado": estado, "resumo": resumo},
                 default=str))
-        if self.path in ("/", "/index.html"):
-            # A URL padrao vem do ambiente do servidor. Dentro do compose o
-            # caminho certo e' http://exo:8080 (fala direto com o Tomcat); o
-            # IP do host nem sempre e' resolvivel de dentro do container.
-            usuario, _, _ = identificar(self.headers.get("Cookie"))
-            pagina = PAGINA.replace(
-                "__EXO_URL__",
-                html.escape(os.environ.get("EXO_URL", "https://192.168.1.59"), quote=True)
-            ).replace("__USUARIO__", html.escape(usuario or "?"))
-            return self._envia(200, pagina, "text/html; charset=utf-8")
         return self._envia(404, json.dumps({"erro": "nao encontrado"}))
 
     def do_POST(self):

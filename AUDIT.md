@@ -3588,3 +3588,20 @@ Registrado tambem: o Especialista rodou `verificar-estrutura.py` e viu "6 FALHA 
 **Estado final confirmado:** verificar-estrutura.py 36/36 TUDO CONFORME; servico exo-estrutura healthy; anonimo em /estrutura/api/log -> 401.
 
 **Status:** CONCLUIDO — perfeicao tecnica e emocional atingida pelo criterio dos 5 fiscais. Loop encerrado.
+
+---
+
+### [137] 2026-08-25 — UX web: usuario deslogado via JSON cru em vez da tela; agora redireciona ao login
+
+**Reportado pelo operador:** abrir https://192.168.1.59/estrutura/ "nao funciona" -- aparecia `{"erro": "entre no portal primeiro"}` (JSON cru) em vez da interface. Causa: `do_GET` chamava `_autorizado()` (401 JSON) ANTES de tratar a pagina HTML; um humano deslogado batia no 401 e nao era levado a lugar nenhum.
+
+**Correcao:** a PAGINA (`/`, `/index.html`) passou a ser tratada separada dos `/api/*`:
+- deslogado -> **HTTP 302** para `/portal/login?initialURI=%2Festrutura%2F` (o eXo volta para /estrutura/ apos o login);
+- logado sem ser admin -> **HTML 403** claro ("Acesso restrito a administradores"), nao JSON;
+- admin -> a pagina (200).
+Os `/api/*` seguem devolvendo 401/403 JSON (o JS trata).
+
+**Provas:** GET /estrutura/ deslogado -> 302 Location /portal/login?initialURI=%2Festrutura%2F; seguindo o redirect -> login do portal (200); GET /estrutura/api/log deslogado -> 401; GET /estrutura/ admin -> 200. Container healthy.
+
+**Comando/Arquivo:** `scripts/estrutura-web.py` (`do_GET` separa pagina de API; `_redir`)
+**Status:** OK — deslogado cai na tela de login e volta sozinho; a interface web abre pelo navegador como esperado.
