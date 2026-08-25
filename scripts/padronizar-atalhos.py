@@ -32,13 +32,11 @@ import argparse, os, subprocess, sys
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # id -> (titulo, descricao|None para nao mexer, ordem|None)
+#
+# SO' OS ATALHOS PROPRIOS (IS_SYSTEM=0). Os de sistema ficaram de fora depois de
+# medido que o eXo os apaga e recria a cada start -- renomea-los aqui dura ate' o
+# proximo boot e ainda deixa ids orfaos.
 PADRAO = {
-    1:  ("Criar tarefa",            None,                                              40),
-    2:  ("Revisão de contribuições", None,                                             None),
-    3:  ("Criar publicação",        None,                                               20),
-    4:  ("Espaços",                 None,                                               50),
-    5:  ("Favoritos",               None,                                               10),
-    6:  ("Dar um Kudos",            "Envie uma recomendação para felicitar os outros", None),
     7:  ("Chamados (GLPI)",         "Abertura e acompanhamento de chamados de suporte",  60),
     8:  ("Consulta de e-mail",      "Consulta de e-mails de servidores e assessores",    70),
     9:  ("Gerador de senhas",       "Gera senhas fortes para contas e sistemas",         80),
@@ -118,13 +116,32 @@ def main():
     for r in reverter:
         print("   " + r)
     mysql("\n".join(s for _, _, _, s in mudancas))
+    # O TITULO MORA EM DOIS LUGARES. Alem de AC_APPLICATION.TITLE, o eXo grava
+    # um SNAPSHOT do nome em SOC_METADATA_ITEMS_PROPERTIES (name='label') quando
+    # o atalho e' fixado no painel -- e e' esse snapshot que a caixa "Atalhos"
+    # desenha. Corrigir so' AC_APPLICATION nao muda nada na tela: medido, o
+    # painel continuou exibindo "MDM Dispositivos Moveis" com o banco ja
+    # dizendo "Dispositivos moveis (MDM)". Este UPDATE alinha os dois pelo
+    # proprio JOIN, entao nao ha lista de nomes repetida aqui.
+    mysql("""
+      UPDATE SOC_METADATA_ITEMS_PROPERTIES p
+        JOIN SOC_METADATA_ITEMS i ON i.METADATA_ITEM_ID = p.METADATA_ITEM_ID
+        JOIN AC_APPLICATION a     ON a.ID = i.OBJECT_ID
+         SET p.VALUE = a.TITLE
+       WHERE p.NAME = 'label' AND i.OBJECT_TYPE = 'appCenter' AND p.VALUE <> a.TITLE;""")
     print(f"\n{len(mudancas)} atalho(s) padronizado(s) NO BANCO.")
     print("ATENCAO -- o App Center guarda a lista em MEMORIA para os atalhos")
     print("nao-sistema (IS_SYSTEM=0). Medido: com o banco ja corrigido, tanto a")
     print("tela quanto a propria API /app-center/rest/applications continuavam")
     print("devolvendo o titulo antigo; um PUT na API respondeu 200 e tambem nao")
     print("refrescou. Os titulos novos aparecem no proximo start do exo-app:")
-    print("    docker compose restart exo     (o boot do eXo leva de 10 a 20 min)")
+    print("    docker compose restart exo     (medido nesta stack: ~3 min ate healthy)")
+    print()
+    print("NAO ADIANTA renomear os atalhos de SISTEMA (IS_SYSTEM=1) por aqui: o")
+    print("eXo os APAGA E RECRIA a cada start, com ids novos e titulo proprio.")
+    print("Medido: ids 1-6 viraram 14-19 no boot seguinte e os nomes voltaram.")
+    print("Eles sao traduzidos pela plataforma -- e o lugar de corrigi-los e o")
+    print("bundle de traducao (conf/i18n), nao o banco.")
 
 
 if __name__ == "__main__":

@@ -137,7 +137,14 @@ RUN set -eux; \
 #    reconfere CADA correcao diretamente de dentro do war ja' modificado.
 # ---------------------------------------------------------------------------
 RUN set -eux; \
-    for app in digital-workplace social webdav agenda task-management deeds-tenant layout; do \
+    # A LISTA TEM DE CONTER TODA WEBAPP QUE derivar-traducoes.py GEROU.
+    # Faltavam app-center, content e as duas gamification: os arquivos eram
+    # gerados em /build e nunca entravam no .war -- a correcao de
+    # "Ver mais comentarios" ficaria no disco de build e nao no produto.
+    # A verificacao logo abaixo pegou isso e reprovou o build (era esse o
+    # objetivo dela).
+    for app in digital-workplace social webdav agenda task-management deeds-tenant layout \
+               app-center content gamification-github gamification-crowdin; do \
       jar uf "/opt/exo/webapps/${app}.war" -C "/build/${app}" .; \
       chown exo:exo "/opt/exo/webapps/${app}.war"; \
     done; \
@@ -551,5 +558,41 @@ RUN set -eux; \
     test -s /opt/exo/lib/web-conferencing-jitsi-services.jar; \
     unzip -p /opt/exo/webapps/jitsi.war js/webconferencing-jitsi.js | grep -q 'CALL_URL_PATH'; \
     echo "OK: addon oficial exo-jitsi 7.2.1 instalado (jitsi.war + services.jar)"
+
+# ---------------------------------------------------------------------------
+# 9) ADDON OFICIAL exo-glpi-integration 7.2.0 -- chamados do GLPI DENTRO do eXo.
+#
+#    Vinha faltando: existia so' um atalho apontando para o GLPI externo, que e'
+#    um link, nao integracao. O addon publica os tickets do usuario dentro do
+#    portal (https://www.exoplatform.com/blog/new-glpi-add-on-...).
+#
+#    POR QUE POR ZIP, E NAO PELO GERENCIADOR DE ADDONS: a imagem
+#    exoplatform/exo-community NAO TRAZ o comando 'addon' e o start_eXo.sh nao
+#    le EXO_ADDONS_LIST -- conferido nesta imagem (0 ocorrencias de 'addon' no
+#    script de boot). O empacotamento oficial e' um zip com webapps/ e lib/, que
+#    e' exatamente o que se copia abaixo. Mesmo caminho ja' validado no Jitsi.
+#
+#    Origem: http://addons.exoplatform.org/n/exo-addons-releases/
+#            org.exoplatform.addons.glpi-integration/glpi-integration-packaging/7.2.0/zip
+#    Catalogo oficial declara compatibility [7.2-m1,) -- serve na 7.2.1.
+#    O zip fica versionado em conf/addons/ para a instalacao nao depender de o
+#    addons.exoplatform.org estar no ar no dia do build.
+# ---------------------------------------------------------------------------
+COPY conf/addons/exo-glpi-integration-7.2.0.zip /tmp/exo-glpi.zip
+
+RUN set -eux; \
+    echo "74e2dd5d911632d1a8f3a734ad8a7112c0e6761648f5ba85ff77d79827574147  /tmp/exo-glpi.zip" | sha256sum -c -; \
+    cd /tmp && unzip -o exo-glpi.zip -d /tmp/glpiaddon; \
+    cp /tmp/glpiaddon/webapps/glpi-integration.war /opt/exo/webapps/glpi-integration.war; \
+    cp /tmp/glpiaddon/lib/glpi-integration-api.jar /opt/exo/lib/glpi-integration-api.jar; \
+    cp /tmp/glpiaddon/lib/glpi-integration-services.jar /opt/exo/lib/glpi-integration-services.jar; \
+    chown exo:exo /opt/exo/webapps/glpi-integration.war \
+                  /opt/exo/lib/glpi-integration-api.jar \
+                  /opt/exo/lib/glpi-integration-services.jar; \
+    rm -rf /tmp/glpiaddon /tmp/exo-glpi.zip; \
+    test -s /opt/exo/webapps/glpi-integration.war; \
+    test -s /opt/exo/lib/glpi-integration-api.jar; \
+    test -s /opt/exo/lib/glpi-integration-services.jar; \
+    echo "OK: addon oficial exo-glpi-integration 7.2.0 instalado"
 
 USER exo
