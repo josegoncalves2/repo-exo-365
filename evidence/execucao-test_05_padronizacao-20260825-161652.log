@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/opt/projetos/exo/tests/test_05_padronizacao.py", line 29, in <module>
+    from exolib import Recorder, Result  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/projetos/exo/tests/exolib.py", line 24, in <module>
+    import requests
+ModuleNotFoundError: No module named 'requests'

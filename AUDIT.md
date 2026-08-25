@@ -3681,3 +3681,20 @@ Regressao SITDS: 36/36. Contas de teste todas removidas ao fim.
 
 **Comando/Arquivo:** `scripts/exo_estrutura.py` (`arvore_atual`), `scripts/estrutura-web.py` (`/api/arvore`, `carregarArvore`, sigla travada em no existente, recarrega apos executar), `tests/e2e_incremental.py` (novo)
 **Status:** OK — pela web: carrega o existente, acrescenta divisao/setor a estrutura existente, e renomeia inline. Provado ponta a ponta com Chromium.
+
+### [141] 2026-08-25 16:16:52 -03 — Execucao da suite test_05_padronizacao (RUN_ID 20260825-161652)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_05_padronizacao`
+**Resultado:** 0
+0 testes passaram, 0
+0 falharam. Codigo de saida 1.
+**Evidência:** evidence/execucao-test_05_padronizacao-20260825-161652.log e evidence/resultado-*-20260825-161652.json
+**Status:** FALHA
+
+### [142] 2026-08-25 16:17:13 -03 — Execucao da suite test_05_padronizacao (RUN_ID 20260825-161712)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_05_padronizacao`
+**Resultado:** 4 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_05_padronizacao-20260825-161712.log e evidence/resultado-*-20260825-161712.json
+**Status:** OK

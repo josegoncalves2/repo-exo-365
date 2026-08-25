@@ -1,0 +1,122 @@
+{
+  "_regra": [
+    "UMA regra para os 13 atalhos do painel (App Center), sem excecao:",
+    "1. portugues do Brasil, sempre, com a acentuacao correta;",
+    "2. primeira letra maiuscula, o resto minusculo -- excecao apenas para nome",
+    "   proprio e sigla (GLPI, MDM, BI, Kudos, Prefeitura);",
+    "3. sigla entre parenteses no fim: 'Dados abertos (BI)', nunca 'Dados Abertos - BI';",
+    "4. nada de crase, aspas ou markdown no nome;",
+    "5. verbo no infinitivo quando o atalho E' a acao ('Adicionar tarefa');",
+    "6. TODO atalho tem tecla: uma letra minuscula, unica no painel inteiro,",
+    "   a inicial do nome -- e, se ocupada, a inicial da palavra significativa",
+    "   seguinte (Consulta de e-mail -> m, de 'mail'; Dados abertos (BI) -> b)."
+  ],
+
+  "_sistema": [
+    "Atalhos que a propria eXo injeta no boot a partir de um applications.json",
+    "DENTRO de um jar. O titulo la' e' literal em ingles -- nao e' chave de",
+    "traducao, entao a plataforma nunca traduz, em idioma nenhum. Renomear pelo",
+    "banco NAO DURA: com 'override': false a eXo ignora o registro existente e,",
+    "quando recria, volta o ingles (medido: ids 1-6 viraram 14-19 e os nomes",
+    "voltaram). O lugar certo e' o proprio seed, com 'override': true -- ai a",
+    "ApplicationCenterInjectService chama updateApplication a cada start e o",
+    "nome passa a ser reaplicado, nao apenas escrito uma vez.",
+    "O texto de cada titulo e' a traducao que a PROPRIA eXo ja' publica em",
+    "pt-BR (chave em 'fonte'), normalizada pela regra de caixa acima -- nao e'",
+    "traducao inventada aqui."
+  ],
+  "sistema": {
+    "addActivity": {
+      "jar": "app-center-services.jar",
+      "titulo": "Adicionar postagem",
+      "tecla": "p",
+      "fonte": "quickActions.activityComposer.name = 'Adicionar Postagem'",
+      "de": "Add a post"
+    },
+    "listSpaces": {
+      "jar": "app-center-services.jar",
+      "titulo": "Espaços",
+      "tecla": "e",
+      "fonte": "quickActions.spacesList.name = 'Espaços'",
+      "de": "List Spaces"
+    },
+    "listFavorites": {
+      "jar": "app-center-services.jar",
+      "titulo": "Favoritos recentes",
+      "tecla": "f",
+      "fonte": "quickActions.favorites.name = 'Favoritos recentes'",
+      "de": "List favorites"
+    },
+    "addTask": {
+      "jar": "task-management-services.jar",
+      "titulo": "Adicionar tarefa",
+      "tecla": "t",
+      "fonte": "quickActions.task.name = 'Adicionar tarefa'",
+      "de": "Add a task"
+    },
+    "sendKudos": {
+      "jar": "kudos-services.jar",
+      "titulo": "Dar Kudos",
+      "tecla": "k",
+      "fonte": "quickActions.kudos.name = 'Dar Kudos'",
+      "de": "Give a Kudos"
+    },
+    "ContributionsReview": {
+      "jar": "gamification-services.jar",
+      "titulo": "Revisão de contribuições",
+      "tecla": "r",
+      "fonte": "gamification.myContributions.title = 'Minhas contribuições' (termo oficial 'contribuições')",
+      "de": "Contributions Review"
+    }
+  },
+
+  "_proprios": [
+    "Atalhos criados nesta implantacao. Vivem so' no banco (IS_SYSTEM=0) e a",
+    "chave aqui e' a URL, nao o ID: ID e' sequencial e muda de servidor para",
+    "servidor, URL nao."
+  ],
+  "proprios": {
+    "https://suporte.pmeto.local/front/central.php": {
+      "titulo": "Chamados (GLPI)",
+      "tecla": "c",
+      "descricao": "Abertura e acompanhamento de chamados de suporte",
+      "ordem": 60
+    },
+    "https://dtisistemas.pmeto.local/consultaemail/public/": {
+      "titulo": "Consulta de e-mail",
+      "tecla": "m",
+      "descricao": "Consulta de e-mails de servidores e assessores",
+      "ordem": 70
+    },
+    "https://dtisistemas.pmeto.local/geradordesenhas/": {
+      "titulo": "Gerador de senhas",
+      "tecla": "g",
+      "descricao": "Gera senhas fortes para contas e sistemas",
+      "ordem": 80
+    },
+    "https://www.olimpia.sp.gov.br/": {
+      "titulo": "Site da Prefeitura",
+      "tecla": "s",
+      "descricao": "Portal público da Prefeitura de Olímpia",
+      "ordem": 90
+    },
+    "https://mdm.olimpia.sp.gov.br/#/": {
+      "titulo": "Dispositivos móveis (MDM)",
+      "tecla": "d",
+      "descricao": "Gestão, inventário e suporte remoto de dispositivos móveis",
+      "ordem": 100
+    },
+    "https://dadosabertos.olimpia.sp.gov.br/": {
+      "titulo": "Dados abertos (BI)",
+      "tecla": "b",
+      "descricao": "Dados públicos abertos e indicadores de BI",
+      "ordem": 110
+    },
+    "https://192.168.1.59/estrutura/": {
+      "titulo": "Estrutura organizacional",
+      "tecla": "o",
+      "descricao": "Cria e administra secretarias, divisões e setores",
+      "ordem": 120
+    }
+  }
+}

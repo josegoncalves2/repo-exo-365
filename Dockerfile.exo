@@ -595,4 +595,38 @@ RUN set -eux; \
     test -s /opt/exo/lib/glpi-integration-services.jar; \
     echo "OK: addon oficial exo-glpi-integration 7.2.0 instalado"
 
+# ---------------------------------------------------------------------------
+# 10) ATALHOS DO PAINEL SOB UMA REGRA SO' -- nome e tecla.
+#
+#    O que a tela mostrava: 13 atalhos em DOIS idiomas e tres caixas distintas.
+#    Os 7 nossos em portugues e sem tecla nenhuma; os 6 da eXo em ingles, com
+#    caixa divergente entre eles ("Add a task" x "Contributions Review" x
+#    "List favorites") -- porque o titulo deles NAO e' chave de traducao: e'
+#    literal, gravado num applications.json dentro de um jar.
+#
+#    POR QUE AQUI, NO BUILD, E NAO NO BANCO: a
+#    ApplicationCenterInjectService le esses descritores a cada start e, com
+#    "override": false, registra "Ignore updating system application, override
+#    flag is turned off" -- ou seja, ignora o que ja' existe. Renomear pelo
+#    banco dura ate' o proximo boot (medido: ids 1-6 viraram 14-19 e os nomes
+#    em ingles voltaram). Corrigindo o SEED e ligando "override": true, o nome
+#    passa a ser reaplicado a cada start: nao ha como regredir.
+#
+#    O texto de cada titulo e' a traducao que a PROPRIA eXo publica em pt-BR
+#    (a chave de origem fica registrada em conf/atalhos/padrao.json),
+#    normalizada pela regra de caixa -- nao ha traducao inventada no build.
+# ---------------------------------------------------------------------------
+COPY conf/atalhos/padrao.json /build/atalhos-padrao.json
+COPY scripts/padronizar-atalhos.py /build/padronizar-atalhos.py
+COPY conf/atalhos/conferir.py /build/conferir-atalhos.py
+
+RUN set -eux; \
+    python3 /build/padronizar-atalhos.py --seed /opt/exo/lib --padrao /build/atalhos-padrao.json; \
+    chown exo:exo /opt/exo/lib/app-center-services.jar \
+                  /opt/exo/lib/task-management-services.jar \
+                  /opt/exo/lib/kudos-services.jar \
+                  /opt/exo/lib/gamification-services.jar; \
+    python3 /build/conferir-atalhos.py /opt/exo/lib /build/atalhos-padrao.json; \
+    rm -f /build/padronizar-atalhos.py /build/atalhos-padrao.json /build/conferir-atalhos.py
+
 USER exo
