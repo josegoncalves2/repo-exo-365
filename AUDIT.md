@@ -3926,3 +3926,27 @@ build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.
 **Acao:** Usuario reportou "icones de atalhos sumiram". Causa: `padronizar-atalhos.py` gravava ICON=NULL (INSERT/UPDATE sem a coluna). Corrigido: `padrao.json` ganhou campo `icon` (7 atalhos proprios), script aplica ICON no UPDATE e INSERT, duplicado 'Consulta de e-mail' removido, MDM recriado.
 **Resultado:** 7 atalhos com icons (fa-headset, fa-envelope, fa-key, fa-city, fa-mobile-alt, fa-chart-bar, fa-sitemap) e teclas (c, m, g, s, d, b, o). test_05 4/4.
 **Status:** OK
+
+---
+
+### [156] 2026-08-26 17:00:00 -03 — IA: Cloudflare Worker `exo-ai-openai` deployado e provider criado
+
+**Acao:** Configurar o provedor de IA do eXo apontando para a Cloudflare Workers AI, sem gambiarra local e tudo versionado para o GitHub.
+**Diagnostico (decompilacao do addon meeds-ai/ai-llm.jar):**
+- `AiProviderService.createProvider` → `testProviderConnection` → `OpenAiPlugin.getAvailableModels` → `GET {baseUrl}/v1/models` com `Authorization: Bearer {apiKey}` (RestClient baseUrl + uri "/v1/models").
+- `ModelListingUtil.readDataIds` le `responseObject.getJsonArray("data")` — **a chave esperada é "data"**, não "models" (tentar "models" gera `Error parsing JSON` → 500).
+- `ProviderStorage.save` é `@CachePut(key='#p0.nameId')` e o frontend envia `nameId: null` → exceção Spring "Null key returned for cache operation" → **POST 400 mesmo com o provider salvo no banco** (cria registros órfãos).
+**Solucao:**
+1. **Cloudflare Worker** (`exo-ai-openai`, classic addEventListener): responde `GET /v1/models` com `{"data":[{id,owned_by},...]}` (formato que o eXo valida) e faz proxy de `POST /v1/embeddings` e `POST /v1/chat/completions` para `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1` com o token real da conta (o token do eXo pode ser qualquer valor não-vazio).
+2. Subdomain workers.dev habilitado via API: `POST .../workers/scripts/exo-ai-openai/subdomain {"enabled":true}` → URL pública `https://exo-ai-openai.lab-hml01.workers.dev`.
+3. Modelos da lista atualizados (llama-3.3-70b-fp8-fast, llama-3.2-3b/1b, llama-3.1-8b-fp8, qwen3-embedding-0.6b, bge-m3, bge-base/large) — llama-3.1-8b-instruct foi deprecado pela Cloudflare (410).
+4. Provider criado **via o mesmo endpoint REST da interface** com `nameId` definido (contorna o bug do cache null): `POST /ai-agent/rest/administration/providers` → `{"enabled":true,"nameId":"cloudflare","providerId":"openaiCompatible","baseUrl":"https://exo-ai-openai.lab-hml01.workers.dev","apiKey":"cfat_Pr6...","completionPath":"/v1/chat/completions"}` → **200 OK**.
+5. Providers órfãos (UUIDs criados pelas tentativas com nameId null) deletados via `DELETE /ai-agent/rest/administration/providers/{nameId}` (7 registros) + o antigo "cloudflare" com URL direta da Cloudflare.
+**Codigo versionado:** `conf/cloudflare-worker.js` (com instruções de deploy e configuração no eXo).
+**Evidencia (testes ao vivo):**
+- `GET https://exo-ai-openai.lab-hml01.workers.dev/v1/models` → 200 `{"data":[...8 modelos...]}` (validação do eXo passa).
+- `POST .../v1/embeddings` → 200 embeddings reais (bge-base-en-v1.5).
+- `POST .../v1/chat/completions` (modelo `@cf/meta/llama-3.2-3b-instruct`) → 200 `chat.completion` com resposta.
+- `GET /ai-agent/rest/administration/providers/cloudflare/models` → 200 com 8 modelos Cloudflare.
+- UI `/administration/home/ai/models` → provider "Open AI Compatible" (fallback de título) aparece na lista de Providers.
+**Status:** OK
