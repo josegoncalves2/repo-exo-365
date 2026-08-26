@@ -46,12 +46,14 @@
 import argparse
 import functools
 import hashlib
+import io
 import json
 import os
 import re
 import subprocess
 import sys
 import urllib.request
+import zipfile
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFESTO = os.path.join(RAIZ, "conf", "addons", "manifesto.json")
@@ -180,6 +182,44 @@ def caminho_cache(a):
     return os.path.join(CACHE, f"{a['id']}-{a['versao']}.zip")
 
 
+def usa_javax_servlet(caminho_zip):
+    """Devolve os .jar do add-on que ainda referenciam javax/servlet/.
+
+    PORTAO QUE NASCEU DE UM ESTRAGO REAL (2026-08-26): a eXo 7.x roda em Tomcat
+    10, onde o pacote e' jakarta.servlet. Um add-on compilado contra
+    javax.servlet nao apenas deixa de funcionar -- ele DERRUBA O PORTAL INTEIRO:
+      Cannot create the portal container 'portal'
+      java.lang.ClassNotFoundException: javax.servlet.http.HttpServletRequest
+    Foi o que aconteceu ao instalar exo-exchange-extension 1.3.1, mfa-fido 1.0.1
+    e mfa-oidc 1.0.1.
+
+    E o catalogo NAO avisa: exo-exchange-extension declara compatibilidade
+    '[4.4,)' -- literalmente "da 4.4 em diante", 7.2.1 incluida -- e e' javax.
+    Sao faixas abertas escritas antes da migracao jakarta e nunca revisadas
+    depois dela. Confiar nesse metadado foi o erro; por isso aqui se ABRE o
+    binario e se mede.
+    """
+    ruins = []
+    with zipfile.ZipFile(caminho_zip) as z:
+        for nome in z.namelist():
+            if not nome.endswith(".jar"):
+                continue
+            try:
+                interno = zipfile.ZipFile(io.BytesIO(z.read(nome)))
+            except (zipfile.BadZipFile, KeyError):
+                continue
+            for classe in interno.namelist():
+                if not classe.endswith(".class"):
+                    continue
+                try:
+                    if b"javax/servlet/" in interno.read(classe):
+                        ruins.append(os.path.basename(nome))
+                        break
+                except Exception:                                # noqa: BLE001
+                    continue
+    return ruins
+
+
 def gera_catalogo_local(m, cat, destino, dir_zips):
     """Catalogo com downloadUrl file:// apontando para os zips vendorizados.
 
@@ -263,6 +303,21 @@ def cmd_conferir(args):
               f"{('instav' if reg.get('unstable') else 'estav'):6} "
               f"{('no-cmp' if precisa else 'ok'):6} {reg.get('compatibility')}")
     print()
+    # PORTAO JAKARTA -- so' roda no que ja' esta em cache; 'baixar' o aplica a tudo.
+    print("  portao jakarta (javax.servlet nao roda em Tomcat 10):")
+    conferidos = 0
+    for a in m["addons"]:
+        z = caminho_cache(a)
+        if not os.path.exists(z):
+            print(f"    {a['id']}: zip nao esta em cache -- rode 'baixar' para conferir")
+            continue
+        ruins = usa_javax_servlet(z)
+        conferidos += 1
+        if ruins:
+            problemas.append(f"{a['id']}:{a['versao']} traz javax.servlet em {ruins} "
+                             f"-- derruba o portal na 7.x, NAO instalar")
+    print(f"    {conferidos} add-on(s) medidos no binario")
+    print()
     if problemas:
         for p in problemas:
             print(f"  DIVERGENCIA: {p}")
@@ -307,6 +362,13 @@ def cmd_baixar(args):
                           f"(selado {a['sha256'][:16]}..., baixado {soma[:16]}...)")
             print(" SHA256 NAO BATE")
             continue
+        ruins = usa_javax_servlet(tmp)
+        if ruins:
+            os.remove(tmp)
+            falhou.append(f"{a['id']}:{a['versao']} traz javax.servlet em {ruins} -- "
+                          f"nao roda em Tomcat 10 e derruba o portal; recusado")
+            print(" REPROVADO (javax.servlet)")
+            continue
         os.replace(tmp, alvo)
         if a.get("sha256") != soma:
             mudou.append((a["id"], a.get("sha256"), soma))
@@ -345,6 +407,10 @@ def cmd_instalar(args):
             continue
         if a.get("sha256") and sha256_arquivo(zip_local) != a["sha256"]:
             falhou.append(f"{a['id']}: sha256 do cache diverge do manifesto")
+            continue
+        ruins = usa_javax_servlet(zip_local)
+        if ruins:
+            falhou.append(f"{a['id']}: javax.servlet em {ruins} -- derruba o portal na 7.x")
             continue
         cmd = [addon, "install", f"{a['id']}:{a['versao']}",
                f"--catalog={catalogo}", "--conflict=overwrite", "-B"]

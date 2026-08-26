@@ -68,22 +68,6 @@
       "porque": "Briefing item 2.2 -- 2FA. E' o motor: define quais GRUPOS exigem segundo fator, que e' o equivalente aplicavel de '2FA por zona' nesta plataforma."
     },
     {
-      "id": "mfa-oidc",
-      "versao": "1.0.1",
-      "sha256": "31dd56c6701c4e1c193525a6d26be7cc9eccaa76b4d543e28522db9c4e5bc80e",
-      "categoria": "seguranca",
-      "no_compat": true,
-      "porque": "Briefing item 2.2 -- segundo fator por provedor OIDC externo (conector do motor acima)."
-    },
-    {
-      "id": "mfa-fido",
-      "versao": "1.0.1",
-      "sha256": "c2f51660ac24cf5b0ca976d6eb8ef2248060efa331ab96afc9050ae6cabc08a0",
-      "categoria": "seguranca",
-      "no_compat": true,
-      "porque": "Briefing item 2.2 -- segundo fator por chave fisica FIDO2/WebAuthn (conector do motor acima)."
-    },
-    {
       "id": "exo-anti-malware",
       "versao": "7.2.1",
       "sha256": "d7f187a0626deb22b4201d6fe97efa6e844d03f2094a4e9c9ff73b9036817691",
@@ -114,14 +98,6 @@
       "categoria": "seguranca",
       "no_compat": true,
       "porque": "Briefing item 2 -- acesso de sistemas terceiros a API do portal por JWT, sem compartilhar senha de usuario."
-    },
-    {
-      "id": "exo-exchange-extension",
-      "versao": "1.3.1",
-      "sha256": "5cd32bd633e4a0300067cba2815d71637e7939fde503a1cfd950ab412fb4712e",
-      "categoria": "conector",
-      "no_compat": false,
-      "porque": "Briefing item 1.4 -- conector de fabrica com Microsoft Exchange, citado nominalmente no pedido."
     },
     {
       "id": "exo-mail-integration",
@@ -181,5 +157,21 @@
       "no_compat": true,
       "porque": "Briefing item 1.4 / cobranca direta do operador -- chamados do GLPI DENTRO do portal. Antes existia so' um atalho para o GLPI externo, que e' link, nao integracao. Ver conf/i18n/derivar-traducoes.py: o add-on so' empacota 'en' e 'fr', e o bundle pt-BR e' gerado no build."
     }
+  ],
+  "_jakarta": [
+    "PORTAO javax.servlet -> jakarta.servlet (2026-08-26, apos derrubar o portal).",
+    "A eXo 7.x roda em Tomcat 10: o pacote e' jakarta.servlet. Add-on compilado",
+    "contra javax.servlet nao carrega, e o estrago nao e' local -- o portal inteiro",
+    "morre com 'Cannot create the portal container' + ClassNotFoundException:",
+    "javax.servlet.http.HttpServletRequest.",
+    "",
+    "O CATALOGO NAO PROTEGE DISSO. exo-exchange-extension 1.3.1 declara faixa",
+    "'[4.4,)' -- 'da 4.4 em diante', o que inclui 7.2.1 -- e e' javax. mfa-fido e",
+    "mfa-oidc 1.0.1 declaram '[6.2-m29,)' e sao javax. Faixa aberta escrita antes da",
+    "migracao jakarta nao foi revisada depois dela.",
+    "",
+    "Por isso 'addons.py conferir' passou a ABRIR cada zip e reprovar quem tiver",
+    "classe referenciando javax/servlet/. E' medicao do binario, nao promessa de",
+    "metadado. Os tres foram removidos deste manifesto por esse portao."
   ]
 }
