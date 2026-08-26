@@ -1,0 +1,6 @@
+[FALHOU] T-05.1 (A-maquina) Os 13 atalhos do painel obedecem a UMA regra — sem tecla: ['Chamados (GLPI)', 'Consulta de e-mail', 'Dados abertos (BI)', 'Dispositivos móveis (MDM)', 'Estrutura organizacional', 'Gerador de senhas', 'Site da Prefeitura']; tecla fora do padrao: ["Chamados (GLPI): '' != 'c'", "Consulta de e-mail: '' != 'm'", "Dados abertos (BI): '' != 'b'", "Dispositivos móveis (MDM): '' != 'd'", "Estrutura organizacional: '' != 'o'", "Gerador de senhas: '' != 'g'", "Site da Prefeitura: '' != 's'"]
+[PASSOU] T-05.2 (A-maquina) O nome dos atalhos de sistema resiste ao proximo start — 6 seeds com titulo pt-BR e override:true
+[PASSOU] T-05.3 (A-maquina) A documentacao nao aponta para arquivo que nao existe — 13 referencia(s) do README conferida(s), todas existem
+[PASSOU] T-05.4 (B-usuario) O nome que a tela desenha e' o do padrao — 0 rotulo(s) fixado(s) no painel, todos no padrao
+
+== T05-padronizacao: 3 passaram, 1 falharam -> evidence/resultado-T05-padronizacao-20260826-105115-verif.json

@@ -32,6 +32,14 @@ exo.notification.service.QueueMessage.period=60
 exo.notification.service.QueueMessage.numberOfMailPerBatch=30
 
 # -------------------------------------------------------------------
+# JWT — acesso de sistemas terceiros à API do portal
+# (addon exo-jwt-authentication; par de chaves RSA do projeto)
+# -------------------------------------------------------------------
+exo.jwt.publicKeyUrl=http://192.168.1.59/jwt-public-key.pem
+exo.jwt.issuer=exo-pmo
+exo.jwt.audience=exo-pmo-portal
+
+# -------------------------------------------------------------------
 # Documentos / Drive — equivalente ao OneDrive + SharePoint
 # -------------------------------------------------------------------
 # Extensões bloqueadas por segurança no upload

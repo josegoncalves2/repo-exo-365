@@ -11,7 +11,6 @@
     "   a inicial do nome -- e, se ocupada, a inicial da palavra significativa",
     "   seguinte (Consulta de e-mail -> m, de 'mail'; Dados abertos (BI) -> b)."
   ],
-
   "_sistema": [
     "Atalhos que a propria eXo injeta no boot a partir de um applications.json",
     "DENTRO de um jar. O titulo la' e' literal em ingles -- nao e' chave de",
@@ -69,7 +68,6 @@
       "de": "Contributions Review"
     }
   },
-
   "_proprios": [
     "Atalhos criados nesta implantacao. Vivem so' no banco (IS_SYSTEM=0) e a",
     "chave aqui e' a URL, nao o ID: ID e' sequencial e muda de servidor para",
@@ -117,6 +115,15 @@
       "tecla": "o",
       "descricao": "Cria e administra secretarias, divisões e setores",
       "ordem": 120
+    }
+  },
+  "sistema_runtime": {
+    "aiAgentChat": {
+      "jar": "meeds-ai (runtime)",
+      "titulo": "Assistente de IA",
+      "tecla": "i",
+      "fonte": "addon meeds-ai injeta atalho de sistema no boot (Pmeto Pilot)",
+      "de": "Pmeto Pilot"
     }
   }
 }

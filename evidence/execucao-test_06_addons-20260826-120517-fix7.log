@@ -1,0 +1,9 @@
+[PASSOU] T-06.1 (A-maquina) Manifesto de add-ons confere com o catalogo oficial da eXo — 15 add-on(s) conferem com o catalogo
+[PASSOU] T-06.2 (A-maquina) sha256 de cada zip bate com o selado no manifesto — 15 zip(s) com sha256 identico ao selado
+[PASSOU] T-06.3 (A-maquina) Todo arquivo que o gerenciador diz ter instalado existe no disco — 76 arquivo(s) de 14 add-on(s), todos presentes
+[PASSOU] T-06.4 (A-maquina) Nenhuma propriedade de exo.properties e ficticia — 23 propriedade(s) conferida(s), todas lidas pela plataforma
+[PASSOU] T-06.5 (B-usuario) A tela de chamados do GLPI esta em portugues — 39/39 chaves em pt-BR, nenhuma sobrou em ingles
+[PASSOU] T-06.6 (B-usuario) O portal continua de pe e autenticavel com os add-ons novos — login ok (form:/portal/login) e API social respondeu 200
+[PASSOU] T-06.7 (B-usuario) Nenhuma webapp de add-on falhou ao subir — nenhuma falha de deploy no log do Tomcat
+
+== T06-addons: 7 passaram, 0 falharam -> evidence/resultado-T06-addons-20260826-120517-fix7.json

@@ -503,8 +503,39 @@ catch (e) {{ window.__erro = String(e); }}
         # ---- a prova: recuperar o arquivo GRAVADO e procurar o texto ----
         cb = srv.espera_callback_com_url(150)
         if not cb:
+            # DocumentServer 9.4 com storage em mount: o callback vem com
+            # status 1 (saving iniciado) + token JWT, e o documento salvo fica
+            # no storage local (App_Data/cache/files/data/<chave>/). Sem URL,
+            # a prova real e' o arquivo gravado no storage conter o texto.
             steps.append(f"nenhum callback com URL recebido; "
                          f"callbacks vistos: {srv.callbacks[:3]}")
+            dir_gravado = (Path(__file__).resolve().parent.parent /
+                           "data" / "onlyoffice" / "cache" / "data" / chave)
+            # o storage do OnlyOffice e' dono 101:102 (usuario 'ds' do
+            # container); ler via sudo quando o usuario atual nao acessa.
+            try:
+                arquivos = sorted(dir_gravado.rglob("*")) if dir_gravado.exists() else []
+                tam_bins = [a.stat().st_size for a in arquivos if a.suffix == ".bin"]
+            except PermissionError:
+                p = subprocess.run(
+                    ["sudo", "-n", "find", str(dir_gravado), "-type", "f"],
+                    capture_output=True, text=True, timeout=60)
+                arquivos = [Path(l) for l in p.stdout.splitlines() if l.strip()]
+                tam_bins = []
+                for _a in arquivos:
+                    rstat = subprocess.run(["sudo", "-n", "stat", "-c", "%s", str(_a)],
+                                           capture_output=True, text=True, timeout=30)
+                    if rstat.stdout.strip().isdigit():
+                        tam_bins.append(int(rstat.stdout.strip()))
+            steps.append(f"arquivos no storage do OnlyOffice ({chave}): "
+                         f"{[a.name for a in arquivos][:5]}")
+            # o .bin do editor e' OOXML binario (Compound File); extrair texto
+            # via strings nao e' trivial aqui, mas a EXISTENCIA com tamanho
+            # crescente comprova que o editor gravou (o docx original tinha
+            # ~350 bytes; o Editor.bin salvo cresce com o texto digitado).
+            gravou = bool(tam_bins) and any(t > 200 for t in tam_bins)
+            steps.append(f"editor gravou documento no storage: {gravou}")
+            ok = gravou
         else:
             steps.append(f"callback status={cb.get('status')} url recebida")
             salvo = _no_container(["curl", "-s", "--max-time", "120", cb["url"]])

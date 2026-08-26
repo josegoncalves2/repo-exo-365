@@ -1,0 +1,40 @@
+======================================================================
+T-01..T-13 — FUNCIONALIDADES (abordagem B: navegador real)
+======================================================================
+[PASSOU] T-11B (B-usuario) Administrador faz login pela interface — login pela interface concluido
+[PASSOU] T-02B (B-usuario) Area 'Documentos (OneDrive/SharePoint)' abre e renderiza para o usuario — area renderizou 39 caracteres
+[PASSOU] T-09B (B-usuario) Area 'Agenda (Outlook Calendar)' abre e renderiza para o usuario — area renderizou 167 caracteres
+[PASSOU] T-05B (B-usuario) Area 'Tarefas (Planner/To Do)' abre e renderiza para o usuario — area renderizou 129 caracteres
+[PASSOU] T-04B (B-usuario) Area 'Notes (OneNote)' abre e renderiza para o usuario — area renderizou 104 caracteres
+[PASSOU] T-06B (B-usuario) Area 'Feed social (Yammer)' abre e renderiza para o usuario — area renderizou 104 caracteres
+[PASSOU] T-01B (B-usuario) Area 'Espacos (Teams/SharePoint)' abre e renderiza para o usuario — area renderizou 1736 caracteres
+[PASSOU] T-12B (B-usuario) Area 'Administracao' abre e renderiza para o usuario — area renderizou 541 caracteres
+[FALHOU] T-06B-post (B-usuario) Usuario publica no feed e a publicacao aparece — excecao: Locator.click: Timeout 90000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('Compartilhar')").last
+    - locator resolved to <button type="button" id="ShareActivity1" aria-label="Compartilhar" class="pa-0 mt-0 v-btn v-btn--flat v-btn--text theme--light v-size--small">…</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="v-overlay__scrim"></div> from <div class="VuetifyApp">…</div> subtree intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="v-overlay__scrim"></div> from <div class="VuetifyApp">…</div> subtree intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    173 × waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+        - <div class="v-overlay__scrim"></div> from <div class="VuetifyApp">…</div> subtree intercepts pointer events
+      - retrying click action
+        - waiting 500ms
+
+
+== T-01a13-funcionalidades-navegador: 8 passaram, 1 falharam -> evidence/resultado-T-01a13-funcionalidades-navegador-20260826-120517-fix7.json

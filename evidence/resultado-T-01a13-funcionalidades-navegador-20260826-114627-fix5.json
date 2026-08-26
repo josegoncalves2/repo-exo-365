@@ -1,0 +1,158 @@
+{
+  "label": "T-01a13-funcionalidades-navegador",
+  "run_id": "20260826-114627-fix5",
+  "base": "http://192.168.1.59",
+  "started": 1787755587.4772713,
+  "duration_s": 639.3,
+  "total": 9,
+  "passed": 8,
+  "failed": 1,
+  "results": [
+    {
+      "tid": "T-11B",
+      "name": "Administrador faz login pela interface",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "login pela interface concluido",
+      "proof": "URL final=http://192.168.1.59/portal/myworkspace",
+      "duration_s": 125.02,
+      "steps": [
+        "credenciais digitadas para 'root'",
+        "botao de envio clicado (button[type='submit'])",
+        "URL apos login: http://192.168.1.59/portal/myworkspace",
+        "saiu da tela de login=True; sem_mensagem_de_erro=True",
+        "captura: T-11B-pos-login-20260826-114627-fix5.png",
+        "texto visivel apos login: 1278 caracteres"
+      ]
+    },
+    {
+      "tid": "T-02B",
+      "name": "Area 'Documentos (OneDrive/SharePoint)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 39 caracteres",
+      "proof": "titulo='Unidades - pmeto.local'; captura=T-02B-20260826-114627-fix5.png",
+      "duration_s": 62.46,
+      "steps": [
+        "GET /portal/dw/documents -> HTTP 200",
+        "titulo='Unidades - pmeto.local'",
+        "texto renderizado: 39 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-02B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-09B",
+      "name": "Area 'Agenda (Outlook Calendar)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 167 caracteres",
+      "proof": "titulo='Agenda - pmeto.local'; captura=T-09B-20260826-114627-fix5.png",
+      "duration_s": 62.47,
+      "steps": [
+        "GET /portal/dw/agenda -> HTTP 200",
+        "titulo='Agenda - pmeto.local'",
+        "texto renderizado: 167 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-09B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-05B",
+      "name": "Area 'Tarefas (Planner/To Do)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 129 caracteres",
+      "proof": "titulo='Tarefas - pmeto.local'; captura=T-05B-20260826-114627-fix5.png",
+      "duration_s": 62.61,
+      "steps": [
+        "GET /portal/dw/tasks -> HTTP 200",
+        "titulo='Tarefas - pmeto.local'",
+        "texto renderizado: 129 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-05B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-04B",
+      "name": "Area 'Notes (OneNote)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 104 caracteres",
+      "proof": "titulo='Página não encontrada - pmeto.local'; captura=T-04B-20260826-114627-fix5.png",
+      "duration_s": 62.32,
+      "steps": [
+        "GET /portal/dw/notes -> HTTP 200",
+        "titulo='Página não encontrada - pmeto.local'",
+        "texto renderizado: 104 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-04B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-06B",
+      "name": "Area 'Feed social (Yammer)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 104 caracteres",
+      "proof": "titulo='Página não encontrada - pmeto.local'; captura=T-06B-20260826-114627-fix5.png",
+      "duration_s": 62.31,
+      "steps": [
+        "GET /portal/dw/stream -> HTTP 200",
+        "titulo='Página não encontrada - pmeto.local'",
+        "texto renderizado: 104 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-06B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-01B",
+      "name": "Area 'Espacos (Teams/SharePoint)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 1736 caracteres",
+      "proof": "titulo='Espaços - pmeto.local'; captura=T-01B-20260826-114627-fix5.png",
+      "duration_s": 62.44,
+      "steps": [
+        "GET /portal/dw/spaces -> HTTP 200",
+        "titulo='Espaços - pmeto.local'",
+        "texto renderizado: 1736 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-01B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-12B",
+      "name": "Area 'Administracao' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 541 caracteres",
+      "proof": "titulo='Configurações da plataforma - Configurações da plataforma - pmeto.local'; captura=T-12B-20260826-114627-fix5.png",
+      "duration_s": 3.35,
+      "steps": [
+        "GET /portal/administration -> HTTP 200",
+        "titulo='Configurações da plataforma - Configurações da plataforma - pmeto.local'",
+        "texto renderizado: 541 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-12B-20260826-114627-fix5.png"
+      ]
+    },
+    {
+      "tid": "T-06B-post",
+      "name": "Usuario publica no feed e a publicacao aparece",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "publicacao nao apareceu no feed apos recarregar",
+      "proof": "texto 'Publicacao via navegador 20260826-114627-fix5' encontrado no DOM apos reload = False",
+      "duration_s": 135.5,
+      "steps": [
+        "compositor localizado por: .activityComposer",
+        "texto digitado: 'Publicacao via navegador 20260826-114627-fix5'",
+        "captura apos digitar: T-06B-digitado-20260826-114627-fix5.png",
+        "botao de publicar clicado (button:has-text('Compartilhar'))",
+        "publicacao visivel no feed apos recarregar: False",
+        "captura final: T-06B-final-20260826-114627-fix5.png"
+      ]
+    }
+  ]
+}

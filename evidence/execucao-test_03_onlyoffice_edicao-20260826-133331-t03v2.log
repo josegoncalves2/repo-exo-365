@@ -1,0 +1,23 @@
+===================================================================
+ T-03 — Edicao de documentos ONLYOFFICE  (RUN_ID 20260826-133331-t03v2)
+ Alvo: http://192.168.1.59
+===================================================================
+[PASSOU] T-03 (A-maquina) Conversao real de .docx para .txt pelo DocumentServer — texto extraido contem o marcador unico 'MARCADOR-T03-20260826-133331-t03v2-CONTEUDO-VERIFICAVEL' (129 bytes)
+[PASSOU] T-03 (A-maquina) Conversao real de .docx para .pdf pelo DocumentServer — PDF valido gerado: assinatura b'%PDF-1.7', 34897 bytes
+[PASSOU] T-03 (A-maquina) API do editor publicada na origem publica (porta 80) — o navegador do usuario consegue carregar a API do editor pela porta 80
+Traceback (most recent call last):
+  File "/opt/projetos/exo/tests/test_03_onlyoffice_edicao.py", line 589, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/opt/projetos/exo/tests/test_03_onlyoffice_edicao.py", line 578, in main
+    ok_nav = b_usuario_digita_e_salva(rec)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/projetos/exo/tests/test_03_onlyoffice_edicao.py", line 514, in b_usuario_digita_e_salva
+    arquivos = sorted(dir_gravado.rglob("*")) if dir_gravado.exists() else []
+                                                 ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 862, in exists
+    self.stat(follow_symlinks=follow_symlinks)
+  File "/usr/lib/python3.12/pathlib.py", line 842, in stat
+    return os.stat(self, follow_symlinks=follow_symlinks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/opt/projetos/exo/data/onlyoffice/cache/data/ed20260826-133331-t0'

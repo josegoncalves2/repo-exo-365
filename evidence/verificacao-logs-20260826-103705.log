@@ -1,0 +1,77 @@
+# Verificacao de erros e warnings — 2026-08-26 10:37:05 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        1
+            1 -- No entries --
+dmesg err,warn         3
+            1 [537950.650234] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+            1 [173002.017739] workqueue: blk_mq_requeue_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+            1 [169587.352045] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 16 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                2604
+            8 2026-08-26 09:09:49,279 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 10:30:36,848 | ERROR | Unable to load keystore null [o.exoplatform.addons.jwt.JwtLoginModule<Catalina-utility-3>] 
+            7 2026-08-26 09:24:00,880 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:15:40,102 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:05:47,437 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            6 2026-08-26 10:30:36,850 | ERROR | Unable to load keystore null [o.exoplatform.addons.jwt.JwtLoginModule<Catalina-utility-3>] 
+            6 2026-08-26 10:30:36,847 | ERROR | Unable to load keystore null [o.exoplatform.addons.jwt.JwtLoginModule<Catalina-utility-3>] 
+            6 2026-08-26 10:30:36,845 | ERROR | Unable to load keystore null [o.exoplatform.addons.jwt.JwtLoginModule<Catalina-utility-3>] 
+exo-web                0
+exo-mysql              0
+exo-es                 3
+            1 {"@timestamp":"2026-08-26T12:25:59.240Z", "log.level": "WARN", "message":"[gc][1322] overhead, spent [1.5s] collecting in the last [2s]", "ecs.version": "1.2.0","service.name":"ES_ECS","event.dataset"
+            1 {"@timestamp":"2026-08-26T12:25:59.236Z", "log.level": "WARN", "message":"[gc][young][1322][11] duration [1.5s], collections [1]/[2s], total [1.5s]/[1.9s], memory [652.5mb]->[101.1mb]/[1gb], all_pools
+            1 {"@timestamp":"2026-08-26T12:03:57.863Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            270
+            5 2026-08-26 09:35:59,539 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            4 2026-08-26 09:35:59,538 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            4 2026-08-26 09:21:17,451 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            4 2026-08-26 09:21:15,607 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            4 2026-08-26 09:21:13,412 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            3 2026-08-26 09:36:00,214 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            3 2026-08-26 09:21:19,015 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            3 2026-08-26 09:21:18,569 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+exo-synapse-db         3
+            1 2026-08-26 12:49:11.712 UTC [131] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-26 12:49:10.801 UTC [128] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-26 12:49:10.559 UTC [128] ERROR:  could not serialize access due to concurrent update
+onlyoffice             19
+            2 [2026-08-26T12:07:04.472] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            1 [2026-08-26T13:36:39.774] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:36:09.523] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T12:07:04.577] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-26T12:07:04.577] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-26T12:07:04.467] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+            1 [2026-08-26T12:07:04.376] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
+exo-mailpit            0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  (ausente)
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) (ausente)
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up 2 hours (healthy)
+exo-es              Up 2 hours (healthy)
+exo-jitsi-call      Up 2 hours (healthy)
+exo-jitsi-jicofo    Up 2 hours (healthy)
+exo-jitsi-jvb       Up 2 hours (healthy)
+exo-jitsi-prosody   Up 2 hours (healthy)
+exo-jitsi-web       Up 2 hours (healthy)
+exo-mailpit         Up 2 hours (healthy)
+exo-mysql           Up 42 seconds (healthy)
+exo-synapse         Up 2 hours (healthy)
+exo-synapse-db      Up 2 hours (healthy)
+exo-web             Up 30 seconds (healthy)
+onlyoffice          Up 2 hours (healthy)
+
+===== RESULTADO =====
+REPROVADO — 2903 ocorrencias somadas.

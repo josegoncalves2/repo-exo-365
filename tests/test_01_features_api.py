@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 import time
 from pathlib import Path
+from urllib.parse import unquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from exolib import (ADMIN_PASS, ADMIN_USER, BASE, EVIDENCE, MAILPIT,  # noqa: E402
@@ -100,7 +102,10 @@ def t01_espaco(c: ExoClient, rec: Recorder) -> dict | None:
     steps = []
 
     payload = {"displayName": nome, "description": "Espaco criado pelo teste automatizado",
-               "visibility": "private", "subscription": "validation"}
+               "visibility": "private", "subscription": "closed", "templateId": 3}
+    # subscription 'closed' + templateId: o valor 'validation' (sem templateId)
+    # devolve 400 SPACE_PERMISSION — comportamento da API 7.2, conferido
+    # manualmente (mesmo payload usado por scripts/exo_estrutura.py).
     path, resp = try_paths(c, "post", ["/rest/v1/social/spaces",
                                        "/portal/rest/v1/social/spaces"],
                            json=payload,
@@ -191,7 +196,29 @@ def t02_documento_webdav(c: ExoClient, rec: Recorder) -> str | None:
     nome = f"prova-{RUN_ID}.txt"
     steps = [f"arquivo: {nome} ({len(conteudo)} bytes) sha256={sha_env[:16]}..."]
 
-    candidatos = [
+    # O WebDAV da 7.2 expoe os DRIVES do usuario em /webdav/drives/<nome>/.
+    # O caminho antigo /webdav/repository/collaboration/Documents/ nao existe
+    # mais nesta versao (redireciona para /webdav/drives/). Descobre-se o
+    # drive do usuario por PROPFIND na raiz.
+    drive = None
+    try:
+        resp = c.s.request("PROPFIND", c.url("/webdav/drives/"),
+                           headers={"Depth": "1", "Content-Type": "application/xml"})
+        m = re.findall(r"<D:href>[^<]*/webdav/drives/([^<]+)/</D:href>", resp.text)
+        for cand in m:
+            if ADMIN_USER.lower() in unquote(cand).lower():
+                drive = cand
+                break
+        if drive is None and m:
+            drive = m[0]
+        steps.append(f"drive do usuario via PROPFIND: {drive}")
+    except Exception as e:  # noqa: BLE001
+        steps.append(f"PROPFIND falhou: {str(e)[:90]}")
+
+    candidatos = []
+    if drive:
+        candidatos.append(f"/webdav/drives/{drive}/{nome}")
+    candidatos += [
         f"/rest/private/jcr/repository/collaboration/Users/{ADMIN_USER[0]}___/{ADMIN_USER}/Private/{nome}",
         f"/rest/jcr/repository/collaboration/Documents/{nome}",
         f"/rest/private/jcr/repository/collaboration/Documents/{nome}",
@@ -200,8 +227,12 @@ def t02_documento_webdav(c: ExoClient, rec: Recorder) -> str | None:
     enviado_em = None
     for p in candidatos:
         try:
-            resp = c.put(p, data=conteudo,
-                         headers={"Content-Type": "text/plain"})
+            # Content-Length explicito: sem ele o PUT cria o arquivo vazio
+            # (medido) — o Tomcat WebDAV so grava o body quando o tamanho
+            # e' anunciado.
+            resp = c.put(p, data=conteudo, headers={
+                "Content-Type": "text/plain",
+                "Content-Length": str(len(conteudo))})
         except requests.RequestException as e:
             steps.append(f"PUT {p} -> ERRO {e}")
             continue
@@ -239,18 +270,25 @@ def t04_notes(c: ExoClient, rec: Recorder) -> None:
 
     path, resp = try_paths(
         c, "post",
-        ["/rest/v1/notes", "/rest/notes/note", "/portal/rest/v1/notes"],
-        json={"title": titulo, "content": corpo, "wikiType": "portal",
-              "wikiOwner": "/portal/intranet"},
+        ["/rest/notes/note", "/portal/rest/notes/note"],
+        json={"title": titulo, "name": f"prova-{RUN_ID}", "content": corpo,
+              "wikiType": "portal", "wikiOwner": "myworkspace",
+              "parentPageId": "1", "syntax": "xhtml"},
         headers={"Content-Type": "application/json", "Accept": "application/json"})
     steps.append(f"POST nota -> rota={path} status={getattr(resp,'status_code',None)}")
     if resp is not None:
         steps.append(f"resposta: {resp.text[:200]}")
     criada = jload(resp) if resp is not None else None
-    nid = (criada or {}).get("id") if isinstance(criada, dict) else None
-
-    lido = None
+    # A resposta do createNote traz 'name'/'title' (nao 'id') — conferido
+    # manualmente: wikiOwner correto e' 'myworkspace' (o WIKI_WIKIS do banco),
+    # nao '/portal/intranet'; e a nota precisa de parentPageId (a pagina Home
+    # tem PAGE_ID=1). Sem estes, 400 ou 'Parent note not found'.
+    nid = (criada or {}).get("id") or (criada or {}).get("name")
+    lido = (criada or {}).get("title") if isinstance(criada, dict) else None
     if nid:
+        steps.append(f"criada: name={nid!r} title={lido!r}")
+
+    if not lido:
         for p in (f"/rest/v1/notes/{nid}", f"/rest/notes/note/{nid}"):
             st, data = c.json_get(p)
             if isinstance(data, dict) and data.get("title"):
@@ -275,7 +313,7 @@ def t05_tarefa(c: ExoClient, rec: Recorder) -> None:
     steps = []
     path, resp = try_paths(
         c, "post",
-        ["/rest/v1/tasks", "/rest/tasks/tasks", "/rest/v1/tasks/tasks"],
+        ["/rest/tasks/", "/portal/rest/tasks/"],
         json={"title": titulo, "description": "criada pelo teste automatizado"},
         headers={"Content-Type": "application/json", "Accept": "application/json"})
     steps.append(f"POST tarefa -> rota={path} status={getattr(resp,'status_code',None)}")
@@ -286,7 +324,7 @@ def t05_tarefa(c: ExoClient, rec: Recorder) -> None:
 
     lido = None
     if tid:
-        for p in (f"/rest/v1/tasks/{tid}", f"/rest/tasks/tasks/{tid}"):
+        for p in (f"/rest/tasks/{tid}", f"/portal/rest/tasks/{tid}"):
             st, data = c.json_get(p)
             if isinstance(data, dict) and data.get("title"):
                 lido = data["title"]
@@ -313,8 +351,16 @@ def t09_agenda(c: ExoClient, rec: Recorder) -> None:
                  f"payload={str(cals)[:160]}")
 
     payload = {"summary": titulo, "description": "evento de teste",
+               "timeZoneId": "America/Sao_Paulo",
                "start": "2026-09-01T14:00:00", "end": "2026-09-01T15:00:00",
-               "allDay": False}
+               "allDay": False,
+               "calendar": {"color": "#2F80ED",
+                            "owner": {"providerId": "organization",
+                                      "remoteId": c.user}}}
+    # API 7.2: o dono do evento é o 'owner' do calendário embutido
+    # (IdentityEntity), não um campo 'calendarOwner' avulso — este devolve
+    # 400 agenda.calendarOwnerNotFound (medido). timeZoneId é obrigatório
+    # (sem ele, NPE ZoneId.of(null)).
     path, resp = try_paths(c, "post", ["/rest/v1/agenda/events"], json=payload,
                            headers={"Content-Type": "application/json",
                                     "Accept": "application/json"})
@@ -408,12 +454,14 @@ def t10_notificacao_email(c: ExoClient, rec: Recorder, novo: dict | None) -> Non
         return
 
     alvo = novo["user"]
+    # O fluxo real: o form do portal chama POST /social/rest/login/
+    # requestResetPassword com body 'username=...' (rastreado no bundle:
+    # requestResetPassword(this.username)). O endpoint /portal/forgot-
+    # password retorna apenas o HTML do form, nao dispara o envio.
     path, resp = try_paths(
         c, "post",
-        ["/portal/rest/v1/social/users/forgotPassword",
-         "/rest/v1/social/users/forgotPassword",
-         "/portal/forgot-password"],
-        data={"username": alvo, "email": f"{alvo}@exo.local"})
+        ["/social/rest/login/requestResetPassword"],
+        data={"username": alvo})
     steps.append(f"POST recuperacao -> rota={path} "
                  f"status={getattr(resp,'status_code',None)}")
 

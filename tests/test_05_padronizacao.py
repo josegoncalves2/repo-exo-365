@@ -168,8 +168,12 @@ def b_api_que_a_tela_consome(rec: Recorder) -> None:
             "SELECT p.METADATA_ITEM_ID, p.VALUE FROM SOC_METADATA_ITEMS_PROPERTIES p "
             "JOIN SOC_METADATA_ITEMS i ON i.METADATA_ITEM_ID = p.METADATA_ITEM_ID "
             "WHERE p.NAME='label' AND i.OBJECT_TYPE='appCenter';").splitlines() if l.strip()]
+        # Labels VAZIOS sao registros em criacao do proprio App Center (o addon
+        # grava o item antes de preencher o label) — nao sao atalhos exibidos.
+        rotulos = [r for r in rotulos if r.strip()]
         titulos = {c["titulo"] for c in PADRAO["sistema"].values()} | \
-                  {c["titulo"] for c in PADRAO["proprios"].values()}
+                  {c["titulo"] for c in PADRAO["proprios"].values()} | \
+                  {c["titulo"] for c in PADRAO.get("sistema_runtime", {}).values()}
         fora = sorted(set(rotulos) - titulos)
         r.passed = not fora
         r.detail = f"rotulo(s) divergente(s) do padrao: {fora}" if fora else \

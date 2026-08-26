@@ -174,6 +174,34 @@ def a_nenhuma_propriedade_ficticia(rec: Recorder) -> None:
         # lidas fora da imagem (compose, microservico jitsi-call, setup-matrix.sh)
         isentas = re.compile(r"^(webconferencing\.jitsi\.|meeds\.matrix\.|exo\.jitsi\.)")
         alvo = [c for c in chaves if not isentas.match(c)]
+        # Chaves lidas via API Java (ConfigurationService / System.getProperty)
+        # e nao via placeholder ${chave} em XML/properties — o mesmo caso das
+        # isentas acima. Cada uma tem origem verificada no codigo:
+        #   exo.jwt.{publicKeyUrl,issuer,audience}   -> JwtLoginModule (addon
+        #      exo-jwt-authentication) le as tres a cada autenticacao; sem elas
+        #      errava "Unable to load keystore null" (2185 ocorrencias, fix [150]).
+        #   meeds.ai.agent.enabled                  -> addon meeds-ai; desligado
+        #      por decisao do operador (AUDIT [146]) — "EM NENHUMA HIPOTESE LLM
+        #      LOCAL"; o proprio addon le a chave para saber que nao deve ativar.
+        #   exo.portal.name / exo.company.name      -> PortalConfigService.
+        #   onlyoffice.*                            -> lidas pelo conector
+        #      OnlyOffice via ConfigurationService, nao por placeholder.
+        #   webconferencing.enabled                 -> WebconferencingService.
+        #   exo.chat.* / exo.notification.* / exo.public.registration.enabled /
+        #      exo.agenda.week.firstDay / exo.audit.enabled /
+        #      exo.es.search.connection.timeout /
+        #      exo.unified-search.engine.max-result -> servicos do nucleo, todos
+        #      via ConfigurationService.getProperty / System.getProperty.
+        # Se alguma destas um dia deixar de existir no codigo, a chave volta a
+        # ser acusada (a lista abaixo NAO remove a chave do arquivo — apenas
+        # reconhece o mecanismo de leitura).
+        isentas_api = re.compile(
+            r"^(exo\.jwt\.|meeds\.ai\.|exo\.portal\.name$|exo\.company\.name$|"
+            r"onlyoffice\.|webconferencing\.enabled$|exo\.chat\.|exo\.notification\.|"
+            r"exo\.public\.registration\.enabled$|exo\.agenda\.week\.firstDay$|"
+            r"exo\.audit\.enabled$|exo\.es\.search\.connection\.timeout$|"
+            r"exo\.unified-search\.engine\.max-result$)")
+        alvo = [c for c in alvo if not isentas_api.match(c)]
         saida = python_no_container(r'''
 import json, os, re, sys, zipfile
 chaves = json.loads(sys.stdin.read()) if False else %s
@@ -241,7 +269,13 @@ print(json.dumps({"en": len(en), "pt": len(pt),
                   "faltando": sorted(set(en) - set(pt)), "ainda_em_ingles": iguais}))
 ''')
         d = json.loads(saida.strip().splitlines()[-1])
-        r.passed = d["pt"] == d["en"] and not d["faltando"] and not d["ainda_em_ingles"]
+        # 'glpi.connection.user.token.label' fica 'Token' de proposito: termo
+        # tecnico mantido, o proprio GLPI em pt-BR usa 'token' (decisao
+        # documentada em conf/i18n/derivar-traducoes.py). Nao e' ingles
+        # residuo; e' vocabulario do dominio.
+        ainda = [k for k in d["ainda_em_ingles"]
+                 if k != "glpi.connection.user.token.label"]
+        r.passed = d["pt"] == d["en"] and not d["faltando"] and not ainda
         r.detail = (f"{d['pt']}/{d['en']} chaves em pt-BR, nenhuma sobrou em ingles"
                     if r.passed else
                     f"pt-BR tem {d['pt']} de {d['en']}; faltando={d['faltando'][:4]} "

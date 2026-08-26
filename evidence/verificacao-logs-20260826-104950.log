@@ -1,0 +1,117 @@
+# Verificacao de erros e warnings — 2026-08-26 10:49:50 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        0
+dmesg err,warn         3
+            1 [537950.650234] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+            1 [173002.017739] workqueue: blk_mq_requeue_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+            1 [169587.352045] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 16 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                13
+            1 2026-08-26 10:48:53,670 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<pool-38-thread-1>] 
+            1 2026-08-26 10:48:53,669 | WARN  | GROUP/SpacesAdministration.js:6:4095: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-26 10:48:42,266 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<pool-38-thread-1>] 
+            1 2026-08-26 10:48:42,265 | WARN  | GROUP/contentLinkGRP.js:6:613: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-26 10:48:20,931 | WARN  | No elicitation methods found [o.s.m.p.e.SyncMcpElicitationProvider<ForkJoinPool.commonPool-worker-2>] 
+            1 2026-08-26 10:48:20,920 | WARN  | No sampling methods found [o.s.m.p.sampling.SyncMcpSamplingProvider<ForkJoinPool.commonPool-worker-2>] 
+            1 2026-08-26 10:48:01,579 | WARN  | Agenda connector agenda.googleCalendar has an empty API key, thus the connector will be disabled [o.e.a.s.AgendaRemoteEventServiceImpl<main>] 
+            1 2026-08-26 10:48:01,573 | WARN  | Agenda connector agenda.officeCalendar has an empty API key, thus the connector will be disabled [o.e.a.s.AgendaRemoteEventServiceImpl<main>] 
+exo-web                55
+            4 2026/08/26 13:47:04 [error] 148#148: *164 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/administration/home/ai/models 
+            4 2026/08/26 13:46:35 [error] 148#148: *164 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/administration/home/ai/models 
+            2 2026/08/26 13:46:36 [error] 148#148: *164 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/administration/home/ai/models 
+            1 2026/08/26 13:48:01 [error] 149#149: *281 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /portal/login HTTP/1.1", upstream: "htt
+            1 2026/08/26 13:47:51 [error] 149#149: *278 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/26 13:47:51 [error] 148#148: *276 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/26 13:47:35 [error] 148#148: *273 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/26 13:47:35 [error] 148#148: *271 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+exo-mysql              0
+exo-es                 3
+            1 {"@timestamp":"2026-08-26T12:25:59.240Z", "log.level": "WARN", "message":"[gc][1322] overhead, spent [1.5s] collecting in the last [2s]", "ecs.version": "1.2.0","service.name":"ES_ECS","event.dataset"
+            1 {"@timestamp":"2026-08-26T12:25:59.236Z", "log.level": "WARN", "message":"[gc][young][1322][11] duration [1.5s], collections [1]/[2s], total [1.5s]/[1.9s], memory [652.5mb]->[101.1mb]/[1gb], all_pools
+            1 {"@timestamp":"2026-08-26T12:03:57.863Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            342
+            5 2026-08-26 10:37:29,018 - synapse.logging.context - 104 - WARNING - POST-955 - Re-starting finished log context POST-955
+            5 2026-08-26 09:35:59,539 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            4 2026-08-26 10:37:29,406 - synapse.logging.context - 104 - WARNING - retry_make_join-0 - Re-starting finished log context retry_make_join-0
+            4 2026-08-26 10:37:28,695 - synapse.logging.context - 104 - WARNING - POST-955 - Re-starting finished log context POST-955
+            4 2026-08-26 09:35:59,538 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            4 2026-08-26 09:21:17,451 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            4 2026-08-26 09:21:15,607 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            4 2026-08-26 09:21:13,412 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+exo-synapse-db         3
+            1 2026-08-26 12:49:11.712 UTC [131] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-26 12:49:10.801 UTC [128] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-26 12:49:10.559 UTC [128] ERROR:  could not serialize access due to concurrent update
+onlyoffice             45
+            2 [2026-08-26T12:07:04.472] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            1 [2026-08-26T13:49:41.630] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:49:11.565] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:48:41.461] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:48:11.383] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:47:41.274] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:47:11.178] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+exo-mailpit            0
+exo-jitsi-call         1
+            1 2026-08-26 12:02:01,251 | WARN  | spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to dis
+exo-jitsi-jicofo       2
+            1 Jicofo 2026-08-26 09:02:56.146 WARNING: [28] [xmpp_connection=client] XmppProvider.setComponents#80: Discovered components: [Component(type=speakerstats, address=speakerstats.meet.jitsi), Component(ty
+            1 Jicofo 2026-08-26 09:02:52.835 WARNING: [1] [xmpp_connection=client] XmppProviderKt.createXmppConnection#343: Disabling TLS certificate verification!
+exo-jitsi-jvb          8
+            1 JVB 2026-08-26 09:03:03.259 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.videobridge.rest.prometheus.Prometheus registered in SERVER runtime d
+            1 JVB 2026-08-26 09:03:03.259 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.rest.Version registered in SERVER runtime does not implement any prov
+            1 JVB 2026-08-26 09:03:03.258 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.rest.Health registered in SERVER runtime does not implement any provi
+            1 JVB 2026-08-26 09:03:02.532 WARNING: [1] org.glassfish.jersey.server.wadl.WadlFeature.configure: JAXBContext implementation could not be found. WADL feature is disabled.
+            1 JVB 2026-08-26 09:02:57.459 WARNING: [14] MetricsUpdater.updateMetrics#63: Exception while running subtask
+            1 JVB 2026-08-26 09:02:55.257 WARNING: [22] [hostname=xmpp.meet.jitsi id=shard0] MucClient.setPresenceExtensions#519: Cannot set presence extension: not connected.
+            1 JVB 2026-08-26 09:02:55.071 WARNING: [21] MucClient.createXMPPTCPConnectionConfiguration#119: Disabling certificate verification!
+            1 JVB 2026-08-26 09:02:43.487 INFO: [1] ReadOnlyConfigurationService.reloadConfiguration#56: Error loading config file: java.io.FileNotFoundException: /config/sip-communicator.properties (No such file o
+exo-jitsi-prosody      1
+            1 2026-08-26 09:01:47 mod_http                                                     error	Not listening on any ports, 'health' will be unreachable
+exo-jitsi-web          0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  73
+            2 [2026-08-26T12:07:04.472] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-26T13:49:41.630] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:49:11.565] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:48:41.461] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:48:11.383] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:47:41.274] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:47:11.178] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+            1 [2026-08-26T13:46:41.098] [WARN] [localhost] [docId] [userId] nodeJS - healthCheck storage(undefined) error Error: EACCES: permission denied, open '/var/lib/onlyoffice/documentserver/App_Data/cache/fi
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) 13
+            1 2026-08-26 10:48:53,670 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<pool-38-thread-1>] 
+            1 2026-08-26 10:48:53,669 | WARN  | GROUP/SpacesAdministration.js:6:4095: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-26 10:48:42,266 | WARN  | 0 error(s), 1 warning(s) [o.g.p.controller.resource.ScriptLoader<pool-38-thread-1>] 
+            1 2026-08-26 10:48:42,265 | WARN  | GROUP/contentLinkGRP.js:6:613: WARNING - [JSC_UNREACHABLE_CODE] unreachable code
+            1 2026-08-26 10:48:20,931 | WARN  | No elicitation methods found [o.s.m.p.e.SyncMcpElicitationProvider<ForkJoinPool.commonPool-worker-2>] 
+            1 2026-08-26 10:48:20,920 | WARN  | No sampling methods found [o.s.m.p.sampling.SyncMcpSamplingProvider<ForkJoinPool.commonPool-worker-2>] 
+            1 2026-08-26 10:48:01,579 | WARN  | Agenda connector agenda.googleCalendar has an empty API key, thus the connector will be disabled [o.e.a.s.AgendaRemoteEventServiceImpl<main>] 
+            1 2026-08-26 10:48:01,573 | WARN  | Agenda connector agenda.officeCalendar has an empty API key, thus the connector will be disabled [o.e.a.s.AgendaRemoteEventServiceImpl<main>] 
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up 4 minutes (healthy)
+exo-es              Up 2 hours (healthy)
+exo-jitsi-call      Up 2 hours (healthy)
+exo-jitsi-jicofo    Up 2 hours (healthy)
+exo-jitsi-jvb       Up 2 hours (healthy)
+exo-jitsi-prosody   Up 2 hours (healthy)
+exo-jitsi-web       Up 2 hours (healthy)
+exo-mailpit         Up 2 hours (healthy)
+exo-mysql           Up 13 minutes (healthy)
+exo-synapse         Up 2 hours (healthy)
+exo-synapse-db      Up 2 hours (healthy)
+exo-web             Up 13 minutes (healthy)
+onlyoffice          Up 2 hours (healthy)
+
+===== RESULTADO =====
+REPROVADO — 562 ocorrencias somadas.

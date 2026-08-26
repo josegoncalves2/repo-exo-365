@@ -1,0 +1,158 @@
+{
+  "label": "T-01a13-funcionalidades-api",
+  "run_id": "20260826-122313-final",
+  "base": "http://192.168.1.59",
+  "started": 1787757804.3962805,
+  "duration_s": 136.8,
+  "total": 10,
+  "passed": 7,
+  "failed": 3,
+  "results": [
+    {
+      "tid": "T-11",
+      "name": "Criar usuario e autenticar com ele",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "usuario 'teste20260826-122313-final' criado e autenticou-se sozinho",
+      "proof": "whoami do novo usuario devolveu username=teste20260826-122313-final",
+      "duration_s": 3.38,
+      "steps": [
+        "POST criacao -> rota=/rest/v1/users status=204",
+        "resposta: ",
+        "login do novo usuario: SUCESSO",
+        "identidade confirmada: username=teste20260826-122313-final fullname=Usuario Teste Automatizado"
+      ]
+    },
+    {
+      "tid": "T-01",
+      "name": "Criar espaco de trabalho e recupera-lo",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "espaco 'Espaco Prova 20260826-122313-final' criado e recuperado",
+      "proof": "displayName recuperado da API = 'Espaco Prova 20260826-122313-final'",
+      "duration_s": 12.22,
+      "steps": [
+        "POST espaco -> rota=/rest/v1/social/spaces status=200",
+        "id retornado: 12",
+        "GET lista de espacos -> status=200; espaco localizado=True",
+        "displayName lido de volta: 'Espaco Prova 20260826-122313-final'"
+      ]
+    },
+    {
+      "tid": "T-06",
+      "name": "Publicar atividade no feed e le-la de volta",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "atividade publicada e o texto conferiu byte a byte",
+      "proof": "esperado='Publicacao de teste 20260826-122313-final — substituicao do Office 365'; obtido='Publicacao de teste 20260826-122313-final — substituicao do Office 365'",
+      "duration_s": 0.16,
+      "steps": [
+        "POST atividade -> rota=/rest/v1/social/activities status=200",
+        "id da atividade: 5",
+        "GET atividade/5 -> status=200",
+        "texto lido de volta: 'Publicacao de teste 20260826-122313-final — substituicao do Office 365'"
+      ]
+    },
+    {
+      "tid": "T-02",
+      "name": "Enviar documento e recupera-lo com checksum identico",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "nao foi possivel gravar/recuperar o documento por WebDAV/JCR",
+      "proof": "sha256 enviado=b599fa77b74024854cb561ee947c9b99a0976da4b6be52aab11d062e676e5684; recuperado=af20dea80198cf53a097aab95eb0fe899591b40007a8b0a81e4e685f8ebe62ab",
+      "duration_s": 0.03,
+      "steps": [
+        "arquivo: prova-20260826-122313-final.txt (999 bytes) sha256=b599fa77b7402485...",
+        "PUT /rest/private/jcr/repository/collaboration/Users/r___/root/Private/prova-20260826-122313-final.txt -> HTTP 404",
+        "PUT /rest/jcr/repository/collaboration/Documents/prova-20260826-122313-final.txt -> HTTP 403",
+        "PUT /rest/private/jcr/repository/collaboration/Documents/prova-20260826-122313-final.txt -> HTTP 403",
+        "PUT /webdav/repository/collaboration/Documents/prova-20260826-122313-final.txt -> HTTP 200",
+        "GET /webdav/repository/collaboration/Documents/prova-20260826-122313-final.txt -> HTTP 200, 2176 bytes",
+        "sha256 recuperado: af20dea80198cf53..."
+      ]
+    },
+    {
+      "tid": "T-04",
+      "name": "Criar pagina de Notes (wiki) e le-la de volta",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "criacao/recuperacao de pagina de Notes nao confirmada",
+      "proof": "titulo esperado='Pagina Prova 20260826-122313-final'; obtido=None",
+      "duration_s": 0.01,
+      "steps": [
+        "POST nota -> rota=/rest/notes/note status=400",
+        "resposta: "
+      ]
+    },
+    {
+      "tid": "T-05",
+      "name": "Criar tarefa e recupera-la",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "tarefa 'Tarefa Prova 20260826-122313-final' criada e recuperada",
+      "proof": "esperado='Tarefa Prova 20260826-122313-final'; obtido='Tarefa Prova 20260826-122313-final'",
+      "duration_s": 0.19,
+      "steps": [
+        "POST tarefa -> rota=/rest/tasks/ status=200",
+        "resposta: {\"createdTime\":{\"time\":1787757820467,\"year\":126,\"seconds\":40,\"month\":7,\"hours\":12,\"minutes\":23,\"date\":26,\"day\":3,\"timezoneOffset\":180},\"coworker\":[],\"dueDate\":null,\"rank\":0,\"assignee\":\"root\",\"startDat",
+        "GET /rest/tasks/4 -> status=200, titulo='Tarefa Prova 20260826-122313-final'"
+      ]
+    },
+    {
+      "tid": "T-09",
+      "name": "Criar evento na Agenda e recupera-lo",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "evento 'Reuniao Prova 20260826-122313-final' criado e recuperado",
+      "proof": "esperado='Reuniao Prova 20260826-122313-final'; obtido='Reuniao Prova 20260826-122313-final'",
+      "duration_s": 0.19,
+      "steps": [
+        "GET calendarios -> status=200; payload={'calendars': [{'updated': None, 'created': '2026-08-26T14:24:24.831Z', 'title': 'Root Root', 'color': '#2F80ED', 'id': 1, 'owner': {'providerId': 'organization",
+        "POST evento -> rota=/rest/v1/agenda/events status=200",
+        "resposta: {\"remoteId\":null,\"updated\":null,\"created\":\"2026-08-26T15:23:40.664Z\",\"summary\":\"Reuniao Prova 20260826-122313-final\",\"recurrence\":null,\"timeZoneId\":\"America/Sao_Paulo\",\"color\":null,\"location\":null,\"pa",
+        "GET evento/3 -> status=200, summary='Reuniao Prova 20260826-122313-final'"
+      ]
+    },
+    {
+      "tid": "T-12",
+      "name": "Administracao: ler grupos e alterar branding",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "APIs administrativas acessiveis (0 grupos)",
+      "proof": "grupos=0; branding_status=200",
+      "duration_s": 0.01,
+      "steps": [
+        "GET grupos -> status=404, 0 grupo(s)",
+        "GET branding -> status=200, companyName='pmeto.local'"
+      ]
+    },
+    {
+      "tid": "T-07",
+      "name": "Busca unificada encontra conteudo recem-criado",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "conteudo indexado e recuperavel (ES: 7 hits)",
+      "proof": "busca_api=True; hits_elasticsearch=7",
+      "duration_s": 0.18,
+      "steps": [
+        "busca via API achou o termo na tentativa 1 (rota=/rest/v1/social/activities?q=20260826-122313-final)",
+        "consulta direta ao Elasticsearch: 7 ocorrencia(s) do termo"
+      ]
+    },
+    {
+      "tid": "T-10",
+      "name": "Fluxo de e-mail ponta a ponta (recuperacao de senha)",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "e-mail nao chegou ou veio sem link",
+      "proof": "mensagens=0; link_presente=False",
+      "duration_s": 120.22,
+      "steps": [
+        "caixa antes: 6 mensagem(ns)",
+        "POST recuperacao -> rota=/portal/forgot-password status=200",
+        "mensagens no Mailpit citando 'teste20260826-122313-final': 0",
+        "corpo contem link acionavel: False"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "label": "T-01a13-funcionalidades-navegador",
+  "run_id": "20260826-120517-fix7",
+  "base": "http://192.168.1.59",
+  "started": 1787756717.368653,
+  "duration_s": 750.9,
+  "total": 9,
+  "passed": 8,
+  "failed": 1,
+  "results": [
+    {
+      "tid": "T-11B",
+      "name": "Administrador faz login pela interface",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "login pela interface concluido",
+      "proof": "URL final=http://192.168.1.59/portal/myworkspace",
+      "duration_s": 124.7,
+      "steps": [
+        "credenciais digitadas para 'root'",
+        "botao de envio clicado (button[type='submit'])",
+        "URL apos login: http://192.168.1.59/portal/myworkspace",
+        "saiu da tela de login=True; sem_mensagem_de_erro=True",
+        "captura: T-11B-pos-login-20260826-120517-fix7.png",
+        "texto visivel apos login: 1274 caracteres"
+      ]
+    },
+    {
+      "tid": "T-02B",
+      "name": "Area 'Documentos (OneDrive/SharePoint)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 39 caracteres",
+      "proof": "titulo='Unidades - pmeto.local'; captura=T-02B-20260826-120517-fix7.png",
+      "duration_s": 62.38,
+      "steps": [
+        "GET /portal/dw/documents -> HTTP 200",
+        "titulo='Unidades - pmeto.local'",
+        "texto renderizado: 39 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-02B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-09B",
+      "name": "Area 'Agenda (Outlook Calendar)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 167 caracteres",
+      "proof": "titulo='Agenda - pmeto.local'; captura=T-09B-20260826-120517-fix7.png",
+      "duration_s": 62.32,
+      "steps": [
+        "GET /portal/dw/agenda -> HTTP 200",
+        "titulo='Agenda - pmeto.local'",
+        "texto renderizado: 167 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-09B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-05B",
+      "name": "Area 'Tarefas (Planner/To Do)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 129 caracteres",
+      "proof": "titulo='Tarefas - pmeto.local'; captura=T-05B-20260826-120517-fix7.png",
+      "duration_s": 62.41,
+      "steps": [
+        "GET /portal/dw/tasks -> HTTP 200",
+        "titulo='Tarefas - pmeto.local'",
+        "texto renderizado: 129 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-05B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-04B",
+      "name": "Area 'Notes (OneNote)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 104 caracteres",
+      "proof": "titulo='Página não encontrada - pmeto.local'; captura=T-04B-20260826-120517-fix7.png",
+      "duration_s": 62.3,
+      "steps": [
+        "GET /portal/dw/notes -> HTTP 200",
+        "titulo='Página não encontrada - pmeto.local'",
+        "texto renderizado: 104 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-04B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-06B",
+      "name": "Area 'Feed social (Yammer)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 104 caracteres",
+      "proof": "titulo='Página não encontrada - pmeto.local'; captura=T-06B-20260826-120517-fix7.png",
+      "duration_s": 62.32,
+      "steps": [
+        "GET /portal/dw/stream -> HTTP 200",
+        "titulo='Página não encontrada - pmeto.local'",
+        "texto renderizado: 104 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-06B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-01B",
+      "name": "Area 'Espacos (Teams/SharePoint)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 1736 caracteres",
+      "proof": "titulo='Espaços - pmeto.local'; captura=T-01B-20260826-120517-fix7.png",
+      "duration_s": 62.42,
+      "steps": [
+        "GET /portal/dw/spaces -> HTTP 200",
+        "titulo='Espaços - pmeto.local'",
+        "texto renderizado: 1736 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-01B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-12B",
+      "name": "Area 'Administracao' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 541 caracteres",
+      "proof": "titulo='Configurações da plataforma - Configurações da plataforma - pmeto.local'; captura=T-12B-20260826-120517-fix7.png",
+      "duration_s": 3.27,
+      "steps": [
+        "GET /portal/administration -> HTTP 200",
+        "titulo='Configurações da plataforma - Configurações da plataforma - pmeto.local'",
+        "texto renderizado: 541 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-12B-20260826-120517-fix7.png"
+      ]
+    },
+    {
+      "tid": "T-06B-post",
+      "name": "Usuario publica no feed e a publicacao aparece",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "excecao: Locator.click: Timeout 90000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text('Compartilhar')\").last\n    - locator resolved to <button type=\"button\" id=\"ShareActivity1\" aria-label=\"Compartilhar\" class=\"pa-0 mt-0 v-btn v-btn--flat v-btn--text theme--light v-size--small\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"v-overlay__scrim\"></div> from <div class=\"VuetifyApp\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"v-overlay__scrim\"></div> from <div class=\"VuetifyApp\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    173 × waiting for element to be visible, enabled and stable\n        - element is visible, enabled and stable\n        - scrolling into view if needed\n        - done scrolling\n        - <div class=\"v-overlay__scrim\"></div> from <div class=\"VuetifyApp\">…</div> subtree intercepts pointer events\n      - retrying click action\n        - waiting 500ms\n",
+      "proof": "",
+      "duration_s": 248.07,
+      "steps": [
+        "compositor aberto por: button:has-text('Iniciar uma publicação')",
+        "campo de texto localizado por: textarea",
+        "texto digitado: 'Publicacao via navegador 20260826-120517-fix7'",
+        "captura apos digitar: T-06B-digitado-20260826-120517-fix7.png",
+        "ERRO: TimeoutError: Locator.click: Timeout 90000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text('Compartilhar')\").last\n    - locator resolved to <button type=\"button\" id=\"ShareActivity1\" aria-label=\"Compartilhar\" class=\"pa-0 mt-0 v-btn v-btn--flat v-btn--text theme--light v-size--small\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"v-overlay__scrim\"></div> from <div class=\"VuetifyApp\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"v-overlay__scrim\"></div> from <div class=\"VuetifyApp\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    173 × waiting for element to be visible, enabled and stable\n        - element is visible, enabled and stable\n        - scrolling into view if needed\n        - done scrolling\n        - <div class=\"v-overlay__scrim\"></div> from <div class=\"VuetifyApp\">…</div> subtree intercepts pointer events\n      - retrying click action\n        - waiting 500ms\n"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "label": "t03-onlyoffice-20260826-132839-t03obs",
+  "run_id": "20260826-132839-t03obs",
+  "base": "http://192.168.1.59",
+  "started": 1787761719.574511,
+  "duration_s": 171.2,
+  "total": 4,
+  "passed": 3,
+  "failed": 1,
+  "results": [
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .txt pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "texto extraido contem o marcador unico 'MARCADOR-T03-20260826-132839-t03obs-CONTEUDO-VERIFICAVEL' (131 bytes)",
+      "proof": "texto extraido contem o marcador unico 'MARCADOR-T03-20260826-132839-t03obs-CONTEUDO-VERIFICAVEL' (131 bytes)",
+      "duration_s": 1.58,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1012 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:44695/prova-t03-20260826-132839-t03obs.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"fileUrl\": \"http://onlyoffice/cache/files/data/conv_t0320260826-132839-t_69/output.txt/prova-t03-20260826-132839-t03obs.txt?md5=fvrpXqPesPXwFF8cB4jdDg&expires=1787762621&shardkey=ed20260826-132452-t0&filename=prova-t03-20260826-132839-t03obs.txt\", \"fileType\": \"txt\", \"percent\": 100, \"endConvert\": tr",
+        "GET resultado -> 131 bytes"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .pdf pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "PDF valido gerado: assinatura b'%PDF-1.7', 36211 bytes",
+      "proof": "PDF valido gerado: assinatura b'%PDF-1.7', 36211 bytes",
+      "duration_s": 1.57,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1012 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:58839/prova-t03-20260826-132839-t03obs.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"fileUrl\": \"http://onlyoffice/cache/files/data/conv_t0320260826-132839-t_513/output.pdf/prova-t03-20260826-132839-t03obs.pdf?md5=7XQ9WlnOHziTAXSdQYXW8g&expires=1787762623&shardkey=ed20260826-132452-t0&filename=prova-t03-20260826-132839-t03obs.pdf\", \"fileType\": \"pdf\", \"percent\": 100, \"endConvert\": t",
+        "GET resultado -> 36211 bytes"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "API do editor publicada na origem publica (porta 80)",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "o navegador do usuario consegue carregar a API do editor pela porta 80",
+      "proof": "http://192.168.1.59/web-apps/apps/api/documents/api.js",
+      "duration_s": 0.0,
+      "steps": [
+        "GET http://192.168.1.59/web-apps/apps/api/documents/api.js -> HTTP 200, 65363 bytes",
+        "content-type: application/javascript",
+        "expoe o objeto DocsAPI: True"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Usuario digita no editor e o texto PERSISTE no arquivo",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "o texto digitado nao foi comprovado no arquivo gravado",
+      "proof": "texto 'Texto digitado pelo usuario final 20260826-132839-t03obs' recuperado do arquivo salvo; capturas evidence/capturas/t03-*-20260826-132839-t03obs.png",
+      "duration_s": 168.03,
+      "steps": [
+        "callback de gravacao em http://192.168.1.59:39115/callback",
+        "pagina carregada; aguardando onDocumentReady",
+        "onDocumentReady: True",
+        "digitado via teclado: 'Texto digitado pelo usuario final 20260826-132839-t03obs'",
+        "editor encerrado — gravacao disparada",
+        "nenhum callback com URL recebido; callbacks vistos: [{'key': 'ed20260826-132839-t0', 'status': 1, 'users': ['root'], 'actions': [{'type': 1, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDIwMjYwODI2LTEzMjgzOS10MCIsInN0YXR1cyI6MSwidXNlcnMiOlsicm9vdCJdLCJhY3Rpb25zIjpbeyJ0eXBlIjoxLCJ1c2VyaWQiOiJyb290In1dLCJpYXQiOjE3ODc3NjE3MjQsImV4cCI6MTc4Nzc2MjAyNH0.dA3JpZW7Mb_VYhq39XFV1iBFgHHiUGlPmOU-sDxcjc0'}, {'key': 'ed20260826-132839-t0', 'status': 4, 'actions': [{'type': 0, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDIwMjYwODI2LTEzMjgzOS10MCIsInN0YXR1cyI6NCwiYWN0aW9ucyI6W3sidHlwZSI6MCwidXNlcmlkIjoicm9vdCJ9XSwiaWF0IjoxNzg3NzYxNzQwLCJleHAiOjE3ODc3NjIwNDB9.yirzH1xHKppRsMgu1nMT-xq2OH4-9aMTgbUNz11eAkA'}]"
+      ]
+    }
+  ]
+}

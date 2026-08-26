@@ -76,6 +76,12 @@ def seed(libdir, padrao):
 
     total = 0
     for jar, apps in sorted(alvos.items()):
+        if jar.endswith("(runtime)"):
+            # Atalho injetado em runtime pelo proprio addon (ex.: meeds-ai
+            # cria 'Pmeto Pilot' -> aiAgentChat no boot). Nao ha jar para
+            # corrigir seed; o titulo/tecla sao corrigidos no banco pelo modo
+            # --aplicar (IS_SYSTEM=1) e reaplicados por UPDATE ali.
+            continue
         caminho = os.path.join(libdir, jar)
         if not os.path.exists(caminho):
             sys.exit(f"FALTA {caminho} -- o seed dos atalhos de sistema mudou de jar nesta versao")

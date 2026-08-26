@@ -1,0 +1,17 @@
+======================================================================
+T-01..T-13 — FUNCIONALIDADES (abordagem A: maquina/API)
+======================================================================
+Autenticado como root (metodo: form:/portal/login)
+
+[PASSOU] T-11 (A-maquina) Criar usuario e autenticar com ele — usuario 'teste20260826-125529-fix13' criado e autenticou-se sozinho
+[PASSOU] T-01 (A-maquina) Criar espaco de trabalho e recupera-lo — espaco 'Espaco Prova 20260826-125529-fix13' criado e recuperado
+[PASSOU] T-06 (A-maquina) Publicar atividade no feed e le-la de volta — atividade publicada e o texto conferiu byte a byte
+[FALHOU] T-02 (A-maquina) Enviar documento e recupera-lo com checksum identico — nao foi possivel gravar/recuperar o documento por WebDAV/JCR
+[FALHOU] T-04 (A-maquina) Criar pagina de Notes (wiki) e le-la de volta — criacao/recuperacao de pagina de Notes nao confirmada
+[PASSOU] T-05 (A-maquina) Criar tarefa e recupera-la — tarefa 'Tarefa Prova 20260826-125529-fix13' criada e recuperada
+[PASSOU] T-09 (A-maquina) Criar evento na Agenda e recupera-lo — evento 'Reuniao Prova 20260826-125529-fix13' criado e recuperado
+[PASSOU] T-12 (A-maquina) Administracao: ler grupos e alterar branding — APIs administrativas acessiveis (0 grupos)
+[PASSOU] T-07 (A-maquina) Busca unificada encontra conteudo recem-criado — conteudo indexado e recuperavel (ES: 11 hits)
+[FALHOU] T-10 (A-maquina) Fluxo de e-mail ponta a ponta (recuperacao de senha) — e-mail nao chegou ou veio sem link
+
+== T-01a13-funcionalidades-api: 7 passaram, 3 falharam -> evidence/resultado-T-01a13-funcionalidades-api-20260826-125529-fix13.json

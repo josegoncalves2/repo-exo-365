@@ -1,0 +1,109 @@
+# Verificacao de erros e warnings — 2026-08-26 10:30:02 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        1
+            1 -- No entries --
+dmesg err,warn         3
+            1 [537950.650234] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+            1 [173002.017739] workqueue: blk_mq_requeue_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+            1 [169587.352045] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 16 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                1861
+            8 2026-08-26 09:09:49,279 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:24:00,880 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:15:40,102 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:05:47,437 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            6 2026-08-26 09:10:44,132 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            5 2026-08-26 09:24:22,291 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            5 2026-08-26 09:24:21,607 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            5 2026-08-26 09:15:40,610 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+exo-web                350
+            7 2026/08/26 12:20:02 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            6 2026/08/26 12:20:11 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            6 2026/08/26 12:20:09 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            6 2026/08/26 12:20:05 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            5 2026/08/26 12:20:12 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            5 2026/08/26 12:20:10 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            5 2026/08/26 12:20:07 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+            5 2026/08/26 12:20:06 [error] 31#31: *187 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/ HTTP/1.1", upstream: "http://17
+exo-mysql              20
+            5 mysql: [Warning] World-writable config file '/etc/mysql/conf.d/exo.cnf' is ignored.
+            3 mysqld: [Warning] World-writable config file '/etc/mysql/conf.d/exo.cnf' is ignored.
+            1 Warning: Unable to load '/usr/share/zoneinfo/zone.tab' as time zone. Skipping it.
+            1 Warning: Unable to load '/usr/share/zoneinfo/zone1970.tab' as time zone. Skipping it.
+            1 Warning: Unable to load '/usr/share/zoneinfo/tzdata.zi' as time zone. Skipping it.
+            1 Warning: Unable to load '/usr/share/zoneinfo/leap-seconds.list' as time zone. Skipping it.
+            1 Warning: Unable to load '/usr/share/zoneinfo/leapseconds' as time zone. Skipping it.
+            1 Warning: Unable to load '/usr/share/zoneinfo/iso3166.tab' as time zone. Skipping it.
+exo-es                 3
+            1 {"@timestamp":"2026-08-26T12:25:59.240Z", "log.level": "WARN", "message":"[gc][1322] overhead, spent [1.5s] collecting in the last [2s]", "ecs.version": "1.2.0","service.name":"ES_ECS","event.dataset"
+            1 {"@timestamp":"2026-08-26T12:25:59.236Z", "log.level": "WARN", "message":"[gc][young][1322][11] duration [1.5s], collections [1]/[2s], total [1.5s]/[1.9s], memory [652.5mb]->[101.1mb]/[1gb], all_pools
+            1 {"@timestamp":"2026-08-26T12:03:57.863Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            268
+            5 2026-08-26 09:35:59,539 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            4 2026-08-26 09:35:59,538 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            4 2026-08-26 09:21:17,451 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            4 2026-08-26 09:21:15,607 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            4 2026-08-26 09:21:13,412 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            3 2026-08-26 09:36:00,214 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-bnKqGKORTkGIHsoD - Re-starting finished log context task-update_join_states-13-bnKqGKORTkGIHsoD
+            3 2026-08-26 09:21:19,015 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+            3 2026-08-26 09:21:18,569 - synapse.logging.context - 104 - WARNING - task-update_join_states-0-BwfdhfIQzsbPvOuh - Re-starting finished log context task-update_join_states-0-BwfdhfIQzsbPvOuh
+exo-synapse-db         3
+            1 2026-08-26 12:49:11.712 UTC [131] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-26 12:49:10.801 UTC [128] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-26 12:49:10.559 UTC [128] ERROR:  could not serialize access due to concurrent update
+onlyoffice             17
+            2 [2026-08-26T12:07:04.472] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            1 [2026-08-26T12:07:04.577] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-26T12:07:04.577] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-26T12:07:04.467] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+            1 [2026-08-26T12:07:04.376] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
+            1 [2026-08-26T12:01:16.244] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-26T12:01:16.243] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+exo-mailpit            0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  45
+            2 [2026-08-26T12:07:04.472] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-26T12:07:04.577] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-26T12:07:04.577] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-26T12:07:04.467] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+            1 [2026-08-26T12:07:04.376] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
+            1 [2026-08-26T12:01:16.244] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-26T12:01:16.243] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-26T12:01:16.118] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) 2240
+            8 2026-08-26 09:09:49,279 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:24:00,880 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:15:40,102 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            7 2026-08-26 09:05:47,437 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            6 2026-08-26 09:10:44,132 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            5 2026-08-26 09:24:22,291 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            5 2026-08-26 09:24:21,607 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+            5 2026-08-26 09:15:40,610 | WARN  | NATIONAL/NCHAR/NVARCHAR implies the character set UTF8MB3, which will be replaced by UTF8MB4 in a future release. Please consider using CHAR(x) CHARACTER SET UTF8MB4 
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up About an hour (healthy)
+exo-es              Up About an hour (healthy)
+exo-jitsi-call      Up About an hour (healthy)
+exo-jitsi-jicofo    Up About an hour (healthy)
+exo-jitsi-jvb       Up About an hour (healthy)
+exo-jitsi-prosody   Up About an hour (healthy)
+exo-jitsi-web       Up About an hour (healthy)
+exo-mailpit         Up About an hour (healthy)
+exo-mysql           Up About an hour (healthy)
+exo-synapse         Up About an hour (healthy)
+exo-synapse-db      Up About an hour (healthy)
+exo-web             Up About an hour (healthy)
+onlyoffice          Up About an hour (healthy)
+
+===== RESULTADO =====
+REPROVADO — 4811 ocorrencias somadas.

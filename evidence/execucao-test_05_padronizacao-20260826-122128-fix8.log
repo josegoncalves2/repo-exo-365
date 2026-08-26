@@ -1,0 +1,6 @@
+[FALHOU] T-05.1 (A-maquina) Os 13 atalhos do painel obedecem a UMA regra — tecla fora do padrao: ["Assistente de IA: 'x' != 'i'"]; caixa fora da regra: ['Assistente de IA']
+[FALHOU] T-05.2 (A-maquina) O nome dos atalhos de sistema resiste ao proximo start — erro: File is not a zip file
+[PASSOU] T-05.3 (A-maquina) A documentacao nao aponta para arquivo que nao existe — 13 referencia(s) do README conferida(s), todas existem
+[FALHOU] T-05.4 (B-usuario) O nome que a tela desenha e' o do padrao — rotulo(s) divergente(s) do padrao: ['']
+
+== T05-padronizacao: 1 passaram, 3 falharam -> evidence/resultado-T05-padronizacao-20260826-122128-fix8.json

@@ -76,7 +76,10 @@ titulo(){ printf '\n===== %s =====\n' "$*"; }
 #   * "Command line argument: -Dliquibase.logLevel=WARNING" -> linha de nivel
 #     INFO em que o Tomcat ecoa os argumentos da JVM. Casa com \bWARNING\b
 #     apenas porque WARNING e' o VALOR de um argumento. Nao ha aviso algum.
-ruido='0 errors|no errors|errors: 0|error_log|ErrorDocument|Using a password on the command line|errorCount.:0|"errors":0|logs-apm\.error|Command line argument: -Dliquibase\.logLevel'
+#   * "-- No entries --" -> linha unica impressa pelo journalctl quando nao
+#     ha' entradas no nivel pedido (p0..4). Conta-la como ocorrencia seria
+#     medir a AUSENCIA de ocorrencias como se fosse uma falha.
+ruido='0 errors|no errors|errors: 0|error_log|ErrorDocument|Using a password on the command line|errorCount.:0|"errors":0|logs-apm\.error|Command line argument: -Dliquibase\.logLevel|-- No entries --'
 
 conta(){                      # conta ocorrencias e imprime as distintas
   local nome="$1" conteudo="$2" padrao="${3:-}"
@@ -109,7 +112,8 @@ D=$(${SU} dmesg -l err,warn 2>/dev/null || dmesg -l err,warn 2>/dev/null || echo
 conta "dmesg err,warn" "$D" '.'
 
 titulo "2. CONTAINERS DO PROJETO"
-for c in exo-app exo-web exo-mysql exo-es exo-synapse exo-synapse-db onlyoffice exo-mailpit; do
+# Os 13 containers da stack (8 originais + jitsi-call + 4 do Jitsi).
+for c in exo-app exo-web exo-mysql exo-es exo-synapse exo-synapse-db onlyoffice exo-mailpit exo-jitsi-call exo-jitsi-jicofo exo-jitsi-jvb exo-jitsi-prosody exo-jitsi-web; do
   docker inspect "$c" >/dev/null 2>&1 || { printf '%-22s (ausente)\n' "$c"; continue; }
   if [ -n "$DESDE" ]; then L=$(docker logs "$c" --since "$DESDE" 2>&1)
   else L=$(docker logs "$c" 2>&1); fi
@@ -126,11 +130,12 @@ titulo "2b. LOGS EM DISCO DO ONLYOFFICE"
 # `docker logs`. Ou seja: contar apenas `docker logs onlyoffice` faz o
 # resultado MELHORAR sozinho a cada recriacao, sem que nada tenha sido
 # corrigido. Medir o arquivo e' a unica leitura honesta.
-if [ -d "${ROOT}/data/onlyoffice/log" ]; then
-  OO=$( (${SU} cat "${ROOT}"/data/onlyoffice/log/documentserver/*.log \
-                   "${ROOT}"/data/onlyoffice/log/documentserver/*/*.log 2>/dev/null \
-        || cat "${ROOT}"/data/onlyoffice/log/documentserver/*.log \
-               "${ROOT}"/data/onlyoffice/log/documentserver/*/*.log 2>/dev/null) || true)
+# Os diretorios de dados foram fechados para 750 (2026-08-26) com dono
+# correspondente ao uid do container; o portao entao perdeu a leitura e
+# passou a reportar "(ausente)". O teste e a expansao do glob passam a
+# usar ${SU} para ler o que a medicao precisa ler.
+if ${SU} test -d "${ROOT}/data/onlyoffice/log" 2>/dev/null || [ -d "${ROOT}/data/onlyoffice/log" ]; then
+  OO=$(${SU} sh -c 'cat "$1"/data/onlyoffice/log/documentserver/*.log "$1"/data/onlyoffice/log/documentserver/*/*.log 2>/dev/null' _ "${ROOT}" 2>/dev/null || true)
   conta "onlyoffice (arquivos)" "$OO"
 else
   printf '%-22s (ausente)\n' "onlyoffice (arquivos)"
@@ -157,7 +162,8 @@ titulo "2c. LOG EM DISCO DO EXO-APP"
 #     casariam com \berror\b/\bwarn\b por conta da URL requisitada
 #     (ex.: GET /portal/rest/.../error), nao por haver falha alguma. Contar isso
 #     seria medir o texto das requisicoes, nao a saude do servico.
-if [ -f "${ROOT}/data/exo-logs/platform.log" ]; then
+# O teste de existencia usa ${SU} (o diretorio e' 750, dono 999:1001).
+if ${SU} test -f "${ROOT}/data/exo-logs/platform.log" 2>/dev/null || [ -f "${ROOT}/data/exo-logs/platform.log" ]; then
   EA=$( (cat "${ROOT}/data/exo-logs/platform.log" 2>/dev/null \
         || ${SU} cat "${ROOT}/data/exo-logs/platform.log" 2>/dev/null) || true)
   EA=$(printf '%s' "$EA" | sed 's/\x1b\[[0-9;]*m//g')

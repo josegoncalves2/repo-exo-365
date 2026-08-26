@@ -77,6 +77,17 @@ def a_versions(rec: Recorder) -> None:
         "exo-synapse-db": "postgres:16",
         "exo-mailpit": "axllent/mailpit:latest",
     }
+    # A tag do exo-app e' definida no .env (EXO_IMAGE) — a imagem de producao
+    # e' 'exo-pmo:7.2.1-addons2' (build local com os add-ons do manifesto).
+    # O esperado abaixo deixa de ser hardcoded e passa a refletir o .env,
+    # que e' a fonte da verdade dos segredos/versoes (nao versionado).
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("EXO_IMAGE="):
+                expected["exo-app"] = line.split("=", 1)[1].strip()
+                break
     got, mismatch = {}, []
     for c, want in expected.items():
         rc, out = sh(["docker", "inspect", "--format", "{{.Config.Image}}", c])

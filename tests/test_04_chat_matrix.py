@@ -306,7 +306,14 @@ def b_chat_no_navegador(rec: Recorder) -> bool:
             pg.fill("input[name='username']", ADMIN_USER)
             pg.fill("input[name='password']", ADMIN_PASS)
             pg.press("input[name='password']", "Enter")
-            pg.wait_for_load_state("networkidle", timeout=90_000)
+            # networkidle NUNCA estabiliza no portal logado: o chat mantem
+            # sync contínuo por WebSocket (polling /_matrix/client/v3/sync),
+            # entao `wait_for_load_state('networkidle')` esgota os 90s e
+            # reprova o chat sem defeito. 'load' basta para o SPA montar.
+            try:
+                pg.wait_for_load_state("load", timeout=30_000)
+            except Exception:  # noqa: BLE001
+                pass
             steps.append(f"login efetuado; URL atual: {pg.url[:90]}")
 
             # O chat NÃO é uma página. Verificado: `/portal/dw/chat` (e as

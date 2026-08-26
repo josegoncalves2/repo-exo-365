@@ -1,0 +1,7 @@
+===================================================================
+ T-03 — Edicao de documentos ONLYOFFICE  (RUN_ID 20260826-134212-t03v4)
+ Alvo: http://192.168.1.59
+===================================================================
+[PASSOU] T-03 (A-maquina) Conversao real de .docx para .txt pelo DocumentServer — texto extraido contem o marcador unico 'MARCADOR-T03-20260826-134212-t03v4-CONTEUDO-VERIFICAVEL' (129 bytes)
+[PASSOU] T-03 (A-maquina) Conversao real de .docx para .pdf pelo DocumentServer — PDF valido gerado: assinatura b'%PDF-1.7', 35121 bytes
+[PASSOU] T-03 (A-maquina) API do editor publicada na origem publica (porta 80) — o navegador do usuario consegue carregar a API do editor pela porta 80

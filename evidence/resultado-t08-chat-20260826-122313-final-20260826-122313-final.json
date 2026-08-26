@@ -1,0 +1,61 @@
+{
+  "label": "t08-chat-20260826-122313-final",
+  "run_id": "20260826-122313-final",
+  "base": "http://192.168.1.59",
+  "started": 1787758862.2181797,
+  "duration_s": 104.2,
+  "total": 3,
+  "passed": 1,
+  "failed": 2,
+  "results": [
+    {
+      "tid": "T-08",
+      "name": "Dois usuarios trocam mensagens reais pelo Matrix",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "a troca real de mensagens nao pode ser comprovada",
+      "proof": "ida='Mensagem de ida 20260826-122313-final — 8649e135' volta='Resposta de volta 20260826-122313-final — 02054a08'",
+      "duration_s": 11.85,
+      "steps": [
+        "criando usuarios t08a20260826-122313-final e t08b20260826-122313-final",
+        "login A: @t08a20260826-122313-final:192.168.1.59 | login B: @t08b20260826-122313-final:192.168.1.59",
+        "sala criada: HTTP 200 !YunJMwUIhlnHnAQspK:192.168.1.59",
+        "B aceitou o convite: HTTP 200",
+        "A enviou a mensagem: HTTP 200 event=$BXdXI6fo4boDZ4WDp79kHhGgu1wzeSc1gWt5DbNkKYo",
+        "B leu 10 eventos; encontrou a mensagem de A: True",
+        "remetente conferido: @t08a20260826-122313-final:192.168.1.59",
+        "A recebeu a resposta de B: True",
+        "upload do anexo: HTTP 500 ",
+        "ERRO: upload do anexo falhou: {'errcode': 'M_UNKNOWN', 'error': 'Internal server error'}"
+      ]
+    },
+    {
+      "tid": "T-08",
+      "name": "eXo integrado ao homeserver (parametros conferidos)",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "eXo e Synapse compartilham exatamente os mesmos segredos, com algoritmo coerente",
+      "proof": "",
+      "duration_s": 0.19,
+      "steps": [
+        "meeds.matrix.server.url = http://synapse:8008",
+        "segredo JWT identico nos dois lados: True",
+        "shared_secret_registration identico: True",
+        "algoritmo do JWT: HS512 (tamanho do segredo: 64 bytes)",
+        "tamanho da chave coerente com o algoritmo: True"
+      ]
+    },
+    {
+      "tid": "T-08",
+      "name": "Usuario final abre o chat no portal (navegador real)",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "o chat nao carregou corretamente no navegador",
+      "proof": "evidence/capturas/t08-chat-20260826-122313-final.png",
+      "duration_s": 92.14,
+      "steps": [
+        "ERRO: Timeout 90000ms exceeded.\n=========================== logs ===========================\n\"domcontentloaded\" event fired\n\"load\" event fired\n============================================================"
+      ]
+    }
+  ]
+}

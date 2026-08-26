@@ -1,0 +1,73 @@
+{
+  "label": "t03-onlyoffice-20260826-105115-verif",
+  "run_id": "20260826-105115-verif",
+  "base": "http://192.168.1.59",
+  "started": 1787752990.8178792,
+  "duration_s": 162.7,
+  "total": 4,
+  "passed": 1,
+  "failed": 3,
+  "results": [
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .txt pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "DocumentServer recusou a conversao: erro -3",
+      "proof": "",
+      "duration_s": 5.04,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1012 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:33691/prova-t03-20260826-105115-verif.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"error\": -3}"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .pdf pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": false,
+      "detail": "DocumentServer recusou a conversao: erro -3",
+      "proof": "",
+      "duration_s": 2.08,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1012 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:57407/prova-t03-20260826-105115-verif.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"error\": -3}"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "API do editor publicada na origem publica (porta 80)",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "o navegador do usuario consegue carregar a API do editor pela porta 80",
+      "proof": "http://192.168.1.59/web-apps/apps/api/documents/api.js",
+      "duration_s": 0.03,
+      "steps": [
+        "GET http://192.168.1.59/web-apps/apps/api/documents/api.js -> HTTP 200, 65363 bytes",
+        "content-type: application/javascript",
+        "expoe o objeto DocsAPI: True"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Usuario digita no editor e o texto PERSISTE no arquivo",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "o texto digitado nao foi comprovado no arquivo gravado",
+      "proof": "texto 'Texto digitado pelo usuario final 20260826-105115-verif' recuperado do arquivo salvo; capturas evidence/capturas/t03-*-20260826-105115-verif.png",
+      "duration_s": 155.54,
+      "steps": [
+        "callback de gravacao em http://192.168.1.59:53331/callback",
+        "pagina carregada; aguardando onDocumentReady",
+        "onDocumentReady: False",
+        "nenhum callback com URL recebido; callbacks vistos: [{'key': 'ed20260826-105115-ve', 'status': 1, 'users': ['root'], 'actions': [{'type': 1, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDIwMjYwODI2LTEwNTExNS12ZSIsInN0YXR1cyI6MSwidXNlcnMiOlsicm9vdCJdLCJhY3Rpb25zIjpbeyJ0eXBlIjoxLCJ1c2VyaWQiOiJyb290In1dLCJpYXQiOjE3ODc3NTMwMDMsImV4cCI6MTc4Nzc1MzMwM30.wMuETIR0NkZstQMhn-raL8NBQcmAUh7mxAR9sObrg_o'}, {'key': 'ed20260826-105115-ve', 'status': 4, 'actions': [{'type': 0, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDIwMjYwODI2LTEwNTExNS12ZSIsInN0YXR1cyI6NCwiYWN0aW9ucyI6W3sidHlwZSI6MCwidXNlcmlkIjoicm9vdCJ9XSwiaWF0IjoxNzg3NzUzMDAzLCJleHAiOjE3ODc3NTMzMDN9.At3b-y_hjavnoHXOyUVShjzhS7Zr4MAJPSeGmGnrpkE'}]"
+      ]
+    }
+  ]
+}
