@@ -1,6 +1,0 @@
-[PASSOU] T-05.1 (A-maquina) Os 13 atalhos do painel obedecem a UMA regra — 13 atalhos conferidos: nome pt-BR, caixa e tecla unica
-[PASSOU] T-05.2 (A-maquina) O nome dos atalhos de sistema resiste ao proximo start — 6 seeds com titulo pt-BR e override:true
-[PASSOU] T-05.3 (A-maquina) O registro de lacunas existe e o README nao aponta para o vazio — registro de lacunas presente; nenhuma referencia pendurada
-[PASSOU] T-05.4 (B-usuario) O nome que a tela desenha e' o do padrao — 16 rotulo(s) fixado(s) no painel, todos no padrao
-
-== T05-padronizacao: 4 passaram, 0 falharam -> evidence/resultado-T05-padronizacao-20260825-161712.json

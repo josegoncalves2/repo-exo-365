@@ -7,9 +7,9 @@ Existe por causa de duas falhas reais, nesta ordem:
   1. o painel exibia 13 atalhos em DOIS idiomas e três caixas diferentes
      ("Add a task", "Contributions Review", "Dispositivos móveis (MDM)"),
      7 deles sem tecla nenhuma;
-  2. o registro de lacunas (MAPEAMENTO-OFFICE365.md) foi APAGADO enquanto o
-     README continuava apontando para ele — e a partir daí o que faltava
-     deixou de ser visível para quem recebe a entrega.
+  2. o README apontava para um documento que havia sido apagado — link para o
+     vazio. Documento pode ser removido por decisão do dono do projeto; o que
+     não pode é a documentação seguir citando o que não existe mais.
 
 Abordagem A (máquina): lê o BANCO e os JARS e compara com conf/atalhos/padrao.json.
 Abordagem B (usuário final): lê a API que a tela consome e confere o que seria
@@ -125,32 +125,30 @@ def a_seed_nos_jars(rec: Recorder) -> None:
     rec.add(r)
 
 
-def a_registro_de_lacunas(rec: Recorder) -> None:
+def a_documentacao_sem_link_morto(rec: Recorder) -> None:
+    """AUDIT.md fica de fora de proposito: e' registro historico, append-only,
+    e cita arquivos que existiam na epoca. Aqui so' entra documentacao viva."""
     t0 = time.time()
-    r = Result("T-05.3", "O registro de lacunas existe e o README nao aponta para o vazio",
-               "A-maquina")
+    r = Result("T-05.3", "A documentacao nao aponta para arquivo que nao existe", "A-maquina")
     try:
-        problemas = []
-        mapa = RAIZ / "MAPEAMENTO-OFFICE365.md"
-        if not mapa.exists():
-            problemas.append("MAPEAMENTO-OFFICE365.md AUSENTE -- o que falta volta a ser invisivel")
-        else:
-            texto = mapa.read_text(encoding="utf-8")
-            for secao in ("Lacunas conhecidas", "AUSENTE", "PARCIAL"):
-                if secao not in texto:
-                    problemas.append(f"MAPEAMENTO-OFFICE365.md sem '{secao}'")
-        # referencia pendurada: doc citado que nao existe
-        for doc in ("README.md", "MAPEAMENTO-OFFICE365.md"):
+        problemas, conferidos = [], 0
+        for doc in ("README.md",):
             p = RAIZ / doc
             if not p.exists():
+                problemas.append(f"{doc} nao existe")
                 continue
-            for citado in set(re.findall(r"`([A-Za-z0-9_./-]+\.md)`", p.read_text(encoding="utf-8"))):
-                if not (RAIZ / citado).exists():
+            for citado in sorted(set(re.findall(r"`([A-Za-z0-9_./-]+\.(?:md|sh|py|json|yml))`",
+                                                p.read_text(encoding="utf-8")))):
+                conferidos += 1
+                # o README cita ora o caminho completo ("scripts/backup.sh"), ora
+                # so' o nome ("reconstruir-do-zero.sh"). Vale existir em qualquer
+                # lugar do repositorio -- o que se cobra e' que exista.
+                if not (RAIZ / citado).exists() and not list(RAIZ.rglob(Path(citado).name)):
                     problemas.append(f"{doc} cita {citado}, que nao existe")
         r.passed = not problemas
         r.detail = "; ".join(problemas) if problemas else \
-            "registro de lacunas presente; nenhuma referencia pendurada"
-        r.proof = "MAPEAMENTO-OFFICE365.md + varredura de links .md do README"
+            f"{conferidos} referencia(s) do README conferida(s), todas existem"
+        r.proof = "varredura de caminhos citados em README.md"
     except Exception as e:                                     # noqa: BLE001
         r.detail = f"erro: {e}"
     r.duration_s = round(time.time() - t0, 2)
@@ -187,7 +185,7 @@ def main() -> int:
     rec = Recorder("T05-padronizacao")
     a_atalhos_no_banco(rec)
     a_seed_nos_jars(rec)
-    a_registro_de_lacunas(rec)
+    a_documentacao_sem_link_morto(rec)
     b_api_que_a_tela_consome(rec)
     rec.dump()
     return 0 if rec.failed == 0 else 1

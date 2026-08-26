@@ -1,0 +1,185 @@
+{
+  "_regra": [
+    "FONTE UNICA dos add-ons da suite. Quem instala e' scripts/addons.py; o",
+    "Dockerfile so' chama o script. Nenhum add-on entra na imagem por fora daqui.",
+    "",
+    "1. 'versao' e 'sha256' sao FIXOS. O build recusa um zip cujo sha256 nao bata.",
+    "   Para mudar um sha256 existe UM caminho: ./scripts/addons.py baixar --selar,",
+    "   que mostra o antes e o depois. Editar o campo a mao derrota o proposito.",
+    "",
+    "2. 'no_compat' e' OBRIGATORIO e nao e' opiniao: e' true exatamente quando o",
+    "   catalogo NAO lista a distribuicao desta imagem ('exo_community') entre as",
+    "   suportadas. './scripts/addons.py conferir' reprova se o campo divergir do",
+    "   catalogo -- o flag nunca e' aplicado no escuro, e nunca vira global.",
+    "",
+    "3. 'porque' e' obrigatorio e cita o item do briefing que o add-on atende.",
+    "   Add-on sem destinatario nao entra: cada .war a mais e' memoria, superficie",
+    "   de ataque e mais um upgrade para carregar.",
+    "",
+    "4. 'instavel': true reproduz o que o catalogo marca como unstable=true. Nao e'",
+    "   desculpa -- e' aviso. Add-on instavel so' entra se nao houver estavel que",
+    "   atenda ao item, e o campo 'ressalva' diz o risco assumido."
+  ],
+  "plataforma": "7.2.1",
+  "distribuicao": "exo_community",
+  "catalogo": "http://storage.exoplatform.org/public/Addons/list.json",
+  "_distribuicao": [
+    "A imagem se identifica como 'exo_community' (medido: addon -v list ->",
+    "PLATFORM SETTINGS / distributionType). Parte do catalogo declara",
+    "'exo_community,community,enterprise' e parte so' 'community,enterprise'.",
+    "Os do segundo grupo sao a MESMA edicao community -- a diferenca e' rotulagem",
+    "do catalogo, nao licenca (todos AGPLv3/LGPLv3, mustAcceptLicense=false) nem",
+    "restricao tecnica. Prova: exo-glpi-integration 7.2.0 declara so' 'community,",
+    "enterprise' e roda nesta instalacao desde 2026-08-25."
+  ],
+  "addons": [
+    {
+      "id": "exo-addons-manager",
+      "versao": "7.2.1-exo",
+      "sha256": "f9796b5a361c2bcd1160cd317291647a630f98f9fbcd1c9a4f842ceb119e881c",
+      "categoria": "gestao",
+      "no_compat": false,
+      "instavel": true,
+      "porque": "Briefing item 3.1 -- Gerenciador de Add-ons. A imagem community nao traz o comando 'addon'; ele proprio e' um add-on do catalogo. Entra PRIMEIRO, semeado a mao no build, e instala todos os demais.",
+      "ressalva": "Marcado unstable no catalogo, mas e' a unica versao cuja faixa e' [7.2.1-exo], ou seja publicada para esta imagem. A alternativa estavel (1.5.6) e' de 2019 e nao conhece o layout 7.x."
+    },
+    {
+      "id": "exo-data-upgrade",
+      "versao": "7.2.1",
+      "sha256": "44139c23840be15075ec4e815a4bd7851baf0c6eba3cb54d2725ccb697f98955",
+      "categoria": "gestao",
+      "no_compat": true,
+      "porque": "Briefing item 3.2 -- Gerenciador de Migracao. Executa os planos de upgrade de dados entre versoes da plataforma."
+    },
+    {
+      "id": "exo-dlp",
+      "versao": "7.2.1",
+      "sha256": "b4e5493bced2ccc7d22d9662cc45943f238b787e9a139e4f01884aec67b05006",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2.1 -- Protecao contra Vazamento de Dados (DLP). Varre documentos e conteudo por padroes sensiveis e coloca em quarentena."
+    },
+    {
+      "id": "exo-multifactor-authentication",
+      "versao": "7.2.1",
+      "sha256": "70427fd03e0abdacd3fc4b818c4438dd3fc3886ac16aac0503b24bb868247410",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2.2 -- 2FA. E' o motor: define quais GRUPOS exigem segundo fator, que e' o equivalente aplicavel de '2FA por zona' nesta plataforma."
+    },
+    {
+      "id": "mfa-oidc",
+      "versao": "1.0.1",
+      "sha256": "31dd56c6701c4e1c193525a6d26be7cc9eccaa76b4d543e28522db9c4e5bc80e",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2.2 -- segundo fator por provedor OIDC externo (conector do motor acima)."
+    },
+    {
+      "id": "mfa-fido",
+      "versao": "1.0.1",
+      "sha256": "c2f51660ac24cf5b0ca976d6eb8ef2248060efa331ab96afc9050ae6cabc08a0",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2.2 -- segundo fator por chave fisica FIDO2/WebAuthn (conector do motor acima)."
+    },
+    {
+      "id": "exo-anti-malware",
+      "versao": "7.2.1",
+      "sha256": "d7f187a0626deb22b4201d6fe97efa6e844d03f2094a4e9c9ff73b9036817691",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2 (governanca) -- varredura antimalware dos arquivos enviados ao portal, antes de ficarem disponiveis."
+    },
+    {
+      "id": "exo-anti-bruteforce",
+      "versao": "7.2.1",
+      "sha256": "85ddc0a2508e43a66e4ba714573ec67875e4b4a75cae37853dabdf8c5bf332d7",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2 (governanca) -- bloqueio de conta apos tentativas de login sucessivas."
+    },
+    {
+      "id": "exo-saml",
+      "versao": "7.2.1",
+      "sha256": "cdcfe128ceac0c116ed9fe5d85a595a19f70ea9fa95f3bcea560e7c670953c57",
+      "categoria": "seguranca",
+      "no_compat": false,
+      "porque": "Briefing item 2 -- autenticacao federada SAML2, requisito de orgao publico que ja' tenha IdP proprio."
+    },
+    {
+      "id": "exo-jwt-authentication",
+      "versao": "7.2.0",
+      "sha256": "b0ff37999dd04c2f77cbe9b52a6d027f64ebe626962939cd97e134812e1252d8",
+      "categoria": "seguranca",
+      "no_compat": true,
+      "porque": "Briefing item 2 -- acesso de sistemas terceiros a API do portal por JWT, sem compartilhar senha de usuario."
+    },
+    {
+      "id": "exo-exchange-extension",
+      "versao": "1.3.1",
+      "sha256": "5cd32bd633e4a0300067cba2815d71637e7939fde503a1cfd950ab412fb4712e",
+      "categoria": "conector",
+      "no_compat": false,
+      "porque": "Briefing item 1.4 -- conector de fabrica com Microsoft Exchange, citado nominalmente no pedido."
+    },
+    {
+      "id": "exo-mail-integration",
+      "versao": "7.2.1",
+      "sha256": "9fb26338e5c0b89f6cb9d988a85941600af86883fb41ce85de0cb1133ec4004c",
+      "categoria": "conector",
+      "no_compat": true,
+      "porque": "Briefing item 1.4 -- caixa de e-mail (IMAP) dentro do portal, substituindo o Outlook Web da suite 365."
+    },
+    {
+      "id": "exo-agenda-connectors",
+      "versao": "7.2.1",
+      "sha256": "46f68c091db16afb6c17d03093e56b655407a45c3f5391f6e072a3553fd7116b",
+      "categoria": "conector",
+      "no_compat": true,
+      "porque": "Briefing item 1.4 -- sincronismo da Agenda do portal com agendas externas (Exchange/Google), substituindo o calendario do 365."
+    },
+    {
+      "id": "exo-cloud-drive-connectors",
+      "versao": "7.2.1",
+      "sha256": "73a01a5db7fa474c5c821abb97ea6fbff7ec928e8b0c052360d5efe5f014fe13",
+      "categoria": "conector",
+      "no_compat": true,
+      "porque": "Briefing item 1.4 -- monta drives externos (OneDrive/SharePoint/Google Drive) dentro do gerenciador de documentos, para a migracao sair do 365 sem copia manual."
+    },
+    {
+      "id": "exo-automatic-translation",
+      "versao": "7.2.1",
+      "sha256": "2f53b40023f2885b43b60c0a0628c9faaa1037ff1699d27294c1b2bd6ec22242",
+      "categoria": "produtividade",
+      "no_compat": false,
+      "porque": "Recurso anunciado no site da eXo -- traducao automatica de publicacoes e artigos. Usa provedor externo configuravel; fica DESLIGADO ate' a prefeitura escolher provedor."
+    },
+    {
+      "id": "meeds-ai",
+      "versao": "7.2.1-exo",
+      "sha256": "3cab849c3829cd7dd90e3de44f06add1035b0e5b9d119d6579c66b413eb0a3ad",
+      "categoria": "ia",
+      "no_compat": true,
+      "instavel": true,
+      "porque": "https://www.exoplatform.com/faq/#ai-responsible-ai -- assistente de IA, RAG sobre o Elasticsearch que a stack ja' tem, e cliente MCP. LGPLv3, sem aceite de licenca.",
+      "ressalva": "Catalogo marca unstable=true, e nao existe versao estavel para 7.2.1 (a linha estavel comeca na 7.3). Entra INSTALADO E DESLIGADO: sem provedor configurado o assistente nao aparece. DECISAO DO OPERADOR, 2026-08-25: nenhum LLM local, em hipotese alguma -- nao ha, e nao havera, container Ollama nesta stack. O provedor e' externo e sai por variavel de ambiente, sem chave embutida."
+    },
+    {
+      "id": "exo-jitsi",
+      "versao": "7.2.1",
+      "sha256": "e21bb179e72e242f169ad968a0cdb816b484e7e13c784046cffce4ed25812566",
+      "categoria": "nativo",
+      "no_compat": false,
+      "porque": "Briefing item 1.2 -- videoconferencia integrada. Implementa o provider da SPI WebConferencingService com callId simetrico e aviso de chamada por push CometD. O conector External Visio que a imagem traz NAO e' sistema de chamada: startCall() e' um window.open(url) e o jar tem zero classes de notificacao (medido) -- quem clicava entrava sozinho numa sala e o outro lado nunca era avisado. Depende do microservico jitsi-call do docker-compose, que assina o JWT da sala ja' com o nome do usuario (e' o que elimina o 'digite seu nome' e o lobby)."
+    },
+    {
+      "id": "exo-glpi-integration",
+      "versao": "7.2.0",
+      "sha256": "74e2dd5d911632d1a8f3a734ad8a7112c0e6761648f5ba85ff77d79827574147",
+      "categoria": "conector",
+      "no_compat": true,
+      "porque": "Briefing item 1.4 / cobranca direta do operador -- chamados do GLPI DENTRO do portal. Antes existia so' um atalho para o GLPI externo, que e' link, nao integracao. Ver conf/i18n/derivar-traducoes.py: o add-on so' empacota 'en' e 'fr', e o bundle pt-BR e' gerado no build."
+    }
+  ]
+}

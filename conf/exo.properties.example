@@ -112,3 +112,133 @@ webconferencing.jitsi.external.secret=__JITSI_EXO_JWT_SECRET__
 # Valor = o 'type' do provider no WebConferencingService (getProvidersConfig).
 # ---------------------------------------------------------------------------
 exo.agenda.webConferencing.default=jitsi
+
+# ===================================================================
+# ADD-ONS OFICIAIS — instalados em 2026-08-26
+# Lista, versão e sha256 em conf/addons/manifesto.json (fonte única).
+#
+# REGRA DESTE BLOCO: só entra aqui propriedade que ALGUÉM LÊ. Cada chave
+# abaixo foi confirmada como placeholder ${chave} dentro do .war/.jar do
+# próprio add-on, e o valor padrão citado é o que o add-on declara.
+# O motivo da regra está logo abaixo, no bloco do GLPI.
+# ===================================================================
+
+# -------------------------------------------------------------------
+# DLP — Proteção contra Vazamento de Dados (exo-dlp 7.2.1, AGPLv3)
+# Lê: dlp.war!WEB-INF/conf/dlp/connector-configuration.xml
+#     dlp-services.jar!conf/portal/configuration.xml
+#
+# Como funciona: um job varre o conteúdo indexado e põe em QUARENTENA o
+# documento que casar com uma das palavras-chave. Documento em quarentena
+# sai da busca e do espaço, e só o administrador o vê.
+#
+# POR QUE NASCE SEM PALAVRA-CHAVE: lista vazia = nada é posto em quarentena.
+# Ligar DLP com um chute de palavras num acervo já em produção tiraria do ar
+# documentos legítimos de servidores que não foram avisados. A lista é decisão
+# da administração, não do instalador. Para ligar, preencha (separado por
+# vírgula) e reinicie o exo-app. Sugestão de partida, comentada:
+#   exo.dlp.keywords=confidencial,sigiloso,uso interno,senha,CPF,dados bancarios
+# -------------------------------------------------------------------
+exo.dlp.keywords=
+exo.dlp.job.period=300000
+
+# -------------------------------------------------------------------
+# 2FA por grupo (exo-multifactor-authentication 7.2.1 + mfa-fido + mfa-oidc)
+# Lê: multifactor-authentication.war!WEB-INF/conf/multifactor-authentication/
+#     mfa-configuration.xml
+#
+# "2FA POR ZONA", na prática desta plataforma, é 2FA POR GRUPO e POR ÁREA DE
+# NAVEGAÇÃO: exo.mfa.protectedGroups exige o segundo fator de quem pertence
+# aos grupos listados, e exo.mfa.protectedGroupNavigations o exige para entrar
+# em determinadas áreas do portal. Não existe "zona" por faixa de IP no
+# add-on — quem precisa disso resolve na borda (nginx), não aqui.
+#
+# Segundo fator: OTP (app autenticador, sem dependência externa) é o padrão.
+#   OTP  — Google Authenticator / FreeOTP / Aegis. Não depende de rede externa.
+#   FIDO — chave física; exige servidor FIDO (exo.mfa.fido.serverUrl).
+#   OIDC — provedor externo (exo.mfa.oidc.oidcServer + clientId).
+#
+# POR QUE NASCE SEM GRUPO PROTEGIDO: ligar 2FA em /platform/administrators
+# antes de os administradores terem cadastrado o app autenticador TRANCA o
+# portal — quem tem a chave para reverter é justamente quem ficou de fora.
+# A ordem correta é: administradores cadastram o segundo fator, e SÓ ENTÃO o
+# grupo entra aqui. Para ligar depois de cadastrado:
+#   exo.mfa.protectedGroups=/platform/administrators
+# -------------------------------------------------------------------
+exo.mfa.system=OTP
+exo.mfa.protectedGroups=
+exo.mfa.protectedGroupNavigations=
+exo.mfa.otp.issuer=PMO eXo
+exo.mfa.otp.algorithm=SHA1
+exo.mfa.otp.codedigits=6
+exo.mfa.otp.timeperiod=30
+
+# -------------------------------------------------------------------
+# Anti-força-bruta (exo-anti-bruteforce 7.2.1)
+# Lê: anti-bruteforce.war!WEB-INF/conf/antibruteforce/plugin-configuration.xml
+# Os valores abaixo SÃO os padrões do add-on. Estão escritos, e não omitidos,
+# porque política de bloqueio de conta é coisa que auditoria pergunta — tem de
+# estar visível num arquivo, não escondida num default dentro de um .war.
+# blockingTime é em MINUTOS.
+# -------------------------------------------------------------------
+exo.authentication.antibruteforce.maxAuthenticationAttempts=5
+exo.authentication.antibruteforce.blockingTime=10
+
+# -------------------------------------------------------------------
+# Antimalware (exo-anti-malware 7.2.1)
+# Varre o que é enviado ao portal. O conector padrão (Trend Micro) é um
+# serviço externo e fica DESLIGADO: sem contrato, ligá-lo faria cada upload
+# tentar uma chamada que nunca responde.
+# Período do job de varredura, em milissegundos.
+# -------------------------------------------------------------------
+exo.antiMalware.MalwareDetectionJob.period=300000
+exo.malwareDetection.connector.trendMicro.isDefault=false
+
+# -------------------------------------------------------------------
+# ASSISTENTE DE IA (meeds-ai 7.2.1-exo, LGPLv3)
+# https://www.exoplatform.com/faq/#ai-responsible-ai
+# Lê: ai-common.jar → ${meeds.ai.agent.enabled:false}
+#
+# DECISÃO DO OPERADOR, 2026-08-25, registrada aqui porque é permanente:
+#   NENHUM LLM LOCAL, EM HIPÓTESE ALGUMA.
+# Não há, e não haverá, container Ollama nesta stack. O add-on suporta Ollama
+# local, e essa opção está descartada por decisão — não por limitação.
+#
+# O provedor (Anthropic, OpenAI, Mistral, xAI) e a respectiva chave NÃO são
+# propriedades: o add-on os guarda no banco e eles são preenchidos na tela de
+# administração. Por isso não existe chave de API neste arquivo, e não deve
+# passar a existir.
+#
+# Fica INSTALADO E DESLIGADO. Ligar exige, nesta ordem: (1) decisão da
+# prefeitura sobre enviar conteúdo do portal a um provedor externo — é dado de
+# servidor público, a pergunta é de LGPD antes de ser técnica; (2) provedor e
+# chave cadastrados na tela; (3) esta chave em true e reinício do exo-app.
+#
+# RAG: o índice vetorial usa o Elasticsearch que a stack já tem
+# (spring.ai.vectorstore.type=elasticsearch, padrão do add-on) — sem serviço
+# novo. As ferramentas MCP usam o mcp-server e o auth-server que já vêm na
+# imagem.
+# -------------------------------------------------------------------
+meeds.ai.agent.enabled=false
+
+# -------------------------------------------------------------------
+# Tradução automática (exo-automatic-translation 7.2.1)
+# Também depende de provedor externo, também desligado pelo mesmo motivo
+# do bloco acima. A URL abaixo só é lida se um provedor for cadastrado.
+# -------------------------------------------------------------------
+# exo.automatic-translation.language-weaver.url=
+
+# -------------------------------------------------------------------
+# Conectores de agenda externa (exo-agenda-connectors 7.2.1)
+# Substituem o calendário do 365. Cada um exige credencial de aplicativo
+# registrada no provedor — sem isso, ligá-los só produz erro de OAuth.
+# -------------------------------------------------------------------
+exo.agenda.exchange.connector.enabled=false
+exo.agenda.google.connector.enabled=false
+exo.agenda.office.connector.enabled=false
+
+# -------------------------------------------------------------------
+# Caixa de e-mail no portal (exo-mail-integration 7.2.1)
+# Desligada até haver servidor IMAP definido para os usuários.
+# -------------------------------------------------------------------
+exo.feature.mailIntegration.enabled=false

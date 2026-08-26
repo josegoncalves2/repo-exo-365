@@ -90,6 +90,15 @@ set -a; source .env; set +a
 if docker image inspect "${EXO_IMAGE}" >/dev/null 2>&1; then
   jaha "imagem ${EXO_IMAGE}"
 else
+  # Os add-ons oficiais (conf/addons/manifesto.json) sao BAIXADOS AQUI, no host,
+  # e nao dentro do build: o `docker build` instala a partir de
+  # conf/addons/cache/ por catalogo file://, sem tocar a rede. Sao ~30 MB que
+  # NAO ficam no git -- o que garante reprodutibilidade e' o sha256 selado no
+  # manifesto, conferido tanto ao baixar quanto ao instalar. Ja' baixado, este
+  # passo so' confere as somas e nao usa rede.
+  ok "add-ons oficiais: conferindo o cache (baixa o que faltar)"
+  ./scripts/addons.py baixar && ok "add-ons em conf/addons/cache" \
+    || erro "addons.py baixar -- sem os zips o build nao instala add-on nenhum"
   ok "construindo ${EXO_IMAGE} (Dockerfile.exo) -- pode levar varios minutos"
   docker compose build exo && ok "imagem construida" || erro "docker compose build exo"
 fi

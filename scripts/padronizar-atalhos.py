@@ -135,10 +135,19 @@ def banco(padrao, aplicar):
             i, u, t, d, s, o = linha.split("\t")
             atual[u] = (int(i), t, d, s, int(o))
 
-    mudancas, reverter = [], []
+    mudancas, reverter, criar = [], [], []
     for url, cfg in padrao["proprios"].items():
         if url not in atual:
-            print(f"  nao existe neste servidor: {cfg['titulo']} ({url}) -- pulado")
+            # ATE' 2026-08-26 AQUI SO' IMPRIMIA "pulado" E SEGUIA -- e o script
+            # saia com codigo 0. Foi assim que "Chamados (GLPI)" desapareceu do
+            # painel sem que nada reprovasse: o padrao.json declarava 13 atalhos,
+            # o banco tinha 12, e a ferramenta que existe para IMPOR o padrao
+            # dizia "tudo certo". Um padrao que nao se reaplica nao e' padrao,
+            # e' documentacao.
+            # Agora o que falta e' CRIADO. Idempotente: quem existe segue pelo
+            # caminho de UPDATE abaixo, e rodar de novo nao duplica (a chave e'
+            # a URL, que e' o que identifica o atalho entre servidores).
+            criar.append((url, cfg))
             continue
         i, t0, d0, s0, o0 = atual[url]
         campos, volta = [], []
@@ -164,19 +173,49 @@ def banco(padrao, aplicar):
                              f"UPDATE AC_APPLICATION SET {', '.join(campos)} WHERE ID={i};"))
             reverter.append(f"UPDATE AC_APPLICATION SET {', '.join(volta)} WHERE ID={i};")
 
-    if not mudancas:
+    if criar:
+        print(f"AUSENTES no banco -- serao CRIADOS ({len(criar)}):")
+        for url, cfg in criar:
+            print(f"     {cfg['titulo']:<28}  tecla {cfg['tecla']!r}  {url}")
+        print()
+
+    if not mudancas and not criar:
         print("Banco: os atalhos proprios ja estao no padrao.")
         return
-    print(f"{'ID':>3}  {'ATALHO':<28}  O QUE MUDA")
-    for i, titulo, detalhe, _ in mudancas:
-        print(f"{i:>3}  {titulo:<28}  {detalhe}")
+    if mudancas:
+        print(f"{'ID':>3}  {'ATALHO':<28}  O QUE MUDA")
+        for i, titulo, detalhe, _ in mudancas:
+            print(f"{i:>3}  {titulo:<28}  {detalhe}")
     if not aplicar:
-        print(f"\n{len(mudancas)} alteracao(oes). Rode com --aplicar para gravar.")
+        print(f"\n{len(mudancas)} alteracao(oes) e {len(criar)} criacao(oes). "
+              "Rode com --aplicar para gravar.")
         return
-    print("\n-- COMO DESFAZER --")
-    for r in reverter:
-        print("   " + r)
-    mysql("\n".join(s for _, _, _, s in mudancas))
+
+    # CRIACAO primeiro: se um INSERT falhar, nada foi alterado ainda.
+    # As colunas nao citadas no padrao.json sao copiadas do que a propria eXo
+    # grava num atalho proprio (medido em AC_APPLICATION, IS_SYSTEM=0):
+    # ACTIVE/BY_DEFAULT/IS_DEFAULT/IS_MOBILE/SAME_TAB = 1, IS_SYSTEM = 0.
+    # IMAGE_FILE_ID fica NULL de proposito: imagem e' binario no banco, nao cabe
+    # num arquivo de padrao de texto -- o atalho nasce com o icone padrao do App
+    # Center e a imagem, se quiserem, entra pela tela de administracao.
+    for url, cfg in criar:
+        mysql("INSERT INTO AC_APPLICATION "
+              "(TITLE, DESCRIPTION, URL, ACTIVE, BY_DEFAULT, IS_SYSTEM, IS_MOBILE, "
+              " IS_CHANGED_MANUALLY, IS_DEFAULT, IS_PWA, APP_TYPE, SAME_TAB, "
+              " SHORTCUT, APPLICATION_ORDER) VALUES ("
+              f"{escapa(cfg['titulo'])}, {escapa(cfg['descricao'])}, {escapa(url)}, "
+              f"1, 1, 0, 1, 1, 1, 0, 0, 1, {escapa(cfg['tecla'])}, {cfg['ordem']});")
+        print(f"   criado: {cfg['titulo']}")
+    if criar:
+        print("\n-- COMO DESFAZER as criacoes --")
+        for url, cfg in criar:
+            print(f"   DELETE FROM AC_APPLICATION WHERE URL={escapa(url)} AND IS_SYSTEM=0;")
+
+    if mudancas:
+        print("\n-- COMO DESFAZER as alteracoes --")
+        for r in reverter:
+            print("   " + r)
+        mysql("\n".join(s for _, _, _, s in mudancas))
     # O titulo mora em DOIS lugares: alem de AC_APPLICATION.TITLE, a eXo grava um
     # snapshot em SOC_METADATA_ITEMS_PROPERTIES(label) quando o atalho e' fixado, e
     # e' ESSE que a caixa desenha. Alinhado pelo proprio JOIN -- sem repetir nomes.
@@ -186,8 +225,8 @@ def banco(padrao, aplicar):
         JOIN AC_APPLICATION a     ON a.ID = i.OBJECT_ID
          SET p.VALUE = a.TITLE
        WHERE p.NAME = 'label' AND i.OBJECT_TYPE = 'appCenter' AND p.VALUE <> a.TITLE;""")
-    print(f"\n{len(mudancas)} atalho(s) proprio(s) padronizado(s). O App Center guarda a")
-    print("lista em memoria: os nomes novos aparecem no proximo start do exo-app.")
+    print(f"\n{len(mudancas)} atalho(s) padronizado(s) e {len(criar)} criado(s). O App Center")
+    print("guarda a lista em memoria: o painel reflete tudo no proximo start do exo-app.")
 
 
 def main():

@@ -10,6 +10,54 @@ FROM exoplatform/exo-community:7.2.1
 USER root
 
 # ---------------------------------------------------------------------------
+# 0) ADD-ONS OFICIAIS -- um manifesto, um comando, e o Gerenciador de Add-ons
+#    da propria eXo fazendo o trabalho.
+#
+#    O QUE MUDOU, E POR QUE. Ate' 2026-08-25 cada add-on entrava aqui como um
+#    bloco escrito a mao: COPY do zip, sha256sum, unzip, e um `cp` por .war e
+#    por .jar -- justificado com "a imagem community NAO TRAZ o comando addon".
+#    A frase era verdadeira e a conclusao, errada: o comando addon nao vem na
+#    imagem, mas E' UM ADD-ON DO CATALOGO (exo-addons-manager, AGPLv3, publico,
+#    versao 7.2.1-exo). Bastava instala-lo primeiro. Enquanto isso nao foi
+#    visto, o catalogo inteiro -- 150 add-ons -- ficou inacessivel na pratica e
+#    a suite parou em quatro. E' a origem direta da cobranca do operador:
+#    "cade os recursos que o site promete?".
+#
+#    Agora o Dockerfile nao sabe o nome de nenhum add-on. Lista, versao, sha256,
+#    justificativa e necessidade de --no-compat moram em
+#    conf/addons/manifesto.json; quem le e' scripts/addons.py. Add-on novo = uma
+#    entrada no JSON, zero linha aqui.
+#
+#    SEM REDE, DE PROPOSITO. Medido: o Add-on Manager IGNORA um zip ja' posto em
+#    addons/archives/ e rebaixa do repositorio -- so' o downloadUrl do catalogo
+#    decide a origem do binario. Entao addons.py gera um catalogo LOCAL, igual
+#    ao oficial em todos os metadados e com downloadUrl file:// apontando para
+#    conf/addons/cache/ (preenchido por './scripts/addons.py baixar', com sha256
+#    selado no manifesto). O build nao depende de addons.exoplatform.org estar
+#    no ar, e dois builds da mesma arvore instalam byte a byte o mesmo add-on.
+#
+#    ORDEM: este passo e' o PRIMEIRO, antes das traducoes, e isso e' proposital.
+#    Os passos seguintes varrem /opt/exo/webapps para corrigir bundles; se os
+#    add-ons entrassem depois, as webapps deles (glpi-integration, dlp, mfa,
+#    ai-agent...) escapariam da correcao e chegariam ao usuario em ingles --
+#    exatamente o defeito que o operador cobrou na tela de chamados do GLPI.
+# ---------------------------------------------------------------------------
+COPY scripts/addons.py                 /build/scripts/addons.py
+COPY scripts/semear-addons-manager.py  /build/scripts/semear-addons-manager.py
+COPY conf/addons/manifesto.json        /build/conf/addons/manifesto.json
+COPY conf/addons/cache/                /build/conf/addons/cache/
+
+RUN set -eux; \
+    test -s /build/conf/addons/cache/catalogo.json; \
+    python3 /build/scripts/semear-addons-manager.py /build /opt/exo; \
+    test -s /opt/exo/addons/addons-manager.jar; \
+    ADDONS_CATALOGO_CACHE=1 python3 /build/scripts/addons.py instalar \
+        --raiz /opt/exo --cache /build/conf/addons/cache; \
+    ADDONS_CATALOGO_CACHE=1 python3 /build/scripts/addons.py listar --raiz /opt/exo; \
+    chown -R exo:exo /opt/exo/webapps /opt/exo/lib /opt/exo/addons /opt/exo/addon; \
+    rm -rf /build/conf /build/scripts
+
+# ---------------------------------------------------------------------------
 # 1) Traducoes derivadas dos proprios bundles oficiais da eXo (39 idiomas).
 #    Ver conf/i18n/derivar-traducoes.py para a logica completa.
 # ---------------------------------------------------------------------------
@@ -137,17 +185,41 @@ RUN set -eux; \
 #    reconfere CADA correcao diretamente de dentro do war ja' modificado.
 # ---------------------------------------------------------------------------
 RUN set -eux; \
-    # A LISTA TEM DE CONTER TODA WEBAPP QUE derivar-traducoes.py GEROU.
-    # Faltavam app-center, content e as duas gamification: os arquivos eram
-    # gerados em /build e nunca entravam no .war -- a correcao de
-    # "Ver mais comentarios" ficaria no disco de build e nao no produto.
-    # A verificacao logo abaixo pegou isso e reprovou o build (era esse o
-    # objetivo dela).
-    for app in digital-workplace social webdav agenda task-management deeds-tenant layout \
-               app-center content gamification-github gamification-crowdin; do \
+    # NAO EXISTE MAIS LISTA ESCRITA A MAO AQUI -- e essa e' a correcao.
+    #
+    # Havia uma, e ela ficou defasada DUAS vezes pelo mesmo motivo: alguem
+    # acrescenta uma webapp em derivar-traducoes.py e esquece de acrescentar o
+    # nome tambem nesta linha. Na primeira vez faltaram app-center, content e as
+    # duas gamification -- a correcao de "Ver mais comentarios" era gerada em
+    # /build e nunca entrava no .war. Na segunda faltou glpi-integration, e a
+    # tela de chamados continuou em ingles depois de o bundle pt-BR ter sido
+    # gerado corretamente. Duas ocorrencias do mesmo defeito nao pedem um item
+    # novo na lista; pedem o fim da lista.
+    #
+    # Agora o laco DESCOBRE o que fundir: toda pasta de /build que tenha um .war
+    # de mesmo nome em /opt/exo/webapps e' fundida. Acrescentar webapp ao
+    # gerador passa a bastar.
+    #
+    # E o portao fecha dos dois lados: pasta em /build SEM war correspondente
+    # reprova o build. Sem isso, um erro de digitacao no nome da webapp viraria
+    # silencio -- exatamente a falha que se esta' corrigindo, so' que ao
+    # contrario. 'css' e' a unica excecao legitima (fragmento consumido pelo
+    # passo 5, nao e' webapp).
+    fundidas=0; \
+    for dir in /build/*/; do \
+      app="$(basename "$dir")"; \
+      case "$app" in css) continue;; esac; \
+      if [ ! -f "/opt/exo/webapps/${app}.war" ]; then \
+        echo "ERRO: /build/${app} nao tem webapp correspondente em /opt/exo/webapps"; exit 1; \
+      fi; \
       jar uf "/opt/exo/webapps/${app}.war" -C "/build/${app}" .; \
       chown exo:exo "/opt/exo/webapps/${app}.war"; \
+      fundidas=$((fundidas+1)); \
+      echo "fundida: ${app}.war"; \
     done; \
+    test "$fundidas" -ge 12; \
+    unzip -Z1 /opt/exo/webapps/glpi-integration.war \
+      'WEB-INF/classes/locale/portlet/Glpi_pt_BR.properties'; \
     for f in $(unzip -Z1 /opt/exo/webapps/digital-workplace.war \
                 'WEB-INF/classes/locale/navigation/portal/myworkspace_*.properties'); do \
       unzip -p /opt/exo/webapps/digital-workplace.war "$f" \
@@ -528,72 +600,17 @@ RUN set -eux; \
     echo "OK: SpacesAdministrationPortlet_pt_BR.properties traduzido (lastActivity, loadingLastActivity)"
 
 # ---------------------------------------------------------------------------
-# 12) NOVO (2026-08-21): ADDON OFICIAL eXo Jitsi 7.2.1
-#     org.exoplatform.addons.jitsi:exo-jitsi:7.2.1
-#
-#     Por que ele e' obrigatorio: o conector External Visio que a imagem
-#     community traz NAO e' um sistema de chamadas -- startCall() e' um unico
-#     window.open(url) e o jar do external-visio tem ZERO classes de
-#     notificacao (medido). Resultado pratico: quem clicava entrava sozinho
-#     numa sala, tinha de digitar o nome e passar por lobby, e o outro lado
-#     nunca era avisado. Isso nao e' ligacao.
-#     Este addon implementa o provider da SPI WebConferencingService, com
-#     callId simetrico (p_<userA>-<userB>) e aviso de chamada por push CometD
-#     (webConferencing.onUserUpdate -> callState == "started").
-#     Depende do microservico jitsi-call (servico do docker-compose.yml), que
-#     assina o JWT da sala JA COM O NOME do usuario -- e' o que elimina o
-#     "digite seu nome" e o lobby.
-#     Baixado de repository.exoplatform.org; sha256 conferido no build.
+# (Aqui viviam dois blocos manuais: "12) ADDON OFICIAL eXo Jitsi 7.2.1" e
+#  "9) ADDON OFICIAL exo-glpi-integration 7.2.0" -- COPY do zip, sha256sum,
+#  unzip e um `cp` por artefato, ~40 linhas cada. Ambos foram para
+#  conf/addons/manifesto.json e sao instalados no passo 0, pelo Add-on Manager
+#  oficial. O sha256 selado pelo manifesto saiu IDENTICO ao que estava fixo
+#  nestes blocos -- e21bb179... no jitsi e 74e2dd5d... no glpi -- entao o
+#  binario instalado e' bit a bit o mesmo; o que mudou foi so' quem instala.
+#  A justificativa tecnica de cada um (por que o External Visio nao servia,
+#  por que link nao e' integracao) foi preservada no campo "porque" do
+#  manifesto, nao se perdeu.)
 # ---------------------------------------------------------------------------
-COPY conf/addons/exo-jitsi-7.2.1.zip /tmp/exo-jitsi.zip
-
-RUN set -eux; \
-    echo "e21bb179e72e242f169ad968a0cdb816b484e7e13c784046cffce4ed25812566  /tmp/exo-jitsi.zip" | sha256sum -c -; \
-    cd /tmp && unzip -o exo-jitsi.zip -d /tmp/jitsiaddon; \
-    cp /tmp/jitsiaddon/webapps/jitsi.war /opt/exo/webapps/jitsi.war; \
-    cp /tmp/jitsiaddon/lib/web-conferencing-jitsi-services.jar /opt/exo/lib/web-conferencing-jitsi-services.jar; \
-    chown exo:exo /opt/exo/webapps/jitsi.war /opt/exo/lib/web-conferencing-jitsi-services.jar; \
-    rm -rf /tmp/jitsiaddon /tmp/exo-jitsi.zip; \
-    test -s /opt/exo/webapps/jitsi.war; \
-    test -s /opt/exo/lib/web-conferencing-jitsi-services.jar; \
-    unzip -p /opt/exo/webapps/jitsi.war js/webconferencing-jitsi.js | grep -q 'CALL_URL_PATH'; \
-    echo "OK: addon oficial exo-jitsi 7.2.1 instalado (jitsi.war + services.jar)"
-
-# ---------------------------------------------------------------------------
-# 9) ADDON OFICIAL exo-glpi-integration 7.2.0 -- chamados do GLPI DENTRO do eXo.
-#
-#    Vinha faltando: existia so' um atalho apontando para o GLPI externo, que e'
-#    um link, nao integracao. O addon publica os tickets do usuario dentro do
-#    portal (https://www.exoplatform.com/blog/new-glpi-add-on-...).
-#
-#    POR QUE POR ZIP, E NAO PELO GERENCIADOR DE ADDONS: a imagem
-#    exoplatform/exo-community NAO TRAZ o comando 'addon' e o start_eXo.sh nao
-#    le EXO_ADDONS_LIST -- conferido nesta imagem (0 ocorrencias de 'addon' no
-#    script de boot). O empacotamento oficial e' um zip com webapps/ e lib/, que
-#    e' exatamente o que se copia abaixo. Mesmo caminho ja' validado no Jitsi.
-#
-#    Origem: http://addons.exoplatform.org/n/exo-addons-releases/
-#            org.exoplatform.addons.glpi-integration/glpi-integration-packaging/7.2.0/zip
-#    Catalogo oficial declara compatibility [7.2-m1,) -- serve na 7.2.1.
-#    O zip fica versionado em conf/addons/ para a instalacao nao depender de o
-#    addons.exoplatform.org estar no ar no dia do build.
-# ---------------------------------------------------------------------------
-COPY conf/addons/exo-glpi-integration-7.2.0.zip /tmp/exo-glpi.zip
-
-RUN set -eux; \
-    echo "74e2dd5d911632d1a8f3a734ad8a7112c0e6761648f5ba85ff77d79827574147  /tmp/exo-glpi.zip" | sha256sum -c -; \
-    cd /tmp && unzip -o exo-glpi.zip -d /tmp/glpiaddon; \
-    cp /tmp/glpiaddon/webapps/glpi-integration.war /opt/exo/webapps/glpi-integration.war; \
-    cp /tmp/glpiaddon/lib/glpi-integration-api.jar /opt/exo/lib/glpi-integration-api.jar; \
-    cp /tmp/glpiaddon/lib/glpi-integration-services.jar /opt/exo/lib/glpi-integration-services.jar; \
-    chown exo:exo /opt/exo/webapps/glpi-integration.war \
-                  /opt/exo/lib/glpi-integration-api.jar \
-                  /opt/exo/lib/glpi-integration-services.jar; \
-    rm -rf /tmp/glpiaddon /tmp/exo-glpi.zip; \
-    test -s /opt/exo/webapps/glpi-integration.war; \
-    test -s /opt/exo/lib/glpi-integration-api.jar; \
-    test -s /opt/exo/lib/glpi-integration-services.jar; \
-    echo "OK: addon oficial exo-glpi-integration 7.2.0 instalado"
 
 # ---------------------------------------------------------------------------
 # 10) ATALHOS DO PAINEL SOB UMA REGRA SO' -- nome e tecla.

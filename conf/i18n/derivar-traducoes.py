@@ -492,12 +492,157 @@ def gera_see_more(destino_raiz):
     return total
 
 
+
+# --- GLPI: o add-on oficial nao tem pt-BR -------------------------------------
+# exo-glpi-integration 7.2.0 empacota SO' Glpi_en.properties e Glpi_fr.properties
+# (conferido no war). Num portal inteiro em pt-BR, o quadro de chamados aparece
+# em ingles -- e' a mistura de idiomas que o operador cobrou.
+#
+# Como as 39 chaves sao preenchidas, em duas camadas e nesta ordem:
+#
+#   1. DERIVADA (12 chaves). O valor ingles da chave GLPI e' procurado, IDENTICO,
+#      entre todos os *_en.properties da imagem; achado, copia-se o valor pt-BR
+#      irmao. Isso nao e' so' procedencia: e' o que garante que o botao do GLPI
+#      diga a MESMA palavra que o resto do portal ja' diz. 'See more' vira
+#      "Ver mais" pela mesma origem que corrigiu o "Ver mais comentarios".
+#      Quando a mesma frase inglesa tem varias traducoes pt-BR na imagem, vence a
+#      mais frequente -- que e' a convencao de fato do produto.
+#
+#   2. ESCRITA (27 chaves). Frases especificas do GLPI ("Enter the GLPI app
+#      token") nao existem em lugar nenhum da imagem; nao ha' origem para copiar.
+#      Vale a regra ja' firmada aqui em 2026-08-19: procedencia e' PREFERENCIA e
+#      nao ganha da CORRECAO -- deixar em ingles seria pior. O vocabulario segue
+#      o do proprio GLPI em pt-BR ("chamado", nao "ticket"/"requisicao") e o
+#      atalho do painel ja' padronizado, "Chamados (GLPI)".
+#
+# O arquivo gerado marca cada linha com [derivada de ...] ou [ESCRITA POR NOS].
+GLPI_WAR = "glpi-integration.war"
+GLPI_BASE = "Glpi"
+
+# Escritas por nos -- chave: (texto pt-BR, motivo de nao haver origem)
+GLPI_ESCRITAS = {
+    "glpi.create.connection.message":            ("Ativar a conex\u00e3o com o GLPI", "frase propria do add-on"),
+    "glpi.enable.users.connection.message":      ("Permita que seus usu\u00e1rios se conectem ao GLPI.", "frase propria do add-on"),
+    "glpi.users.connection.todo.message":        ("Habilite seus usu\u00e1rios a se conectar ao GLPI informando os dados necess\u00e1rios, dispon\u00edveis no pr\u00f3prio GLPI", "frase propria do add-on"),
+    "glpi.settings.server.api.url.label":        ("Endere\u00e7o do servidor", "'Server address' nao ocorre na imagem"),
+    "glpi.settings.server.api.url.placeholder":  ("Informe o endere\u00e7o do servidor GLPI", "frase propria do add-on"),
+    "glpi.settings.app.token.label":             ("Token do aplicativo", "'App token' nao ocorre na imagem"),
+    "glpi.settings.app.token.placeholder":       ("Informe o token do aplicativo GLPI", "frase propria do add-on"),
+    "glpi.settings.max.tickets.display.label":   ("Limite de chamados na lista", "frase propria do add-on"),
+    "glpi.settings.max.tickets.display.hint.message": ("Deve ficar entre 1 e 10", "frase propria do add-on"),
+    "glpi.settings.saved.success.message":       ("Configura\u00e7\u00f5es do GLPI salvas", "frase propria do add-on"),
+    "glpi.settings.saved.error.message":         ("Erro ao salvar as configura\u00e7\u00f5es do GLPI", "frase propria do add-on"),
+    "glpi.settings.last.requests.label":         ("Meus \u00faltimos chamados no GLPI", "frase propria do add-on"),
+    "glpi.connection.label":                     ("Conex\u00e3o", "'Connection' isolado nao ocorre na imagem"),
+    "glpi.user.connection.message":              ("Autenticar no GLPI", "frase propria do add-on"),
+    "glpi.user.connection.todo.message":         ("Para se autenticar, informe nas configura\u00e7\u00f5es do aplicativo um token fornecido pelo GLPI.", "frase propria do add-on"),
+    "glpi.connection.user.token.label":          ("Token", "termo mantido: o GLPI em pt-BR tambem usa 'token'"),
+    "glpi.connection.user.token.placeholder":    ("Informe o token da sua conta no GLPI", "frase propria do add-on"),
+    "glpi.user.token.saved.success.message":     ("Token do usu\u00e1rio salvo", "frase propria do add-on"),
+    "glpi.user.token.saved.error.message":       ("Erro ao salvar o token do usu\u00e1rio", "frase propria do add-on"),
+    "glpi.user.token.not.valid.message":         ("Token do usu\u00e1rio inv\u00e1lido", "frase propria do add-on"),
+    "glpi.ticket.status.PROCESSING_ASSIGNED.label": ("Em atendimento (atribu\u00eddo)", "status do GLPI; termo do proprio GLPI pt-BR"),
+    "glpi.ticket.status.PROCESSING_PLANNED.label":  ("Em atendimento (planejado)", "status do GLPI; termo do proprio GLPI pt-BR"),
+    "glpi.ticket.status.SOLVED.label":           ("Solucionado", "status do GLPI; termo do proprio GLPI pt-BR"),
+    "glpi.ticket.status.CLOSED.label":           ("Fechado", "status do GLPI; termo do proprio GLPI pt-BR"),
+    "glpi.ticket.create.label":                  ("Criar chamado no GLPI", "'Criar', e nao 'Abrir', para nao colidir com 'Abrir o chamado' logo abaixo"),
+    "glpi.my.ticket.list.label":                 ("Meus chamados no GLPI", "casa com o atalho ja' padronizado 'Chamados (GLPI)'"),
+    "glpi.ticket.open.message":                  ("Abrir o chamado", "acao de abrir o chamado no GLPI"),
+}
+
+
+def indice_en_ptbr():
+    """valor ingles (minusculo) -> [(valor pt-BR, [chaves de origem])], mais frequente primeiro.
+
+    Varre TODOS os .war: para cada par <base>_en / <base>_pt_BR, casa chave a
+    chave. So' entra o par cujo pt-BR existe, nao e' vazio e difere do ingles --
+    valor igual ao ingles e' chave nao traduzida, nao e' origem valida."""
+    idx = {}
+    for w in wars():
+        try:
+            z = zipfile.ZipFile(w)
+        except zipfile.BadZipFile:
+            continue
+        with z:
+            for n in z.namelist():
+                if not n.endswith("_en.properties"):
+                    continue
+                irmao = n[:-len("_en.properties")] + "_pt_BR.properties"
+                if irmao not in z.namelist():
+                    continue
+                en, br = le_properties(z.read(n)), le_properties(z.read(irmao))
+                for chave, valor in en.items():
+                    alvo = br.get(chave)
+                    if not alvo or alvo == valor or re.search(r"crwdn[se]\d+:\d+", alvo):
+                        continue
+                    idx.setdefault(valor.strip().lower(), {}).setdefault(alvo, []).append(
+                        "%s:%s:%s" % (os.path.basename(w), os.path.basename(n), chave))
+    return {k: sorted(v.items(), key=lambda kv: -len(kv[1])) for k, v in idx.items()}
+
+
+def gera_glpi(destino_raiz):
+    caminho = os.path.join(WEBAPPS, GLPI_WAR)
+    if not os.path.exists(caminho):
+        sys.exit("ERRO: %s ausente -- o add-on GLPI deveria estar instalado; build reprovado" % GLPI_WAR)
+    with zipfile.ZipFile(caminho) as z:
+        nome_en = PORTLET_DIR + "%s_en.properties" % GLPI_BASE
+        if nome_en not in z.namelist():
+            sys.exit("ERRO: %s nao tem %s -- build reprovado" % (GLPI_WAR, nome_en))
+        if PORTLET_DIR + "%s_pt_BR.properties" % GLPI_BASE in z.namelist():
+            print("   glpi: o add-on passou a trazer pt_BR proprio -- reconferir se este "
+                  "gerador ainda e' necessario")
+        en = le_properties(z.read(nome_en))
+
+    idx = indice_en_ptbr()
+    linhas = ["# GERADO EM TEMPO DE BUILD por conf/i18n/derivar-traducoes.py.",
+              "# NAO EDITAR A MAO -- e' reescrito a cada `docker build`.",
+              "#",
+              "# O add-on exo-glpi-integration 7.2.0 empacota so' 'en' e 'fr'. Este arquivo",
+              "# da' ao quadro de chamados o mesmo idioma do resto do portal.",
+              "#   [derivada de ...]  valor COPIADO da traducao pt-BR oficial da MESMA frase",
+              "#                      inglesa, ja' presente na imagem (garante vocabulario unico).",
+              "#   [ESCRITA POR NOS]  frase especifica do GLPI, sem equivalente na imagem.",
+              "#"]
+    derivadas = escritas = 0
+    for chave in sorted(en):
+        valor_en = en[chave].strip()
+        cand = idx.get(valor_en.lower())
+        if cand:
+            texto, origens = cand[0]
+            linhas.append("# [derivada de %s]  (%d ocorrencia(s) na imagem)" % (origens[0], len(origens)))
+            derivadas += 1
+        elif chave in GLPI_ESCRITAS:
+            bruto, motivo = GLPI_ESCRITAS[chave]
+            texto = desescapa(bruto)
+            linhas.append("# [ESCRITA POR NOS -- %s]  ingles: %s" % (motivo, valor_en))
+            escritas += 1
+        else:
+            sys.exit("ERRO: chave GLPI '%s' (%r) sem origem na imagem e sem entrada em "
+                     "GLPI_ESCRITAS -- o add-on mudou de bundle; build reprovado"
+                     % (chave, valor_en))
+        linhas.append("%s=%s" % (chave, escapa(texto)))
+
+    sobrando = set(GLPI_ESCRITAS) - set(en)
+    if sobrando:
+        sys.exit("ERRO: GLPI_ESCRITAS tem chave(s) que nao existem mais no add-on: %s "
+                 "-- build reprovado" % ", ".join(sorted(sobrando)))
+
+    destino = os.path.join(destino_raiz, GLPI_WAR[:-4], PORTLET_DIR)
+    os.makedirs(destino, exist_ok=True)
+    with open(os.path.join(destino, "%s_pt_BR.properties" % GLPI_BASE), "w", encoding="ascii") as fh:
+        fh.write("\n".join(linhas) + "\n")
+    print("   glpi: %d chave(s) -- %d derivada(s) da imagem, %d escrita(s) por nos"
+          % (len(en), derivadas, escritas))
+    return len(en)
+
+
 if __name__ == "__main__":
     raiz = sys.argv[1]
     print("== derivando traducoes a partir dos bundles da imagem oficial ==")
     n = gera_myworkspace(os.path.join(raiz, "digital-workplace", NAV))
     m = gera_portlets(os.path.join(raiz, "social", PORTLET))
     k = gera_see_more(raiz)
-    if n == 0 or m == 0 or k == 0:
+    g = gera_glpi(raiz)
+    if n == 0 or m == 0 or k == 0 or g == 0:
         sys.exit("ERRO: nada foi gerado -- build reprovado")
-    print("== OK: %d navegacao + %d portlet social + %d see-more ==" % (n, m, k))
+    print("== OK: %d navegacao + %d portlet social + %d see-more + %d glpi ==" % (n, m, k, g))

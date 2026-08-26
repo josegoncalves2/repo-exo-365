@@ -216,8 +216,8 @@ EXO_MAIL_SMTP_PASSWORD=senha
 e recrie apenas a aplicação: `docker compose up -d --force-recreate exo`
 
 > **Lembrete:** o eXo **não é servidor de e-mail**. Ele apenas envia notificações.
-> Caixas postais (equivalente ao Exchange/Outlook) exigem produto separado.
-> Ver `MAPEAMENTO-OFFICE365.md`, seção "Lacunas conhecidas".
+> Caixas postais (equivalente ao Exchange/Outlook) exigem produto separado
+> (Mailu, Mailcow, Zimbra) — não há equivalente no eXo Community.
 
 ---
 
