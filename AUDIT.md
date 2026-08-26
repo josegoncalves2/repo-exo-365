@@ -3698,3 +3698,203 @@ Regressao SITDS: 36/36. Contas de teste todas removidas ao fim.
 0 falharam. Codigo de saida 0.
 **Evidência:** evidence/execucao-test_05_padronizacao-20260825-161712.log e evidence/resultado-*-20260825-161712.json
 **Status:** OK
+
+---
+
+### [143] 2026-08-26 — A suíte parou em 4 add-ons por uma suposição que ninguém conferiu
+
+**Cobrança do operador, procedente:** "CADE A INTEGRAÇÃO COM GLPI E TODAS AS OUTRAS
+INTEGRAÇÕES DISPONIVEIS????", "cade os recursos que o site promete?", "qual o motivo
+da implementação ficar pela metade e pior, sem notificar dessa atitude unilateral sua?".
+
+**Causa raiz — e ela é constrangedora:** presumiu-se que DLP, 2FA, Gerenciador de
+Add-ons, Gerenciador de Migração e IA fossem eXo *Enterprise* pago, e a suíte foi
+entregue com quatro add-ons. A suposição nunca foi conferida contra o catálogo.
+Medição feita agora (`storage.exoplatform.org/public/Addons/list.json`, 8.801
+entradas / 150 add-ons; 48 URLs testadas uma a uma): **47 de 48 baixam
+anonimamente**, em versão compatível com a 7.2.1, todos AGPLv3/LGPLv3 e com
+`mustAcceptLicense=false`. Nenhum era pago. O único indisponível é
+`exo-caldav-integration` (HTTP 404 na 7.2.1).
+
+**O erro de leitura que travou tudo:** o Dockerfile registrava "a imagem community
+NÃO TRAZ o comando `addon`" — verdade — e concluía que o catálogo era inalcançável.
+Mas o comando `addon` **é um add-on do catálogo** (`exo-addons-manager` 7.2.1-exo,
+AGPLv3). Bastava instalá-lo primeiro.
+
+**Segunda armadilha, medida:** a imagem se identifica como distribuição
+`exo_community` (`addon -v list` → `PLATFORM SETTINGS / distributionType`), e parte
+do catálogo declara só `community,enterprise`. O gerenciador recusa por
+"compatibilidade". É rotulagem, não licença nem barreira técnica — prova empírica:
+`exo-glpi-integration` 7.2.0 tem esse mesmo rótulo e roda aqui desde 2026-08-25.
+Por isso o manifesto marca `no_compat` **add-on a add-on**, e `conferir` reprova se
+o campo divergir do catálogo — o flag nunca é global nem aplicado no escuro.
+
+**Feito:**
+- `conf/addons/manifesto.json` — FONTE ÚNICA: id, versão, sha256, categoria,
+  `no_compat` e o `porque` citando o item do briefing que cada add-on atende.
+- `scripts/addons.py` — `resolver` / `conferir` / `baixar --selar` / `instalar` /
+  `listar`. Comparador de versão estilo Maven `ComparableVersion` (necessário:
+  ordenar texto inverte `7.2.1-RC01` × `7.2.1` e `7.2-m1` × `7.2`).
+- `scripts/semear-addons-manager.py` — semeia o único add-on que não pode se instalar.
+- **Build sem rede:** medido que o Add-on Manager IGNORA zip já posto em
+  `addons/archives/` e rebaixa do repositório — só o `downloadUrl` do catálogo
+  decide a origem. Então `addons.py` gera um catálogo local idêntico ao oficial em
+  todos os metadados, com `downloadUrl` `file://` para `conf/addons/cache/`.
+- Dockerfile: os dois blocos manuais (Jitsi ~30 linhas, GLPI ~38) foram removidos e
+  os add-ons migrados ao manifesto. **O sha256 selado saiu idêntico ao que estava
+  fixo nos blocos** (`e21bb179…` jitsi, `74e2dd5d…` glpi): binário bit a bit o
+  mesmo, mudou só quem instala.
+- `.gitignore`: `conf/addons/cache/` fora do git (~30 MB). Reprodutibilidade vem do
+  sha256 selado, não de versionar binário. `instalar.sh` preenche o cache antes do build.
+
+**Contagem — 15 e 14 estão ambos certos, medem coisas diferentes:** o manifesto tem
+**15** entradas; `/opt/exo/addons/statuses/` tem **14** arquivos. O
+`exo-addons-manager` não gera `.status` porque é semeado à mão no build, antes de
+existir gerenciador para registrá-lo. (Registrado a pedido da sessão paralela
+`projetos-72`, para ninguém tratar como divergência depois.)
+
+**Comando/Arquivo:** `conf/addons/manifesto.json`, `scripts/addons.py`,
+`scripts/semear-addons-manager.py`, `Dockerfile.exo` (passo 0), `scripts/instalar.sh`, `.gitignore`
+**Status:** OK — 15 add-ons sob um manifesto; `conferir` fecha sem divergência.
+
+---
+
+### [144] 2026-08-26 — Instalei 3 add-ons pré-Jakarta e DERRUBEI o portal
+
+**Falha minha, em produção.** A imagem `exo-pmo:7.2.1-addons` instalou 17 add-ons e o
+portal não subiu:
+
+```
+ERROR | Cannot create the portal container 'portal'
+java.lang.ClassNotFoundException: javax.servlet.http.HttpServletRequest
+   when calling start on org.exoplatform.services.rest.impl.StartableApplication
+```
+
+**Causa:** a eXo 7.x roda em Tomcat 10, onde o pacote é `jakarta.servlet`. Três
+add-ons são da era `javax.servlet` e, ao entrar em `/opt/exo/lib`, não apenas deixam
+de funcionar — **derrubam o container do portal inteiro**:
+
+| Add-on | Jar | Faixa que o catálogo declara |
+|---|---|---|
+| `exo-exchange-extension` 1.3.1 | `jcifs.jar` | `[4.4,)` |
+| `mfa-fido` 1.0.1 | `mfa-fido-service.jar` | `[6.2-m29,)` |
+| `mfa-oidc` 1.0.1 | `mfa-oidc-service.jar` | `[6.2-m29,)` |
+
+**O catálogo não protege disso:** `[4.4,)` significa "da 4.4 em diante", 7.2.1
+incluída. São faixas abertas escritas ANTES da migração jakarta e nunca revisadas
+depois dela. Confiar nesse metadado foi o erro — `conferir` passou justamente porque
+acreditou nele.
+
+**Correção — portão que mede o binário, não o metadado:** `usa_javax_servlet()` abre
+cada zip, entra em cada `.jar`, lê cada `.class` e procura `javax/servlet/`. Reprova
+em **três** pontos: `conferir`, `baixar` (apaga o download) e `instalar` (última
+barreira antes da imagem). Verificado: reprova exatamente os 3, aprova os 15.
+
+**Consequências para o briefing, sem maquiar:**
+- **2FA fica só com OTP** (`exo-multifactor-authentication` 7.2.1, app autenticador).
+  FIDO e OIDC não existem em build compatível com 7.2.
+- **Add-on Exchange dedicado está fora.** A via viável é `exo-agenda-connectors`
+  7.2.1 (`exo.agenda.exchange.connector.enabled`), que é nativo da 7.2.1.
+
+**Prova:** `exo-pmo:7.2.1-addons2`, `docker logs exo-app | grep -cE 'ERROR|SEVERE'` = **0**.
+
+**Comando/Arquivo:** `scripts/addons.py` (`usa_javax_servlet`), `conf/addons/manifesto.json` (`_jakarta`)
+**Status:** OK — portal de pé, e a classe do defeito não passa mais.
+
+---
+
+### [145] 2026-08-26 — Duas listas escritas à mão, o mesmo defeito duas vezes
+
+**1. Merge de traduções nos `.war`.** O passo 7 do Dockerfile tinha uma lista literal
+de webapps. Ficou defasada duas vezes pelo mesmo motivo — alguém acrescenta webapp ao
+gerador e esquece da lista. Na primeira faltaram `app-center`, `content` e as duas
+`gamification` (a correção de "Ver mais comentarios" ficava no disco de build). Na
+segunda faltou `glpi-integration`, e a tela de chamados seguiu em inglês **depois** de
+o bundle pt-BR ter sido gerado corretamente. Duas ocorrências não pedem mais um item
+na lista; pedem o fim da lista. Agora o laço **descobre**: toda pasta de `/build` com
+`.war` de mesmo nome é fundida, e pasta **sem** war correspondente **reprova o build**
+(senão um erro de digitação viraria silêncio).
+
+**2. `padronizar-atalhos.py` só renomeava.** `conf/atalhos/padrao.json` declara 13
+atalhos; o banco tinha 12 — **"Chamados (GLPI)" havia sumido**. A ferramenta que
+existe para IMPOR o padrão imprimia "pulado" e saía com código 0. Um padrão que não
+se reaplica não é padrão, é documentação. Agora o ausente é **criado** (colunas
+copiadas do que a própria eXo grava num atalho próprio; `IMAGE_FILE_ID` fica NULL de
+propósito — imagem é binário, não cabe num arquivo de padrão de texto). Idempotente:
+rodar de novo não duplica. Aplicado e conferido: atalho id 26, tecla `c`, ordem 60;
+segunda execução diz "já estão no padrão"; 7 próprios + 6 de sistema = 13.
+
+**3. GLPI não falava português.** O add-on oficial empacota **só `en` e `fr`**. Novo
+`gera_glpi()` preenche as 39 chaves em duas camadas: **12 derivadas** — o valor inglês
+da chave GLPI é procurado idêntico entre todos os `*_en.properties` da imagem e copia-se
+o pt-BR irmão (garante o mesmo vocabulário do resto do portal; `See more` → `Ver mais`
+pela mesma origem que corrigiu o "Ver mais comentarios") — e **27 escritas**, por não
+existirem em lugar nenhum da imagem. Cada linha do arquivo gerado é marcada com
+`[derivada de <origem>]` ou `[ESCRITA POR NOS — <motivo>]`. Chave nova no add-on sem
+entrada correspondente **reprova o build**.
+
+**Comando/Arquivo:** `Dockerfile.exo` (passo 7), `scripts/padronizar-atalhos.py`, `conf/i18n/derivar-traducoes.py`
+**Status:** OK — as três listas manuais deixaram de existir.
+
+---
+
+### [146] 2026-08-26 — 8 propriedades de `exo.properties` que ninguém lê
+
+**Achado ao configurar os add-ons novos.** `conf/exo.properties` declarava
+`glpi.integration.enabled=true`, `glpi.sync.enabled=true` e `glpi.widget.enabled=true`.
+Varredura de todos os `.jar`/`.war` da imagem por `${glpi…}`: o add-on lê **apenas**
+`exo.glpi-integration.portalConfig.metadata.override` e `.importmode`. As três davam a
+impressão de que a integração estava configurada e não configuravam nada — pior que a
+ausência, porque a ausência é visível. A configuração real do GLPI é pela tela
+(endereço + token do aplicativo; token pessoal por usuário).
+
+Mesma varredura acusou mais 5 órfãs: `exo.chat.enabled`, `onlyoffice.enabled`,
+`onlyoffice.documentserver.url`, `onlyoffice.jwt.enabled`, `webconferencing.enabled`.
+(OnlyOffice e chat funcionam — são configurados por variável do compose, não por estas.)
+
+**Feito:** as três `glpi.*` removidas, com o motivo escrito no lugar delas. O bloco novo
+dos add-ons só contém propriedade **confirmada como lida**, com o valor padrão que o
+add-on declara citado ao lado. `tests/test_06_addons.py::T-06.4` transforma isso em
+portão permanente: reprova qualquer chave de `exo.properties` que nada consuma.
+
+**Decisões de configuração, e por quê:**
+- **DLP nasce sem palavra-chave.** Lista vazia = nada em quarentena. Ligar com um chute
+  num acervo em produção tiraria do ar documentos legítimos de servidores não avisados.
+- **2FA nasce sem grupo protegido.** Ligar em `/platform/administrators` antes de os
+  administradores cadastrarem o autenticador **tranca o portal** — quem tem a chave para
+  reverter é justamente quem ficou de fora.
+- **Antimalware com conector Trend Micro desligado:** sem contrato, cada upload tentaria
+  uma chamada que nunca responde.
+- **IA (`meeds.ai.agent.enabled=false`).** Decisão do operador, 2026-08-25, textual:
+  *"EM NENHUMA HIPOTESE DEVE EXISTIR E NEM EXISTIRÁ LLM LOCAL"*. Não há e não haverá
+  Ollama nesta stack. Provedor e chave são cadastrados na tela e ficam no banco — não
+  existe, e não deve passar a existir, chave de API neste repositório.
+
+**Comando/Arquivo:** `conf/exo.properties`, `conf/exo.properties.example`, `tests/test_06_addons.py`
+**Status:** OK — nenhuma propriedade fictícia; as decisões de não-ativação estão escritas.
+
+---
+
+### [147] 2026-08-26 — SEIS sessões Claude na mesma stack; teste ao vivo não conclui
+
+**Medido:** `pgrep -af native-binary/claude` → 6 processos vivos (2690521, 3284052,
+3284346, 4153352, 4156195, 4181973). **Três** rodando teste Playwright ao vivo ao mesmo
+tempo, em displays distintos (`:77`→noVNC 6080, `:101`→6081, `:98`→6082) e **duas
+escrevendo em `evidence/ao-vivo/`**, com numeração `NN-nome.png` colidente.
+
+Às 08:59:18 -03 a stack inteira foi destruída (`network destroy exo_net`) por um
+`docker compose up -d` cuja cadeia de PPID leva ao claude PID 3284346, matando dois
+testes ao vivo em andamento. **Não foi esta sessão:** PID 3284052, irmão de 3284346
+(mesmo PPID 2416310, 11 s de diferença no nascimento) — a sessão `projetos-72`
+levantou a acusação, conferiu e a retirou. O 3284346 não se apresentou.
+
+**Efeito prático:** o teste ao vivo desta sessão não passou do login, porque o portal é
+recriado por baixo dele (`502 Bad Gateway` no meio da suíte). Enquanto seis sessões
+disputarem os mesmos containers, nenhum teste ao vivo termina.
+
+**Feito:** `tests/e2e_addons_ao_vivo.py` grava em `evidence/ao-vivo-<pid>/`, uma pasta
+por sessão. Coordenação por mensagem entre sessões; esta cedeu a stack.
+
+**Status:** PENDENTE — o teste end-to-end ao vivo NÃO foi concluído por esta sessão.
+Não há prova de navegador para os add-ons novos vinda daqui. O que existe de prova é:
+build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.

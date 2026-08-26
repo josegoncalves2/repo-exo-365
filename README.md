@@ -142,6 +142,85 @@ valores cifrados com a chave do codec.
 
 ---
 
+## Add-ons oficiais — o que está instalado e por quê
+
+Nada de add-on entra na imagem "na mão". A lista, a versão, o `sha256`, a
+justificativa e a necessidade de `--no-compat` moram em
+**`conf/addons/manifesto.json`** (fonte única); quem lê e instala é
+`scripts/addons.py`, usando o **Add-on Manager oficial da eXo**. O Dockerfile não
+cita o nome de nenhum add-on.
+
+```bash
+./scripts/addons.py resolver    # o catálogo oficial propõe versão por add-on
+./scripts/addons.py conferir    # o manifesto ainda bate com o catálogo?
+./scripts/addons.py baixar      # preenche conf/addons/cache/ e confere o sha256
+./scripts/addons.py listar      # o que está instalado na imagem
+```
+
+| Item do briefing | Add-on | Versão |
+|---|---|---|
+| Chat integrado | Matrix/Synapse (já na imagem) | — |
+| Videoconferência | `exo-jitsi` | 7.2.1 |
+| Edição de documentos | OnlyOffice (já na imagem) | — |
+| Chamados dentro do portal | `exo-glpi-integration` | 7.2.0 |
+| **DLP** | `exo-dlp` | 7.2.1 |
+| **2FA por grupo/zona** | `exo-multifactor-authentication` | 7.2.1 |
+| Antimalware / anti-força-bruta | `exo-anti-malware`, `exo-anti-bruteforce` | 7.2.1 |
+| SSO federado / API por token | `exo-saml`, `exo-jwt-authentication` | 7.2.1 / 7.2.0 |
+| **Gerenciador de Add-ons** | `exo-addons-manager` | 7.2.1-exo |
+| **Gerenciador de Migração** | `exo-data-upgrade` | 7.2.1 |
+| Correio, agenda externa, drives externos | `exo-mail-integration`, `exo-agenda-connectors`, `exo-cloud-drive-connectors` | 7.2.1 |
+| Tradução automática | `exo-automatic-translation` | 7.2.1 |
+| **Assistente de IA** | `meeds-ai` | 7.2.1-exo |
+
+São **15 entradas no manifesto** e **14 arquivos em `/opt/exo/addons/statuses/`** — a
+diferença é o `exo-addons-manager`, que não gera `.status` porque é semeado à mão no
+build, antes de existir gerenciador para registrá-lo. Os dois números estão certos.
+
+Todos são **AGPLv3 ou LGPLv3**, com `mustAcceptLicense=false`. Nenhum é pago.
+Nenhum exige contrato. O que impedia instalá-los era só o fato de o comando `addon`
+não vir na imagem — e ele próprio é um add-on do catálogo.
+
+### Três portões que o build não deixa passar
+
+1. **`sha256` selado.** O manifesto fixa a soma de cada zip. Divergência reprova o
+   build. Só `addons.py baixar --selar` grava soma nova, e ele mostra o antes e o depois.
+2. **`javax.servlet`.** A eXo 7.x roda em Tomcat 10 (`jakarta.servlet`). Add-on
+   compilado contra `javax.servlet` **derruba o portal inteiro**, não só a si mesmo —
+   aconteceu em 2026-08-26 (AUDIT [144]). O catálogo *não* protege: `exo-exchange-extension`
+   1.3.1 declara compatibilidade `[4.4,)`, que inclui a 7.2.1, e é `javax`. Por isso
+   `addons.py` **abre cada zip e mede o binário** em vez de acreditar no metadado.
+3. **Distribuição.** A imagem se identifica como `exo_community`; parte do catálogo
+   declara só `community,enterprise`. É rotulagem, não licença. O manifesto marca
+   `no_compat` add-on a add-on, e `conferir` reprova se divergir do catálogo — o flag
+   nunca é global.
+
+### O que NÃO entrou, e por quê
+
+| Pedido | Situação |
+|---|---|
+| 2FA por FIDO / OIDC | `mfa-fido` e `mfa-oidc` (1.0.1) são `javax.servlet`. **Não existe build compatível com 7.2.** Fica só OTP (app autenticador). |
+| Add-on Exchange dedicado | `exo-exchange-extension` 1.3.1 é `javax.servlet`. A via viável é `exo-agenda-connectors` 7.2.1 (`exo.agenda.exchange.connector.enabled`), nativo da 7.2.1. |
+| CalDAV | `exo-caldav-integration` 7.2.1 responde HTTP 404 no repositório oficial. |
+| Suporte com SLA, manutenção pela eXo, serviços sob demanda | **Não é software — é contrato comercial com a eXo SAS.** Nenhum script cria isso. O que se constrói no lugar é capacidade interna: pipeline de patches, backup testado e observabilidade. |
+
+### Instalados e DESLIGADOS de propósito
+
+DLP nasce sem palavra-chave, 2FA sem grupo protegido, IA e tradução automática sem
+provedor. Não é entrega pela metade — é que cada um desses, ligado no escuro, causa
+dano: DLP com palavra chutada tira do ar documento legítimo; 2FA ligado em
+`/platform/administrators` antes de os administradores cadastrarem o autenticador
+**tranca o portal**. O motivo de cada um está escrito ao lado da chave em
+`conf/exo.properties.example`.
+
+> **IA — decisão do operador, 2026-08-25:** *nenhum LLM local, em hipótese alguma.*
+> Não há e não haverá Ollama nesta stack. O `meeds-ai` suporta provedor externo
+> (Anthropic, OpenAI, Mistral, xAI), cadastrado **na tela** — provedor e chave ficam no
+> banco. Não existe, e não deve passar a existir, chave de API neste repositório.
+> O RAG usa o Elasticsearch que a stack já tem; nenhum serviço novo.
+
+---
+
 ## Operação
 
 ```bash
@@ -216,8 +295,9 @@ EXO_MAIL_SMTP_PASSWORD=senha
 e recrie apenas a aplicação: `docker compose up -d --force-recreate exo`
 
 > **Lembrete:** o eXo **não é servidor de e-mail**. Ele apenas envia notificações.
-> Caixas postais (equivalente ao Exchange/Outlook) exigem produto separado
-> (Mailu, Mailcow, Zimbra) — não há equivalente no eXo Community.
+> Caixas postais (equivalente ao Exchange) exigem produto separado (Mailu, Mailcow,
+> Zimbra). O add-on `exo-mail-integration` (instalado, desligado) não muda isso: ele é
+> um **cliente** IMAP dentro do portal, que lê uma caixa que já exista em outro lugar.
 
 ---
 

@@ -41,19 +41,55 @@ TS="$(date +%Y%m%d-%H%M%S)"
 
 MYSQL_CT="$(docker compose ps -q mysql 2>/dev/null)"
 
-# --- 1. Dump lógico do banco (consistente, restaurável em qualquer versão)
-if [[ -n "$MYSQL_CT" ]] && docker exec "$MYSQL_CT" mysqladmin ping -h 127.0.0.1 \
-       -uroot -pmy-super-secret-pw --silent >/dev/null 2>&1; then
-  echo "[1/2] dump do banco (com --single-transaction, sem travar a aplicação)"
-  docker exec "$MYSQL_CT" mysqldump -uroot -pmy-super-secret-pw \
-      --single-transaction --routines --triggers --events \
-      --default-character-set=utf8mb4 exo 2>/dev/null \
-    | gzip > "${DEST}/exo-banco-${TS}.sql.gz"
-  echo "      -> exo-banco-${TS}.sql.gz ($(du -h "${DEST}/exo-banco-${TS}.sql.gz" | cut -f1))"
-else
-  echo "[1/2] MySQL não está no ar — pulando o dump lógico."
-  echo "      (a cópia dos arquivos abaixo ainda serve, desde que a stack esteja PARADA)"
+# A senha vem do .env, que é a fonte da verdade do projeto.
+# Até 2026-08-26 esta senha estava chumbada aqui como "my-super-secret-pw",
+# que não é a senha real. Resultado: o `mysqladmin ping` falhava sempre, o
+# script caía no ramo "MySQL não está no ar", pulava o dump em silêncio e
+# saía com código 0 — parecendo sucesso. Nunca houve um único .sql.gz.
+# Foi por isso que a perda de dados de 2026-08-26 virou permanente.
+# Por isso, aqui, falha de dump é ERRO FATAL: nunca mais em silêncio.
+if [[ -f "${ROOT}/.env" ]]; then
+  # shellcheck disable=SC1091
+  MYSQL_ROOT_PW="$(grep -E '^MYSQL_ROOT_PASSWORD=' "${ROOT}/.env" | cut -d= -f2-)"
 fi
+
+if [[ -z "${MYSQL_ROOT_PW:-}" ]]; then
+  echo "ERRO: MYSQL_ROOT_PASSWORD não encontrado em ${ROOT}/.env." >&2
+  echo "      Sem ela não há dump lógico, e backup sem dump não é backup." >&2
+  exit 1
+fi
+
+# --- 1. Dump lógico do banco (consistente, restaurável em qualquer versão)
+if [[ -z "$MYSQL_CT" ]]; then
+  echo "ERRO: contêiner mysql não encontrado. Suba a stack antes do backup." >&2
+  exit 1
+fi
+
+if ! docker exec "$MYSQL_CT" mysqladmin ping -h 127.0.0.1 \
+       -uroot -p"$MYSQL_ROOT_PW" --silent >/dev/null 2>&1; then
+  echo "ERRO: MySQL não respondeu ao ping com a senha do .env." >&2
+  echo "      Abortando: um backup sem o dump do banco daria falsa segurança." >&2
+  exit 1
+fi
+
+echo "[1/2] dump do banco (com --single-transaction, sem travar a aplicação)"
+if ! docker exec "$MYSQL_CT" mysqldump -uroot -p"$MYSQL_ROOT_PW" \
+    --single-transaction --routines --triggers --events \
+    --default-character-set=utf8mb4 exo 2>/dev/null \
+  | gzip > "${DEST}/exo-banco-${TS}.sql.gz"; then
+  echo "ERRO: mysqldump falhou. Removendo arquivo truncado." >&2
+  rm -f "${DEST}/exo-banco-${TS}.sql.gz"
+  exit 1
+fi
+
+# Um .sql.gz de poucos bytes é um gzip vazio: dump que falhou sem avisar.
+DUMP_BYTES="$(stat -c%s "${DEST}/exo-banco-${TS}.sql.gz")"
+if (( DUMP_BYTES < 10240 )); then
+  echo "ERRO: dump saiu com apenas ${DUMP_BYTES} bytes — vazio ou truncado." >&2
+  rm -f "${DEST}/exo-banco-${TS}.sql.gz"
+  exit 1
+fi
+echo "      -> exo-banco-${TS}.sql.gz ($(du -h "${DEST}/exo-banco-${TS}.sql.gz" | cut -f1))"
 
 # --- 2. Cópia dos arquivos: binários + chaves de criptografia + datadir
 echo "[2/2] arquivos (data/exo, data/exo-codec, data/mysql)"

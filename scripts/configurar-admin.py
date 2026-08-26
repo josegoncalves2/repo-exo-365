@@ -59,8 +59,11 @@ def main() -> int:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
-        nav = p.chromium.launch(args=["--no-sandbox"])
-        ctx = nav.new_context(viewport={"width": 1440, "height": 900}, locale="pt-BR")
+        nav = p.chromium.launch(headless=False, slow_mo=400,
+                                args=["--no-sandbox", "--disable-dev-shm-usage",
+                                      "--window-size=1600,1000", "--window-position=0,0"])
+        ctx = nav.new_context(viewport={"width": 1440, "height": 900}, locale="pt-BR",
+                              ignore_https_errors=True)
         pg = ctx.new_page()
 
         pg.goto(f"{BASE}/", wait_until="networkidle", timeout=120_000)

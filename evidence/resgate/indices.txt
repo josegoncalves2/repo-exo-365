@@ -1,0 +1,17 @@
+index                           docs.count store.size
+ai_user_permissions                      2     16.9kb
+file_v4                                 10     70.2kb
+task_v1                                  2     15.4kb
+news_v1                                  0       249b
+webdav_item_path_mappings                0       249b
+rule_v1                                 17      2.5mb
+event_v1                                 2     15.2kb
+analytics_2026-08-13                  1605    656.7kb
+profile_v4                              16     25.6kb
+webdav_items_cache                       0       249b
+space_v9                                 7     27.1kb
+category_v2                             21     45.1kb
+notes_v1                                 0       247b
+analytics_2026-08-20                 20016      3.7mb
+activity_v1                              2     14.3kb
+ai_user_contents_indexing_queue          0       249b

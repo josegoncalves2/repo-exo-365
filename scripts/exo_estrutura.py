@@ -1529,7 +1529,14 @@ def remover_nivel(prov, caminho, apagar_espaco=True):
         if prov.dry or st_e < 400:
             prov.log(f"   espaco apagado: {alvo.get('displayName')}")
         else:
+            # Apagar o GRUPO depois de falhar em apagar o ESPACO deixa um espaco
+            # orfao, sem vinculo, invisivel para o organograma e impossivel de
+            # remover por esta tela. Ja' aconteceu -- os orfaos ids 5..8 desta
+            # instalacao nasceram assim. Aborta o nivel e devolve 'falhou'.
             prov.log(f"   espaco NAO apagado ({st_e}): {alvo.get('displayName')}")
+            prov.log(f"   grupo MANTIDO de proposito: {caminho} "
+                     f"-- apagar o grupo agora deixaria o espaco orfao")
+            return "falhou"
     elif alvo and apagar_espaco:
         prov.log(f"   espaco PRESERVADO: '{alvo.get('displayName')}' so' foi achado "
                  f"por palpite. Nao apago por palpite.")
@@ -1575,8 +1582,40 @@ def caminhos_da_arvore(payload):
     return fora
 
 
+def subarvore_de(exo, caminho):
+    """Todos os grupos sob `caminho` (inclusive ele), DO MAIS FUNDO AO MAIS RASO.
+
+    MEDIDO NO SERVIDOR, nao deduzido do que o chamador mandou. Nasceu de uma
+    falha real (2026-08-26): a tela manda no payload apenas o no' clicado, mas
+    o modal promete apagar a subarvore inteira. O motor entao tentava apagar o
+    espaco da Secretaria com a Divisao ainda apontando para ela e o eXo devolvia
+
+      HTTP 500  Cannot delete or update a parent row: a foreign key constraint
+                fails (`exo`.`SOC_SPACES`, CONSTRAINT `FK_SOC_SPACES_PARENT`)
+
+    -- com os vinculos ja' desfeitos, ou seja, estrago pela metade. Descobrir a
+    subarvore aqui conserta a web, a CLI e qualquer outro chamador de uma vez.
+    """
+    todos = grupos_existentes(exo)
+    dentro = [g for g in todos if g == caminho or g.startswith(caminho + "/")]
+    return sorted(dentro, key=lambda g: g.count("/"), reverse=True)
+
+
 def remover_arvore(prov, payload):
-    caminhos = caminhos_da_arvore(payload)
+    pedidos = caminhos_da_arvore(payload)
+    # Expande cada caminho com a subarvore REAL do servidor e ordena do mais
+    # fundo ao mais raso: o eXo recusa apagar grupo com subgrupo, e a FK
+    # SOC_SPACES.PARENT_SPACE_ID recusa apagar espaco que ainda seja pai.
+    caminhos = []
+    for c in pedidos:
+        for g in subarvore_de(prov.exo, c):
+            if g not in caminhos:
+                caminhos.append(g)
+    caminhos.sort(key=lambda g: g.count("/"), reverse=True)
+    extras = [c for c in caminhos if c not in pedidos]
+    if extras:
+        prov.log("   subarvore encontrada no servidor, sera' removida de baixo "
+                 "para cima: " + ", ".join(extras))
     try:
         contas = {}
         for c in caminhos:

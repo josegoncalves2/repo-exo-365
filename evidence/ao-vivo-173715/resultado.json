@@ -1,0 +1,111 @@
+{
+  "base": "http://192.168.1.59",
+  "quando": "2026-08-26 09:43:32",
+  "total": 17,
+  "passaram": 17,
+  "falharam": 0,
+  "passos": [
+    {
+      "passo": "login no portal",
+      "ok": true,
+      "detalhe": "url apos login: http://192.168.1.59/portal/myworkspace",
+      "prova": "evidence/ao-vivo-173715/02-apos-login.png"
+    },
+    {
+      "passo": "painel sem nome em ingles e sem 'Ver mais comentarios'",
+      "ok": true,
+      "detalhe": "nenhum nome em ingles, nenhum 'Ver mais comentarios'",
+      "prova": "evidence/ao-vivo-173715/03-painel.png"
+    },
+    {
+      "passo": "1.1 chat integrado abre",
+      "ok": true,
+      "detalhe": "572 chars na tela; url=http://192.168.1.59/portal/administration/home/applications/chat",
+      "prova": "evidence/ao-vivo-173715/04-1-1-chat.png"
+    },
+    {
+      "passo": "1.2 agenda (onde vive o botao de conferencia) abre",
+      "ok": true,
+      "detalhe": "210 chars; url=http://192.168.1.59/portal/myworkspace/dashboard/agenda",
+      "prova": "evidence/ao-vivo-173715/05-1-2-agenda-jitsi.png"
+    },
+    {
+      "passo": "1.3 documentos abre",
+      "ok": true,
+      "detalhe": "157 chars; url=http://192.168.1.59/portal/myworkspace/drives",
+      "prova": "evidence/ao-vivo-173715/06-1-3-documentos.png"
+    },
+    {
+      "passo": "administracao abre",
+      "ok": true,
+      "detalhe": "541 chars; url=http://192.168.1.59/portal/administration",
+      "prova": "evidence/ao-vivo-173715/07-administracao.png"
+    },
+    {
+      "passo": "2.1 DLP (quarentena) tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/08-2-1-dlp-quarentena.png"
+    },
+    {
+      "passo": "2.2 2FA (MFA) tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/09-2-2-2fa-mfa.png"
+    },
+    {
+      "passo": "2.3 Restricao de download tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/10-2-3-restricao-de-download.png"
+    },
+    {
+      "passo": "IA — modelos e provedor tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/11-ia-modelos-e-provedor.png"
+    },
+    {
+      "passo": "IA — agentes tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/12-ia-agentes.png"
+    },
+    {
+      "passo": "Traducao automatica tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/13-traducao-automatica.png"
+    },
+    {
+      "passo": "Conector de agenda (Exchange) tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/14-conector-de-agenda-exchange.png"
+    },
+    {
+      "passo": "Chat tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/15-chat.png"
+    },
+    {
+      "passo": "Videoconferencia (Jitsi) tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-173715/16-videoconferencia-jitsi.png"
+    },
+    {
+      "passo": "GLPI sem texto em ingles na tela",
+      "ok": true,
+      "detalhe": "nenhum termo em ingles; em pt encontrei ['Configura']",
+      "prova": "evidence/ao-vivo-173715/17-glpi.png"
+    },
+    {
+      "passo": "atalho da IA em portugues",
+      "ok": true,
+      "detalhe": "nenhum atalho em ingles no painel",
+      "prova": "evidence/ao-vivo-173715/18-atalho-ia.png"
+    }
+  ]
+}

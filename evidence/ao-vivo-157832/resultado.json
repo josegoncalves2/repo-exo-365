@@ -1,0 +1,81 @@
+{
+  "base": "http://192.168.1.59",
+  "quando": "2026-08-26 09:34:56",
+  "total": 12,
+  "passaram": 8,
+  "falharam": 4,
+  "passos": [
+    {
+      "passo": "login no portal",
+      "ok": true,
+      "detalhe": "url apos login: http://192.168.1.59/portal/myworkspace",
+      "prova": "evidence/ao-vivo-157832/02-apos-login.png"
+    },
+    {
+      "passo": "painel sem nome em ingles e sem 'Ver mais comentarios'",
+      "ok": true,
+      "detalhe": "nenhum nome em ingles, nenhum 'Ver mais comentarios'",
+      "prova": "evidence/ao-vivo-157832/03-painel.png"
+    },
+    {
+      "passo": "1.1 chat integrado abre",
+      "ok": true,
+      "detalhe": "95 chars na tela; url=http://192.168.1.59/portal/dw/page-not-found",
+      "prova": "evidence/ao-vivo-157832/04-1-1-chat.png"
+    },
+    {
+      "passo": "1.2 agenda (onde vive o botao de conferencia) abre",
+      "ok": true,
+      "detalhe": "220 chars; url=http://192.168.1.59/portal/dw/agenda",
+      "prova": "evidence/ao-vivo-157832/05-1-2-agenda-jitsi.png"
+    },
+    {
+      "passo": "1.3 documentos abre",
+      "ok": false,
+      "detalhe": "47 chars; url=http://192.168.1.59/portal/dw/documents",
+      "prova": "evidence/ao-vivo-157832/06-1-3-documentos.png"
+    },
+    {
+      "passo": "administracao abre",
+      "ok": true,
+      "detalhe": "470 chars; url=http://192.168.1.59/portal/administration",
+      "prova": "evidence/ao-vivo-157832/07-administracao.png"
+    },
+    {
+      "passo": "2.1 DLP tem tela propria",
+      "ok": false,
+      "detalhe": "pagina abriu mas SEM conteudo do add-on -- provavel no de navegacao ausente (o boot registra \"Node with uri ... wasn't found\"), e NAO add-on ausente",
+      "prova": "evidence/ao-vivo-157832/08-2-1-dlp.png"
+    },
+    {
+      "passo": "2.2 2FA (MFA) tem tela propria",
+      "ok": true,
+      "detalhe": "tela respondeu com conteudo do add-on",
+      "prova": "evidence/ao-vivo-157832/09-2-2-2fa-mfa.png"
+    },
+    {
+      "passo": "IA (assistente) tem tela propria",
+      "ok": false,
+      "detalhe": "pagina abriu mas SEM conteudo do add-on -- provavel no de navegacao ausente (o boot registra \"Node with uri ... wasn't found\"), e NAO add-on ausente",
+      "prova": "evidence/ao-vivo-157832/10-ia-assistente.png"
+    },
+    {
+      "passo": "Traducao automatica tem tela propria",
+      "ok": false,
+      "detalhe": "pagina abriu mas SEM conteudo do add-on -- provavel no de navegacao ausente (o boot registra \"Node with uri ... wasn't found\"), e NAO add-on ausente",
+      "prova": "evidence/ao-vivo-157832/11-traducao-automatica.png"
+    },
+    {
+      "passo": "GLPI sem texto em ingles na tela",
+      "ok": true,
+      "detalhe": "nenhum termo em ingles; em pt encontrei []",
+      "prova": "evidence/ao-vivo-157832/12-glpi.png"
+    },
+    {
+      "passo": "atalho da IA em portugues",
+      "ok": true,
+      "detalhe": "nenhum atalho em ingles no painel",
+      "prova": "evidence/ao-vivo-157832/13-atalho-ia.png"
+    }
+  ]
+}
