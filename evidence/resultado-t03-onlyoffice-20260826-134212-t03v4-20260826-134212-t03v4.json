@@ -1,0 +1,79 @@
+{
+  "label": "t03-onlyoffice-20260826-134212-t03v4",
+  "run_id": "20260826-134212-t03v4",
+  "base": "http://192.168.1.59",
+  "started": 1787762532.2109063,
+  "duration_s": 171.0,
+  "total": 4,
+  "passed": 4,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .txt pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "texto extraido contem o marcador unico 'MARCADOR-T03-20260826-134212-t03v4-CONTEUDO-VERIFICAVEL' (129 bytes)",
+      "proof": "texto extraido contem o marcador unico 'MARCADOR-T03-20260826-134212-t03v4-CONTEUDO-VERIFICAVEL' (129 bytes)",
+      "duration_s": 1.59,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1012 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:43575/prova-t03-20260826-134212-t03v4.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"fileUrl\": \"http://onlyoffice/cache/files/data/conv_t0320260826-134212-t_69/output.txt/prova-t03-20260826-134212-t03v4.txt?md5=3xkg9J31eJIvV7q9gMDnLw&expires=1787763434&shardkey=ed20260826-133717-t0&filename=prova-t03-20260826-134212-t03v4.txt\", \"fileType\": \"txt\", \"percent\": 100, \"endConvert\": true",
+        "GET resultado -> 129 bytes"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Conversao real de .docx para .pdf pelo DocumentServer",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "PDF valido gerado: assinatura b'%PDF-1.7', 35121 bytes",
+      "proof": "PDF valido gerado: assinatura b'%PDF-1.7', 35121 bytes",
+      "duration_s": 1.57,
+      "steps": [
+        "segredo JWT lido do .env (64 chars)",
+        ".docx OOXML gerado: 1012 bytes, 3 partes",
+        "documento publicado em http://192.168.1.59:57921/prova-t03-20260826-134212-t03v4.docx",
+        "POST http://onlyoffice/ConvertService.ashx a partir do container exo-app (mesmo caminho da aplicacao real)",
+        "resposta: {\"fileUrl\": \"http://onlyoffice/cache/files/data/conv_t0320260826-134212-t_513/output.pdf/prova-t03-20260826-134212-t03v4.pdf?md5=1jl4oCWdtfwI3wZIpMCcpQ&expires=1787763435&shardkey=ed20260826-133717-t0&filename=prova-t03-20260826-134212-t03v4.pdf\", \"fileType\": \"pdf\", \"percent\": 100, \"endConvert\": tru",
+        "GET resultado -> 35121 bytes"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "API do editor publicada na origem publica (porta 80)",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "o navegador do usuario consegue carregar a API do editor pela porta 80",
+      "proof": "http://192.168.1.59/web-apps/apps/api/documents/api.js",
+      "duration_s": 0.0,
+      "steps": [
+        "GET http://192.168.1.59/web-apps/apps/api/documents/api.js -> HTTP 200, 65363 bytes",
+        "content-type: application/javascript",
+        "expoe o objeto DocsAPI: True"
+      ]
+    },
+    {
+      "tid": "T-03",
+      "name": "Usuario digita no editor e o texto PERSISTE no arquivo",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "o usuario digitou no editor e o texto foi PERSISTIDO no .docx gravado pelo servidor",
+      "proof": "texto 'Texto digitado pelo usuario final 20260826-134212-t03v4' recuperado do arquivo salvo; capturas evidence/capturas/t03-*-20260826-134212-t03v4.png",
+      "duration_s": 167.87,
+      "steps": [
+        "callback de gravacao em http://192.168.1.59:43619/callback",
+        "pagina carregada; aguardando onDocumentReady",
+        "onDocumentReady: True",
+        "digitado via teclado: 'Texto digitado pelo usuario final 20260826-134212-t03v4'",
+        "editor encerrado — gravacao disparada",
+        "nenhum callback com URL recebido; callbacks vistos: [{'key': 'ed20260826-134212-t0', 'status': 1, 'users': ['root'], 'actions': [{'type': 1, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDIwMjYwODI2LTEzNDIxMi10MCIsInN0YXR1cyI6MSwidXNlcnMiOlsicm9vdCJdLCJhY3Rpb25zIjpbeyJ0eXBlIjoxLCJ1c2VyaWQiOiJyb290In1dLCJpYXQiOjE3ODc3NjI1MzcsImV4cCI6MTc4Nzc2MjgzN30.T6q24jmAd8XH4GlBZFKsCF3mSaPS2SE-MTVFxuvKlV4'}, {'key': 'ed20260826-134212-t0', 'status': 4, 'actions': [{'type': 0, 'userid': 'root'}], 'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJlZDIwMjYwODI2LTEzNDIxMi10MCIsInN0YXR1cyI6NCwiYWN0aW9ucyI6W3sidHlwZSI6MCwidXNlcmlkIjoicm9vdCJ9XSwiaWF0IjoxNzg3NzYyNTUzLCJleHAiOjE3ODc3NjI4NTN9.rDOiCkELstV_YVyz1LnXlLG_6u3iMpGLTwzAGZL1RIw'}]",
+        "arquivos no storage do OnlyOffice (ed20260826-134212-t0): ['Editor.bin']",
+        "editor gravou documento no storage: True"
+      ]
+    }
+  ]
+}

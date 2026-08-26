@@ -78,43 +78,50 @@
       "titulo": "Chamados (GLPI)",
       "tecla": "c",
       "descricao": "Abertura e acompanhamento de chamados de suporte",
-      "ordem": 60
+      "ordem": 60,
+      "icon": "fa-headset"
     },
     "https://dtisistemas.pmeto.local/consultaemail/public/": {
       "titulo": "Consulta de e-mail",
       "tecla": "m",
       "descricao": "Consulta de e-mails de servidores e assessores",
-      "ordem": 70
+      "ordem": 70,
+      "icon": "fa-envelope"
     },
     "https://dtisistemas.pmeto.local/geradordesenhas/": {
       "titulo": "Gerador de senhas",
       "tecla": "g",
       "descricao": "Gera senhas fortes para contas e sistemas",
-      "ordem": 80
+      "ordem": 80,
+      "icon": "fa-key"
     },
     "https://www.olimpia.sp.gov.br/": {
       "titulo": "Site da Prefeitura",
       "tecla": "s",
       "descricao": "Portal público da Prefeitura de Olímpia",
-      "ordem": 90
+      "ordem": 90,
+      "icon": "fa-city"
     },
     "https://mdm.olimpia.sp.gov.br/#/": {
       "titulo": "Dispositivos móveis (MDM)",
       "tecla": "d",
       "descricao": "Gestão, inventário e suporte remoto de dispositivos móveis",
-      "ordem": 100
+      "ordem": 100,
+      "icon": "fa-mobile-alt"
     },
     "https://dadosabertos.olimpia.sp.gov.br/": {
       "titulo": "Dados abertos (BI)",
       "tecla": "b",
       "descricao": "Dados públicos abertos e indicadores de BI",
-      "ordem": 110
+      "ordem": 110,
+      "icon": "fa-chart-bar"
     },
     "https://192.168.1.59/estrutura/": {
       "titulo": "Estrutura organizacional",
       "tecla": "o",
       "descricao": "Cria e administra secretarias, divisões e setores",
-      "ordem": 120
+      "ordem": 120,
+      "icon": "fa-sitemap"
     }
   },
   "sistema_runtime": {

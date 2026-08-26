@@ -1,0 +1,52 @@
+{
+  "label": "T05-padronizacao",
+  "run_id": "20260826-134530-final2",
+  "base": "http://192.168.1.59",
+  "started": 1787763704.7735379,
+  "duration_s": 0.6,
+  "total": 4,
+  "passed": 4,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-05.1",
+      "name": "Os 13 atalhos do painel obedecem a UMA regra",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "13 atalhos conferidos: nome pt-BR, caixa e tecla unica",
+      "proof": "AC_APPLICATION: {\"Adicionar tarefa\": \"t\", \"Revisão de contribuições\": \"r\", \"Adicionar postagem\": \"p\", \"Espaços\": \"e\", \"Favoritos recentes\": \"f\", \"Dar Kudos\": \"k\", \"Assistente de IA\": \"i\", \"Chamados (GLPI)\": \"c\", \"Consulta de e-mail\": \"m\", \"Gerador de senhas\": \"g\", \"Site da Prefeitura\": \"s\", \"Dispositivos móveis (MDM)\": \"d\", \"Dados abertos (BI)\": \"b\", \"Estrutura organizacional\": \"o\"}",
+      "duration_s": 0.07,
+      "steps": []
+    },
+    {
+      "tid": "T-05.2",
+      "name": "O nome dos atalhos de sistema resiste ao proximo start",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "6 seeds com titulo pt-BR e override:true",
+      "proof": "applications.json lido de dentro dos jars do container",
+      "duration_s": 0.39,
+      "steps": []
+    },
+    {
+      "tid": "T-05.3",
+      "name": "A documentacao nao aponta para arquivo que nao existe",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "13 referencia(s) do README conferida(s), todas existem",
+      "proof": "varredura de caminhos citados em README.md",
+      "duration_s": 0.04,
+      "steps": []
+    },
+    {
+      "tid": "T-05.4",
+      "name": "O nome que a tela desenha e' o do padrao",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "1 rotulo(s) fixado(s) no painel, todos no padrao",
+      "proof": "SOC_METADATA_ITEMS_PROPERTIES(label) = ['Assistente de IA']",
+      "duration_s": 0.06,
+      "steps": []
+    }
+  ]
+}

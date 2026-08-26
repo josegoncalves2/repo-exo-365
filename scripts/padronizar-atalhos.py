@@ -156,10 +156,18 @@ def banco(padrao, aplicar):
             criar.append((url, cfg))
             continue
         i, t0, d0, s0, o0 = atual[url]
+        # ICON: o padrao passou a definir o icon FontAwesome de cada atalho
+        # proprio (2026-08-26). Antes o script gravava ICON=NULL e a tela
+        # caia no defaultApp.png — os icones "sumiam" a cada reaplicacao.
+        i0 = None
+        for linha in mysql(f"SELECT ICON FROM AC_APPLICATION WHERE ID={i};").splitlines():
+            if linha.strip():
+                i0 = linha.strip()
         campos, volta = [], []
         for coluna, novo, velho in (("TITLE", cfg["titulo"], t0),
                                     ("DESCRIPTION", cfg["descricao"], d0),
-                                    ("SHORTCUT", cfg["tecla"], s0)):
+                                    ("SHORTCUT", cfg["tecla"], s0),
+                                    ("ICON", cfg.get("icon"), i0)):
             if novo != velho:
                 campos.append(f"{coluna}={escapa(novo)}")
                 volta.append(f"{coluna}=" + ("NULL" if velho == NULO else escapa(velho)))
@@ -173,6 +181,7 @@ def banco(padrao, aplicar):
                                 for c, n, v in (("TITLE", cfg["titulo"], t0),
                                                 ("DESCRIPTION", cfg["descricao"], d0),
                                                 ("SHORTCUT", cfg["tecla"], "(nenhuma)" if s0 == NULO else s0),
+                                                ("ICON", cfg.get("icon"), "(nenhum)" if i0 == NULO else i0),
                                                 ("APPLICATION_ORDER", cfg["ordem"], o0))
                                 if str(n) != str(v))
             mudancas.append((i, cfg["titulo"], detalhe,
@@ -208,9 +217,10 @@ def banco(padrao, aplicar):
         mysql("INSERT INTO AC_APPLICATION "
               "(TITLE, DESCRIPTION, URL, ACTIVE, BY_DEFAULT, IS_SYSTEM, IS_MOBILE, "
               " IS_CHANGED_MANUALLY, IS_DEFAULT, IS_PWA, APP_TYPE, SAME_TAB, "
-              " SHORTCUT, APPLICATION_ORDER) VALUES ("
+              " SHORTCUT, APPLICATION_ORDER, ICON) VALUES ("
               f"{escapa(cfg['titulo'])}, {escapa(cfg['descricao'])}, {escapa(url)}, "
-              f"1, 1, 0, 1, 1, 1, 0, 0, 1, {escapa(cfg['tecla'])}, {cfg['ordem']});")
+              f"1, 1, 0, 1, 1, 1, 0, 0, 1, {escapa(cfg['tecla'])}, {cfg['ordem']}, "
+              f"{escapa(cfg.get('icon'))});")
         print(f"   criado: {cfg['titulo']}")
     if criar:
         print("\n-- COMO DESFAZER as criacoes --")
