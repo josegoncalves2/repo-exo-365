@@ -110,6 +110,13 @@ public enum MotivoNaoVarrido {
     if (contem(m, "bomba", "limite de seguranca", "compressao")) {
       return RECUSADO_POR_SEGURANCA;
     }
+    // ANTES da regra de OCR de proposito: a mensagem de estouro de tempo do
+    // proprio motor de OCR contem a palavra "OCR", e cairia em
+    // PROVAVEL_DIGITALIZACAO -- mandando comprar OCR quando o OCR ja' existe e
+    // o que falta e' capacidade. Sao encaminhamentos opostos.
+    if (contem(m, "passou do teto de", "foi encerrado")) {
+      return ORCAMENTO_DE_TEMPO_ESGOTADO;
+    }
     if (contem(m, "ocr", "digitaliza", "nenhum extrator", "sem nenhum texto", "sem texto")) {
       return PROVAVEL_DIGITALIZACAO;
     }
@@ -119,7 +126,9 @@ public enum MotivoNaoVarrido {
     if (contem(m, "teto de bytes", "bytes acima do teto")) {
       return ACIMA_DO_TETO_DE_BYTES;
     }
-    if (contem(m, "teto de", "caracteres")) {
+    // AND, nao OR: "caracteres" sozinho aparece em prosa demais, e "teto de"
+    // sozinho tambem casa com teto de bytes. So' os dois juntos identificam.
+    if (contemTodos(m, "teto de", "caracteres")) {
       return ACIMA_DO_TETO_DE_CARACTERES;
     }
     if (contem(m, "orcamento", "esgotado")) {
@@ -131,6 +140,7 @@ public enum MotivoNaoVarrido {
     return OUTRO;
   }
 
+  /** Verdadeiro se QUALQUER marca aparece. */
   private static boolean contem(String alvo, String... marcas) {
     for (String marca : marcas) {
       if (alvo.contains(marca)) {
@@ -138,5 +148,15 @@ public enum MotivoNaoVarrido {
       }
     }
     return false;
+  }
+
+  /** Verdadeiro so' se TODAS as marcas aparecem. */
+  private static boolean contemTodos(String alvo, String... marcas) {
+    for (String marca : marcas) {
+      if (!alvo.contains(marca)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

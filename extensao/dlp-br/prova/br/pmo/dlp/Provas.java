@@ -25,6 +25,8 @@ public final class Provas {
     ProvaMascarador.rodar();
     ProvaPolitica.rodar();
     ProvaExtrator.rodar();
+    ProvaRelatorio.rodar();
+    ProvaOcr.rodar();
 
     System.exit(Prova.fechar());
   }
