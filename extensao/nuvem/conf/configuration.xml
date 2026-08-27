@@ -40,7 +40,10 @@
           <property name="provider-client-secret" value="${exo.nuvem.nextcloud.client-secret:}"/>
           <property name="connector-host" value="${exo.nuvem.nextcloud.server-url:}"/>
           <property name="connector-schema" value="${exo.nuvem.nextcloud.schema:https}"/>
-          <property name="disable" value="${exo.nuvem.nextcloud.disable:true}"/>
+          <property name="disable" value="${exo.nuvem.nextcloud.disable:false}"/>
+          <property name="server-url" value="${exo.nuvem.nextcloud.server-url:}"/>
+          <property name="webdav-path" value="${exo.nuvem.nextcloud.webdav-path:}"/>
+          <property name="redirect-uri" value="${exo.nuvem.nextcloud.redirect-uri:}"/>
         </properties-param>
       </init-params>
     </component-plugin>

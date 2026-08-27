@@ -4152,3 +4152,67 @@ build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.
 **Resultado:** VERIFICADO no container recriado as 14:11: 'grep -c web.filter.GenericFilter /opt/exo/webapps/webdav/WEB-INF/web.xml' devolve 2 (declaracao + mapeamento), contra 0 antes. As tres extensoes seguem registrando em requisicao HTTP real (DLP 14:11:24, 2FA por zona e Transferencia 14:12:37) e o contexto ai-agent inicializou 14:12:48. Portal saudavel. dlp-br 223 asseveracoes, mfa-zona 78, transferencia 38, wopi 28 ; zero falhas.
 **Evidência:** docker exec exo-app grep -c web.filter.GenericFilter /opt/exo/webapps/webdav/WEB-INF/web.xml
 **Status:** OK
+
+### [NUVEM-014] 2026-08-27 15:00 — Conector Nextcloud: preparo de deploy + 3 correcoes de boot
+**Acao:** Diagnóstico do 502 e do "nada aparece no painel" + preparo do deploy do `extensao/nuvem`.
+**Comando/Arquivo:**
+- `docker inspect exo-app` — confirmado: exo-app **Up 22 min (healthy)**; os jars da outra sessão
+  (zz-dlp-br, zz-mfa-zona, zzz-transferencia) montados e carregados; `nuvem.jar` NAO estava montado.
+- `docker-compose.yml` — **acrescentado** bind mount `./extensao/nuvem/target/nuvem.jar:/opt/exo/lib/zz-nuvem.jar:ro` (YAML validado).
+- `conf/exo.properties` — **acrescentado** bloco `exo.nuvem.nextcloud.*` (server-url, schema, client-id,
+  client-secret, disable=false, webdav-path, redirect-uri).
+- `NextcloudDriveConnector.java` — **3 correcoes**: (1) construtor nunca mais valida/lanca (espelha
+  GoogleDriveConnector nativo — o kernel instancia plugins ANTES de isDisabled(); validar no construtor
+  quebraria o boot com disable=true); (2) validacao movida para `garantirClientes()` chamada no uso real
+  (authenticate/createDrive/loadDrive); (3) `param()` passou a ler de `properties-param drive-configuration`
+  (antes lia `value-param`, que nao existia — server-url/webdav-path/redirect-uri jamais seriam lidos).
+- `conf/configuration.xml` do jar — adicionadas propriedades `server-url`, `webdav-path`, `redirect-uri`
+  ao `drive-configuration`; `disable` default = **false** (item aparece no painel mesmo sem destino).
+**Resultado:** Build completo verde: `RESULTADO: 81 asseveracoes, 0 falhas`; `target/nuvem.jar` (37 KB)
+com configuration.xml conferido (disable=false, server-url presente); EXIT=0.
+**Evidencia:** bytecode de `CloudDriveServiceImpl.addPlugin` (isDisabled -> pula registro; getProvider so
+com !disabled) e `GoogleDriveConnector.<init>` (so chama super — nunca valida); `InitParams.getPropertiesParam`.
+**Status:** OK — deploy pendente de autorizacao de restart do exo-app (ordem expressa: nao reiniciar).
+
+### [NUVEM-015] 2026-08-27 15:30 — TESTE AO VIVO do conector Nextcloud: REGISTRADO e FUNCIONAL
+**Acao:** Deploy real (autorizado verbalmente: "testa ai entao") + teste de ponta a ponta no navegador.
+**Comando/Arquivo:**
+- `docker compose up -d --force-recreate exo` — container recriado com `zz-nuvem.jar` montado; healthy.
+- REST `GET /portal/rest/clouddrive/provider/all` (navegador autenticado) -> **200, 3 providers**:
+  `nextcloud`, `gdrive`, `onedrive` (JSON completo, 1473 B).
+- REST `GET /portal/rest/clouddrive/provider/nextcloud` -> **200** com `{"authURL":...,"redirectURL":...,
+  "name":"Nextcloud","id":"nextcloud"}` (231 B).
+- REST `GET /portal/rest/clouddrive/connect/init/nextcloud/` -> **200** com authURL do fluxo OAuth2.
+**Correcao encontrada no teste:** `NextcloudProvider.getAuthURL()` lancava CloudDriveException com
+redirectURL null -> o serializador JSON devolvia 200 com CORPO VAZIO (provider registrado mas invisivel).
+Corrigido espelhando o GoogleProvider nativo: getAuthURL() nunca lanca; createProvider() monta o
+redirectURL (schema://host/portal/rest/clouddrive/connect/nextcloud) com placeholder se nao configurado.
+**Resultado:** Conector REGISTRADO no CloudDriveService, serializando e respondendo ao fluxo de connect.
+**BLOQUEIO DE UI (pre-existente, OUTRA SESSAO):** o app Documentos falha com
+`Error retrieving User 'root' parent node` / `Node with id drives not found` (JCR do drive pessoal
+corrompido; presente no log de 26/08 e 27/08 07:49 — ANTES deste deploy; afeta root e jose.goncalves).
+O sidebar de drives (onde a UI renderiza o botao "Conectar um drive" e a lista de cloud drives) nao
+renderiza por causa disso. NAO e causado pelo conector nuvem.
+**Status:** OK (conector) / BLOQUEADO (visualizacao na UI — JCR da outra sessao).
+
+### [NUVEM-016] 2026-08-27 16:05 — CORRECAO DA QUEBRA: indice Lucene do JCR corrompido
+**Acao:** "se quebrou, arruma" — o app Documentos falhava com 500 ao carregar a arvore.
+**Diagnostico (causa raiz):**
+- Erro: `IllegalStateException: Error retrieving User 'root' parent node` +
+  `NullPointerException: ...because "parent" is null` em
+  `JCRDocumentFileStorage.getFolderChildNodes:739` / `getFullTreeData:926`.
+- Stack real: `ChildAxisQuery` (Lucene do JCR) -> `ISPNCacheWorkspaceStorageCache.getChildNodes`
+  -> NPE `parent is null`. O **indice Lucene do JCR** (`/srv/exo/jcr/index/collaboration_portal`)
+  continha documentos orfaos (nos removidos pela outra sessao via WebDAV) cujo pai nao existe;
+  a query listava os filhos e o cache nao achava o parent.
+- O indice ES `file_v4` TAMBEM tinha 8 docs orfaos (nao existiam no JCR) — removidos via
+  `DELETE /file_v4/_doc/<id>` (backup em /tmp/file_v4_backup.json).
+**Correcao:**
+1. `DELETE` dos 8 orfaos do indice ES file_v4.
+2. Movido `/srv/exo/jcr/index/collaboration_portal` -> `.corrompido-20260827` (backup) e
+   reiniciado o exo-app — o JCR reindexou do zero a partir do banco (222 nos, "Index initialized").
+**Prova (navegador):**
+- `GET /portal/rest/v1/documents/fullTree?ownerId=1` -> **200** (antes 500).
+- `GET /portal/rest/clouddrive/provider/all` -> **200** com nextcloud+gdrive+onedrive.
+- UI: drawer de drives renderizado (Personal Documents / Documentos / Space Drives), sem erros.
+**Status:** OK — app Documentos restaurado; conector Nextcloud registrado e serializando.

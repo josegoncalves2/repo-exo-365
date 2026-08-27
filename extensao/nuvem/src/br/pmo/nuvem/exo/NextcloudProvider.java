@@ -6,11 +6,14 @@ import org.exoplatform.services.cms.clouddrives.CloudProvider;
 /**
  * Provedor Nextcloud para o Cloud Drive.
  *
- * <p>Nao usa OAuth2 para montar a URL de autorizacao DIRETAMENTE aqui: a URL de
- * autorizacao vive no {@link br.pmo.nuvem.OAuth2Cliente}, que o conector monta
- * a partir da configuracao. Este provedor existe para satisfazer o contrato da
- * plataforma (o {@code CloudDriveConnector} exige um {@code CloudProvider}) e
- * para expor o {@code redirectURL} que a UI usa para iniciar o fluxo.
+ * <p>Espelha o {@code GoogleProvider} nativo em um ponto critico:
+ * {@link #getAuthURL()} NUNCA lanca. O serializador JSON da REST
+ * ({@code ProviderService.getById}) chama {@code getAuthURL()} para montar o
+ * JSON de cada provider; se lancar, o provider registrado aparece como 200 com
+ * corpo vazio e a UI nao renderiza o botao. Sem configuracao, a URL e'
+ * montada com o que existe (ate' o placeholder literal do host), exatamente
+ * como o gdrive nao-configurado expoe {@code client_id=${clouddrive.google.
+ * client.id}} no proprio JSON.
  */
 public class NextcloudProvider extends CloudProvider {
 
@@ -27,12 +30,9 @@ public class NextcloudProvider extends CloudProvider {
 
   @Override
   public String getAuthURL() throws CloudDriveException {
-    // A URL real de autorizacao (com client_id, state etc.) e' montada pelo
-    // OAuth2Cliente do nucleo; aqui devolvemos o alvo base para quem quiser
-    // apenas verificar conectividade do endpoint.
-    if (redirectURL == null) {
-      throw new CloudDriveException("provedor sem URL de autorizacao configurada");
-    }
+    // NUNCA lanca: a serializacao JSON chama isto. Devolve a URL base de
+    // autorizacao (o alvo real com client_id/state e' montado pelo
+    // OAuth2Cliente no fluxo de connect), ou o redirect da plataforma.
     return redirectURL;
   }
 

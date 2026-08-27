@@ -1,7 +1,5 @@
 package br.pmo.nuvem.exo;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.exoplatform.services.cms.clouddrives.CloudDriveConnector;
@@ -32,10 +30,12 @@ import br.pmo.nuvem.WebDavCliente;
  * JA' EXISTE na rede da prefeitura. Configuracao (URL do servidor, client-id,
  * client-secret) vem do {@code InitParams} -- jamais chumbada no codigo.
  *
- * <p><b>REGRA DE FALHA.</b> {@code createProvider()} com configuracao
- * incompleta lanca {@link ConfigurationException} -- conector registrado com
- * configuracao faltando e' conector que "funciona" mas nao conecta, exatamente
- * o tipo de feature pela metade que o operador recusou.
+ * <p><b>REGRA DE FALHA.</b> A configuracao essencial (server-url, client-id)
+ * e' conferida em {@code garantirClientes()}, chamada no {@code authenticate}
+ * — no uso real, com o provedor habilitado. O construtor NUNCA valida: o
+ * kernel instancia este plugin no boot antes de consultar {@code isDisabled()}
+ * (mesmo padrao do GoogleDriveConnector nativo), entao validar no construtor
+ * com configuracao vazia quebraria o CloudDriveService com disable=true.
  */
 public class NextcloudDriveConnector extends CloudDriveConnector {
 
@@ -44,14 +44,20 @@ public class NextcloudDriveConnector extends CloudDriveConnector {
   public static final String CONFIG_WEBDAV_PATH = "webdav-path";
   public static final String CONFIG_REDIRECT_URI = "redirect-uri";
 
-  private final RepositoryService jcr;
   private final SessionProviderService sessions;
   private final NodeFinder finder;
   private final ExtendedMimeTypeResolver mime;
   private final CofreTokens cofre;
-  private final OAuth2Cliente oauth;
-  private final WebDavCliente webdav;
-  private final InitParams paramsIniciais;
+  private final String serverUrl;
+  private final String webdavPath;
+  private final String redirect;
+  private final String clientId;
+  private final String clientSecret;
+  private final String schema;
+  /** Clientes montados sob demanda em {@link #garantirClientes()}; null enquanto
+   *  a configuracao estiver incompleta (estado "nasce desligado"). */
+  private volatile OAuth2Cliente oauth;
+  private volatile WebDavCliente webdav;
 
   public NextcloudDriveConnector(RepositoryService jcrService,
                                  SessionProviderService sessionProviders,
@@ -59,68 +65,97 @@ public class NextcloudDriveConnector extends CloudDriveConnector {
                                  ExtendedMimeTypeResolver mimeTypes,
                                  InitParams params) throws ConfigurationException {
     super(jcrService, sessionProviders, jcrFinder, mimeTypes, params);
-    this.jcr = jcrService;
     this.sessions = sessionProviders;
     this.finder = jcrFinder;
     this.mime = mimeTypes;
     this.cofre = new CofreTokens();
-    this.paramsIniciais = params;
+    // IMPORTANTE: o construtor NAO valida nem monta os clientes. O kernel
+    // instancia este plugin antes de consultar isDisabled(); se o construtor
+    // lancasse ConfigurationException com configuracao vazia, o boot do
+    // CloudDriveService quebraria mesmo com disable=true. O padrao nativo
+    // (GoogleDriveConnector) faz exatamente isto: o construtor so' guarda os
+    // valores e a validacao fica para o uso real (garantirClientes), que so'
+    // roda com o provedor registrado e habilitado.
+    this.serverUrl = param(params, CONFIG_SERVER_URL);
+    this.webdavPath = param(params, CONFIG_WEBDAV_PATH);
+    this.redirect = param(params, CONFIG_REDIRECT_URI);
+    this.clientId = getClientId();
+    this.clientSecret = getClientSecret();
+    this.schema = getConnectorSchema();
+  }
 
-    String serverUrl = param(params, CONFIG_SERVER_URL);
-    String webdavPath = param(params, CONFIG_WEBDAV_PATH);
-    String redirect = param(params, CONFIG_REDIRECT_URI);
-    String clientId = getClientId();
-    String clientSecret = getClientSecret();
-    String schema = getConnectorSchema();
-
-    if (serverUrl == null || serverUrl.isEmpty()) {
-      throw new ConfigurationException("Nextcloud: '" + CONFIG_SERVER_URL
-          + "' e' obrigatorio; sem ele o conector nao conecta em lugar nenhum.");
+  /** Valida a configuracao e monta os clientes OAuth2/WebDAV. Lanca
+   *  {@link CloudDriveException} se faltar o essencial — chamado apenas no uso
+   *  real (authenticate), quando o operador ja' habilitou e configurou. */
+  private void garantirClientes() throws CloudDriveException {
+    if (oauth != null && webdav != null) {
+      return;
     }
-    if (clientId == null || clientId.isEmpty()) {
-      throw new ConfigurationException("Nextcloud: '" + CONFIG_PROVIDER_CLIENT_ID
-          + "' e' obrigatorio; sem ele o OAuth2 nao autoriza.");
-    }
-
-    // Monta as URLs derivadas: auth e token vivem sob o endpoint OAuth2 do
-    // Nextcloud (/apps/oauth2/authorize e /apps/oauth2/api/v1/token).
-    String base = (schema == null || schema.isEmpty() ? "https" : schema) + "://" + serverUrl;
-    String authUrl = base + "/apps/oauth2/authorize";
-    String tokenUrl = base + "/apps/oauth2/api/v1/token";
-    this.oauth = new OAuth2Cliente(authUrl, tokenUrl, clientId, clientSecret,
-                                   redirect == null ? "" : redirect);
-
-    String dav = (webdavPath == null || webdavPath.isEmpty())
-        ? "/remote.php/dav/files/"
-        : webdavPath;
-    this.webdav = new WebDavCliente(base + dav, new WebDavCliente.TokenSource() {
-      @Override
-      public String acessar() throws Exception {
-        String chave = providerKey();
-        if (cofre.expirado(chave, System.currentTimeMillis())) {
-          String r = cofre.refresh(chave);
-          if (r == null) {
-            throw new CloudDriveException("token expirado e sem refresh: reautentique");
-          }
-          OAuth2Cliente.Tokens novo = oauth.renovar(r);
-          cofre.guardar(chave, novo);
-        }
-        String t = cofre.acesso(chave);
-        if (t == null) {
-          throw new CloudDriveException("sem token de acesso: reautentique");
-        }
-        return t;
+    synchronized (this) {
+      if (oauth != null && webdav != null) {
+        return;
       }
-    });
+      if (serverUrl == null || serverUrl.isEmpty()) {
+        throw new CloudDriveException("Nextcloud: '" + CONFIG_SERVER_URL
+            + "' nao configurado (exo.nuvem.nextcloud.server-url).");
+      }
+      if (clientId == null || clientId.isEmpty()) {
+        throw new CloudDriveException("Nextcloud: '" + CONFIG_PROVIDER_CLIENT_ID
+            + "' nao configurado (exo.nuvem.nextcloud.client-id).");
+      }
+      // Monta as URLs derivadas: auth e token vivem sob o endpoint OAuth2 do
+      // Nextcloud (/apps/oauth2/authorize e /apps/oauth2/api/v1/token).
+      String base = (schema == null || schema.isEmpty() ? "https" : schema) + "://" + serverUrl;
+      String authUrl = base + "/apps/oauth2/authorize";
+      String tokenUrl = base + "/apps/oauth2/api/v1/token";
+      this.oauth = new OAuth2Cliente(authUrl, tokenUrl, clientId, clientSecret,
+                                     redirect == null ? "" : redirect);
+
+      String dav = (webdavPath == null || webdavPath.isEmpty())
+          ? "/remote.php/dav/files/"
+          : webdavPath;
+      this.webdav = new WebDavCliente(base + dav, new WebDavCliente.TokenSource() {
+        @Override
+        public String acessar() throws Exception {
+          String chave = providerKey();
+          if (cofre.expirado(chave, System.currentTimeMillis())) {
+            String r = cofre.refresh(chave);
+            if (r == null) {
+              throw new CloudDriveException("token expirado e sem refresh: reautentique");
+            }
+            OAuth2Cliente.Tokens novo = oauth.renovar(r);
+            cofre.guardar(chave, novo);
+          }
+          String t = cofre.acesso(chave);
+          if (t == null) {
+            throw new CloudDriveException("sem token de acesso: reautentique");
+          }
+          return t;
+        }
+      });
+    }
   }
 
   @Override
   protected CloudProvider createProvider() {
-    return new NextcloudProvider(getProviderId(), getProviderName());
+    // Sempre devolve o provider (nunca lanca): com disable=true o addPlugin
+    // nem chega a chamar isto, e com disable=false a UI precisa do provider
+    // mesmo antes de o OAuth2 ser exercitado. O redirectURL e' montado como o
+    // onedrive nativo (schema://host/portal/rest/clouddrive/connect/nextcloud);
+    // sem host configurado, o placeholder literal fica no JSON (mesmo padrao
+    // do gdrive nao-configurado) — o item aparece na UI, a falha so' vem ao
+    // tentar conectar de verdade.
+    String base = (schema == null || schema.isEmpty() ? "https" : schema) + "://"
+        + (serverUrl == null || serverUrl.isEmpty() ? "${exo.nuvem.nextcloud.server-url}" : serverUrl);
+    String redirect = base + CloudProvider.CONNECT_URL_BASE + getProviderId();
+    return new NextcloudProvider(getProviderId(), getProviderName(), redirect);
   }
 
   @Override
   protected NextcloudUser authenticate(Map<String, String> params) throws CloudDriveException {
+    // A configuracao essencial e' conferida aqui, no uso real — nunca no
+    // construtor (que roda no boot mesmo com disable=true).
+    garantirClientes();
     String code = params.get(CloudDriveConnector.OAUTH2_CODE);
     String state = params.get(CloudDriveConnector.OAUTH2_STATE);
     if (code == null || code.isEmpty()) {
@@ -149,6 +184,7 @@ public class NextcloudDriveConnector extends CloudDriveConnector {
   @Override
   protected NextcloudDrive createDrive(CloudUser user, javax.jcr.Node node)
       throws CloudDriveException, javax.jcr.RepositoryException {
+    garantirClientes();
     return new NextcloudDrive((NextcloudUser) user, node, sessions, finder, mime,
                               cofre, webdav);
   }
@@ -157,6 +193,7 @@ public class NextcloudDriveConnector extends CloudDriveConnector {
   protected NextcloudDrive loadDrive(javax.jcr.Node node)
       throws CloudDriveException, javax.jcr.RepositoryException {
     // O node carrega o id do drive; o drive reabre a partir do proprio node.
+    garantirClientes();
     return new NextcloudDrive(null, node, sessions, finder, mime, cofre, webdav);
   }
 
@@ -169,18 +206,17 @@ public class NextcloudDriveConnector extends CloudDriveConnector {
       return null;
     }
     try {
-      org.exoplatform.container.xml.ValueParam v = params.getValueParam(nome);
-      return v == null ? null : v.getValue();
+      // As propriedades especificas do Nextcloud vivem no MESMO properties-param
+      // "drive-configuration" que a classe base le para provider-id/client-id/
+      // connector-host — jamais em value-param separado.
+      org.exoplatform.container.xml.PropertiesParam p = params.getPropertiesParam("drive-configuration");
+      if (p == null) {
+        return null;
+      }
+      String v = p.getProperty(nome);
+      return (v == null || v.trim().isEmpty()) ? null : v.trim();
     } catch (Exception e) {
       return null;
     }
-  }
-
-  private Map<String, String> configMap() {
-    Map<String, String> m = new LinkedHashMap<>();
-    m.put(CONFIG_SERVER_URL, param(paramsIniciais, CONFIG_SERVER_URL));
-    m.put(CONFIG_WEBDAV_PATH, param(paramsIniciais, CONFIG_WEBDAV_PATH));
-    m.put(CONFIG_REDIRECT_URI, param(paramsIniciais, CONFIG_REDIRECT_URI));
-    return Collections.unmodifiableMap(m);
   }
 }

@@ -27,10 +27,12 @@ O que falta para isso acontecer **não é código, é deploy** — e não é dec
 minha:
 
 1. Embarcar `target/nuvem.jar` em `/opt/exo/lib/` (bind mount no
-   `docker-compose.yml` ou `COPY` no `Dockerfile.exo`) e reiniciar o `exo-app`.
-   **Não tenho autorização para isso** (ordem expressa: não reconstruir, não
-   reiniciar).
-2. Configurar credenciais em `conf/exo.properties` (nunca chumbadas):
+   `docker-compose.yml` — **já acrescentado em 2026-08-27** como
+   `zz-nuvem.jar`, espelhando `zz-dlp-br.jar`) e reiniciar o `exo-app`.
+   **Não tenho autorização para reiniciar** (ordem expressa: não reconstruir,
+   não reiniciar).
+2. Configurar credenciais em `conf/exo.properties` (nunca chumbadas; o bloco
+   `exo.nuvem.nextcloud.*` **já está no arquivo**):
    ```
    exo.nuvem.nextcloud.server-url   = nuvem.pmo.gov.br
    exo.nuvem.nextcloud.schema       = https
@@ -38,9 +40,22 @@ minha:
    exo.nuvem.nextcloud.client-secret= <segredo do app>
    exo.nuvem.nextcloud.disable      = false
    ```
-   Sem credencial, o conector registra com `disable=true` — **diferente de
-   ausente**: aparece na lista de provedores dizendo "aguardando configuração",
-   em vez de não existir.
+   **`disable=false` é o padrão** (decisão alinhada ao operador: "implemente
+   conectores mesmo sem destino conectado") — com isso o item **"Nextcloud"
+   aparece no diálogo "Conectar um drive"** assim que o jar for montado e o
+   `exo-app` reiniciado, mesmo sem servidor configurado. Tentar conectar sem
+   `server-url`/`client-id` responde **erro claro** ("não configurado") — nada
+   quebra e nada fica silencioso.
+
+> **Segurança de boot (importante):** o construtor do `NextcloudDriveConnector`
+> **nunca valida nem lança** — espelha o `GoogleDriveConnector` nativo, cujo
+> construtor só chama `super()`. A validação de `server-url`/`client-id` vive em
+> `garantirClientes()`, chamada apenas no `authenticate`/`createDrive`/`loadDrive`
+> (uso real, com o provedor habilitado). O kernel instancia plugins de
+> `external-component-plugins` **antes** de consultar `isDisabled()`; se o
+> construtor lançasse com config vazia, o boot do `CloudDriveService` quebraria
+> mesmo com `disable=true`. Foi exatamente o que o bytecode do `addPlugin`
+> provou (`isDisabled()` → pula registro, sem tocar em `getProvider()`).
 
 ## O que este núcleo NÃO é
 
