@@ -30,6 +30,7 @@ import br.pmo.dlp.Achado;
 import br.pmo.dlp.Extrator;
 import br.pmo.dlp.ExtratorTextoSimples;
 import br.pmo.dlp.PoliticaDlp;
+import br.pmo.dlp.RelatorioConformidade;
 import br.pmo.dlp.RegrasSensiveis.Severidade;
 import br.pmo.dlp.ResultadoVarredura;
 import br.pmo.dlp.Varredura;
@@ -114,6 +115,27 @@ public class ConectorDlpRegex extends FileDlpConnector {
    *  (Tika) fica por ultimo. */
   private final List<Extrator> extratores = new ArrayList<>();
 
+  /**
+   * Acumulador de conformidade. Vive alem do lote de propósito: a pergunta que
+   * ele responde ; "quantos documentos do acervo o DLP nao conseguiu abrir" ;
+   * so' faz sentido sobre o acervo inteiro, e um contador que zera a cada lote
+   * nunca chegaria la'.
+   *
+   * <p>{@code registrar} e' sincronizado no proprio relatorio porque o
+   * DlpOperationProcessorImpl processa a fila num
+   * {@code Executors.newCachedThreadPool()} ; medido no bytecode. {@code int++}
+   * sem trava perde incremento, e relatorio que perde contagem mente PARA
+   * MENOS, justamente na coluna que interessa.
+   */
+  private final RelatorioConformidade relatorio =
+      new RelatorioConformidade("Acervo varrido pelo DLP por padrao");
+
+  /** De quantos em quantos itens o laudo consolidado vai para o log. */
+  private final int publicarACada;
+
+  /** Protegido pelo proprio relatorio; so' e' lido dentro do bloco sincronizado. */
+  private int desdeAUltimaPublicacao;
+
   public ConectorDlpRegex(InitParams parametros,
                           FileSearchServiceConnector conectorBusca,
                           RepositoryService servicoRepositorio,
@@ -146,6 +168,8 @@ public class ConectorDlpRegex extends FileDlpConnector {
         PoliticaDlp.Acao.REGISTRAR);
     this.politica = new PoliticaDlp(corte, minimo, acao, acaoIncompleta, null);
     this.varredura = new Varredura();
+
+    this.publicarACada = (int) lerInteiro(parametros, "dlp.regex.publicarRelatorioACada", 200L);
 
     this.extratores.add(new ExtratorTextoSimples());
     // ExtratorDoPortal e nao ExtratorTika: detecta o tipo pelos BYTES (o
@@ -180,6 +204,12 @@ public class ConectorDlpRegex extends FileDlpConnector {
             ? varredura.varrer(extraido.texto)
             : varredura.varrerParcial(extraido.texto, extraido.motivoParcial);
         PoliticaDlp.Decisao decisao = politica.decidir(resultado);
+
+        // REGISTRA SEMPRE, antes de qualquer decisao. Um item so' entra na
+        // estatistica se passar por aqui, e sair mais cedo por qualquer ramo
+        // faria o acervo parecer menor do que e' ; sub-relatar cobertura de DLP
+        // e' pior do que nao ter relatorio, porque parece cobertura.
+        registrarNoRelatorio(entityId, resultado);
 
         if (decisao.impedeOperacao()) {
           LOG.info("DLP por padrao RETIROU DE CIRCULACAO item={} acao={} classificacao={} motivo={}",
@@ -231,6 +261,34 @@ public class ConectorDlpRegex extends FileDlpConnector {
       return true;
     }
     return super.processItem(entityId);
+  }
+
+  /**
+   * Acumula o item no laudo de conformidade e publica o consolidado de tempos
+   * em tempos.
+   *
+   * <p>Publicar periodicamente nao e' enfeite: o numero de documentos em
+   * "nao varrido / provavel digitalizacao" e' exatamente o argumento que
+   * decide se vale investir em OCR, e um numero que ninguem ve nao decide
+   * nada. Sem isso o relatorio existiria e continuaria invisivel.
+   */
+  private void registrarNoRelatorio(String entityId, ResultadoVarredura resultado) {
+    boolean publicar = false;
+    synchronized (relatorio) {
+      relatorio.registrar(entityId, resultado);
+      desdeAUltimaPublicacao++;
+      if (desdeAUltimaPublicacao >= publicarACada) {
+        desdeAUltimaPublicacao = 0;
+        publicar = true;
+      }
+    }
+    if (publicar) {
+      // FORA do bloco sincronizado: montar e formatar o instantaneo e' o
+      // trabalho caro, e segura-lo com a trava faria as threads do lote
+      // esperarem uma formatacao de texto.
+      LOG.info("DLP por padrao ; laudo de conformidade:\n{}",
+               relatorio.instantaneo().emTexto());
+    }
   }
 
   /**

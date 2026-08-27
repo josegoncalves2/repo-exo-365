@@ -35,6 +35,32 @@
     <listener-class>org.exoplatform.services.security.web.ConversationStateListener</listener-class>
   </listener>
 
+  <!-- ===================================================================
+       ACRESCENTADO 2026-08-27 ; FECHA UM DESVIO DE 2FA E DE POLITICA
+       DE TRANSFERENCIA.
+
+       O webapp `portal` declara org.exoplatform.web.filter.GenericFilter,
+       que e' quem executa a cadeia do ExtensibleFilter ; e' por ela que as
+       extensoes proprias (2FA por zona, restricoes de transferencia) sao
+       chamadas. Este webapp NAO a declarava.
+
+       Consequencia medida: o nginx tem um `location /` que encaminha tudo,
+       entao /webdav/... chega aqui, e aqui os filtros nunca rodavam. Um
+       usuario sob exigencia de segundo fator montava o acervo como unidade
+       de rede e lia e gravava documento SEM o segundo fator, e sem passar
+       por nenhuma regra de download. Exigencia na navegacao e porta aberta
+       ao lado nao e' controle ; e' a aparencia de controle.
+
+       O caminho apontado por revisao cruzada da sessao paralela: "se a
+       exigencia vale para a navegacao mas o WebDAV monta o acervo como
+       unidade de rede, e' o mesmo padrao do REST isento por outra porta".
+       Estava certo.
+       =================================================================== -->
+  <filter>
+    <filter-name>GenericFilter</filter-name>
+    <filter-class>org.exoplatform.web.filter.GenericFilter</filter-class>
+  </filter>
+
   <filter>
     <filter-name>SetCurrentIdentityFilter</filter-name>
     <filter-class>org.exoplatform.services.security.web.SetCurrentIdentityFilter</filter-class>
@@ -48,6 +74,15 @@
     <filter-name>ResourceRequestFilter</filter-name>
     <filter-class>org.exoplatform.portal.application.ResourceRequestFilter</filter-class>
   </filter>
+
+  <!-- ACRESCENTADO 2026-08-27. Cobre TODO o contexto, e nao so' /drives/*:
+       o acervo e' alcancado por varios caminhos deste webapp, e um mapeamento
+       parcial deixaria exatamente as rotas nao previstas de fora ; que sao as
+       que interessam a quem procura desvio. -->
+  <filter-mapping>
+    <filter-name>GenericFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
 
   <filter-mapping>
     <filter-name>ResourceRequestFilter</filter-name>
