@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Registro do filtro de 2FA por ZONA DE REDE.
+
+  ENCAIXE: e' o MESMO usado pelo proprio add-on de MFA ; ExtensibleFilter mais
+  FilterDefinitionPlugin. Nada aqui e' improviso: le-se
+  multifactor-authentication.war!WEB-INF/conf/multifactor-authentication/mfa-configuration.xml
+  e ve-se o "Mfa Redirect Filter" registrado exatamente assim, com priority 5.
+
+  PRIORIDADE 6, isto e', DEPOIS do filtro do add-on. Assim o criterio por
+  GRUPO decide primeiro e este so' opina sobre o que passou por la'. Os dois
+  mandam para a mesma tela, entao a ordem nao muda o destino ; muda apenas
+  qual motivo aparece no log de auditoria, e o criterio nativo tem precedencia
+  de registro.
+
+  ESTADO INERTE: sem exo.mfa.zonas.exigir preenchido o filtro nao opina sobre
+  nada. Registrar o filtro NAO liga a funcionalidade.
+-->
+<configuration
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.web.filter.ExtensibleFilter</target-component>
+    <component-plugin>
+      <name>Filtro 2FA por Zona</name>
+      <set-method>addFilterDefinitions</set-method>
+      <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
+      <priority>6</priority>
+      <init-params>
+        <object-param>
+          <name>Filtro 2FA por Zona</name>
+          <object type="org.exoplatform.web.filter.FilterDefinition">
+            <field name="filter">
+              <object type="br.pmo.mfa.exo.FiltroMfaPorZona"/>
+            </field>
+            <field name="patterns">
+              <collection type="java.util.ArrayList" item-type="java.lang.String">
+                <value>
+                  <string>.*</string>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+</configuration>

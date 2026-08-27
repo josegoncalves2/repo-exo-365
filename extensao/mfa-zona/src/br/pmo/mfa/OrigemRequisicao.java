@@ -157,8 +157,14 @@ public final class OrigemRequisicao {
     }
     int primeiro = limpo.indexOf(':');
     if (primeiro >= 0 && primeiro == limpo.lastIndexOf(':')) {
-      return limpo.substring(0, primeiro);
+      limpo = limpo.substring(0, primeiro);
     }
-    return limpo;
+
+    // VALIDA antes de devolver. Sem esta conferencia, uma entrada de lixo na
+    // cadeia ; "X-Forwarded-For: nao-sou-um-ip" ; sairia daqui como se fosse
+    // endereco, e o catalogo a classificaria como "fora de toda zona
+    // protegida", DISPENSANDO o segundo fator. Era um desvio de autenticacao,
+    // pego pelas provas antes de ir para o ar.
+    return Zona.enderecoValido(limpo) ? limpo : null;
   }
 }

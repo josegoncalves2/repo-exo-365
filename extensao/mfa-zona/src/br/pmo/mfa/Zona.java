@@ -215,6 +215,35 @@ public final class Zona {
     return true;
   }
 
+  /**
+   * O texto e' um endereco literal INTERPRETAVEL?
+   *
+   * <p>Existe porque {@link OrigemRequisicao} precisa distinguir "entrada da
+   * cadeia que e' um endereco" de "entrada que e' lixo". Devolver lixo como se
+   * fosse endereco foi um desvio de autenticacao real, pego pelas provas: o
+   * catalogo classificaria o lixo como "fora de toda zona protegida" e
+   * dispensaria o segundo fator.
+   */
+  public static boolean enderecoValido(String texto) {
+    if (texto == null) {
+      return false;
+    }
+    String limpo = texto.trim();
+    int porcento = limpo.indexOf('%');
+    if (porcento > 0) {
+      limpo = limpo.substring(0, porcento);
+    }
+    if (!pareceEnderecoLiteral(limpo)) {
+      return false;
+    }
+    try {
+      InetAddress.getByName(limpo);
+      return true;
+    } catch (UnknownHostException e) {
+      return false;
+    }
+  }
+
   public int getBitsPrefixo() {
     return bitsPrefixo;
   }

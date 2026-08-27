@@ -256,6 +256,21 @@ services:
       # Construido por extensao/dlp-br/construir.sh, que compila DENTRO desta
       # mesma imagem contra o /opt/exo/lib real.
       - ./extensao/dlp-br/target/dlp-br.jar:/opt/exo/lib/zz-dlp-br.jar:ro
+      # Extensao 2FA POR ZONA DE REDE (ACRESCENTADA em 2026-08-27).
+      #
+      # O add-on exo-multifactor-authentication so' sabe exigir segundo fator
+      # por GRUPO e por AREA DE NAVEGACAO. Nao ha' nada nele que olhe o
+      # endereco de origem: MfaService tem exatamente dois criterios,
+      # isProtectedUri e currentUserIsInProtectedGroup. "2FA por zona"
+      # simplesmente nao existia.
+      #
+      # A extensao NAO duplica nada do add-on: nao gera codigo, nao guarda
+      # segredo, nao desenha tela e nao valida OTP. Ela so' responde "este
+      # acesso, vindo daqui, precisa de segundo fator?" e reaproveita a MESMA
+      # tela (/portal/dw/mfa-access) e as MESMAS marcas de sessao.
+      #
+      # NASCE INERTE: sem exo.mfa.zonas.exigir preenchido, nada muda.
+      - ./extensao/mfa-zona/target/mfa-zona.jar:/opt/exo/lib/zz-mfa-zona.jar:ro
       # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
       # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
       # do scanner, e o relatorio precisa de escrita dos dois lados — o
