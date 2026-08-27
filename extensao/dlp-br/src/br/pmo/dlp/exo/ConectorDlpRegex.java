@@ -136,14 +136,28 @@ public class ConectorDlpRegex extends FileDlpConnector {
     this.tetoBytesArquivo = lerInteiro(parametros, "dlp.regex.tetoBytesArquivo",
                                        16L * 1024 * 1024);
 
-    this.politica = new PoliticaDlp(corte, minimo, acao, PoliticaDlp.Acao.ALERTAR, null);
+    // Acao para varredura INCOMPLETA, configuravel ; nao e' valor chumbado.
+    // Nasce em REGISTRAR: ligar ALERTAR de saida, num acervo com muita
+    // digitalizacao, produz uma enxurrada de notificacoes no primeiro job, e
+    // alerta em massa e' alerta que se aprende a ignorar. Mede-se o volume
+    // primeiro, sobe-se depois ; mesma logica da acao principal.
+    PoliticaDlp.Acao acaoIncompleta = PoliticaDlp.Acao.de(
+        lerTexto(parametros, "dlp.regex.acaoQuandoIncompleta", null),
+        PoliticaDlp.Acao.REGISTRAR);
+    this.politica = new PoliticaDlp(corte, minimo, acao, acaoIncompleta, null);
     this.varredura = new Varredura();
 
     this.extratores.add(new ExtratorTextoSimples());
-    this.extratores.add(new ExtratorTika());
+    // ExtratorDoPortal e nao ExtratorTika: detecta o tipo pelos BYTES (o
+    // Content-Type vem do cliente e quem quer escapar de filtro mente),
+    // levanta excecao em PDF sem camada de texto em vez de devolver "" (que
+    // entraria no motor como documento limpo), e limita razao de compressao
+    // e profundidade ; um .docx de 40 KB pode ter 4 GB descomprimidos, e isso
+    // e' DoS ao alcance de quem so' pode anexar arquivo.
+    this.extratores.add(new ExtratorDoPortal());
 
-    LOG.info("DLP por padrao: ligado={} severidadeMinima={} acao={} minimoOcorrencias={} tetoBytesArquivo={}",
-             this.ligado, corte, acao, minimo, this.tetoBytesArquivo);
+    LOG.info("DLP por padrao: ligado={} severidadeMinima={} acao={} acaoQuandoIncompleta={} minimoOcorrencias={} tetoBytesArquivo={}",
+             this.ligado, corte, acao, acaoIncompleta, minimo, this.tetoBytesArquivo);
   }
 
   private static Severidade RegrasSensiveis_severidade(String texto) {
@@ -156,9 +170,15 @@ public class ConectorDlpRegex extends FileDlpConnector {
       return delegarAoNativo(entityId);
     }
     try {
-      String texto = extrairTexto(entityId);
-      if (texto != null && !texto.isEmpty()) {
-        ResultadoVarredura resultado = varredura.varrer(texto);
+      TextoExtraido extraido = extrairTexto(entityId);
+      if (extraido != null && extraido.texto != null && !extraido.texto.isEmpty()) {
+        // A DIFERENCA QUE IMPORTA: quando a extracao foi parcial, o laudo
+        // nasce marcado como incompleto e com o motivo escrito. Sem isso a
+        // politica recebe "varri tudo e nao achei nada" para um documento que
+        // mal foi aberto ; que e' como PDF digitalizado passava por limpo.
+        ResultadoVarredura resultado = extraido.motivoParcial == null
+            ? varredura.varrer(extraido.texto)
+            : varredura.varrerParcial(extraido.texto, extraido.motivoParcial);
         PoliticaDlp.Decisao decisao = politica.decidir(resultado);
 
         if (decisao.impedeOperacao()) {
@@ -214,12 +234,50 @@ public class ConectorDlpRegex extends FileDlpConnector {
   }
 
   /**
+   * Texto extraido MAIS o motivo pelo qual a extracao ficou incompleta.
+   *
+   * <p>Este par existe por causa de um defeito real, achado em revisao no
+   * mesmo dia em que o conector entrou: {@code extrairTexto} tinha tres
+   * saidas que devolviam so' nome e titulo (arquivo acima do teto, nenhum
+   * extrator capaz, item sem binario). O comentario do codigo dizia "NAO e'
+   * tratado como limpo", e o efeito era exatamente o contrario ; varrer
+   * "ficha-funcional.pdf\nFicha Funcional" nao acha padrao nenhum e devolve
+   * um laudo COMPLETO e LIMPO. A politica so' ve o laudo; ela nao tinha como
+   * saber que o texto chegou capenga.
+   *
+   * <p>Consequencia concreta: PDF digitalizado passando por PUBLICO. Numa
+   * prefeitura, papel digitalizado e' o formato mais comum de documento
+   * sensivel ; ficha funcional, atestado, procuracao, RG anexado a processo.
+   *
+   * <p>Deixar o caso so' no log NAO resolve: log nao e' decisao, e ninguem le
+   * log de DLP num acervo com dezenas de milhares de itens.
+   */
+  private static final class TextoExtraido {
+    private final String texto;
+    /** Nulo quando a extracao foi completa. */
+    private final String motivoParcial;
+
+    TextoExtraido(String texto, String motivoParcial) {
+      this.texto = texto;
+      this.motivoParcial = motivoParcial;
+    }
+
+    static TextoExtraido completo(String texto) {
+      return new TextoExtraido(texto, null);
+    }
+
+    static TextoExtraido parcial(String texto, String motivo) {
+      return new TextoExtraido(texto, motivo);
+    }
+  }
+
+  /**
    * Texto do no', para a varredura: titulo, nome e conteudo binario.
    *
    * <p>Titulo e nome entram porque "Relacao de CPF dos servidores.xlsx" ja'
    * denuncia o conteudo, e porque ha' formato cujo binario o Tika nao abre.
    */
-  private String extrairTexto(String entityId) throws Exception {
+  private TextoExtraido extrairTexto(String entityId) throws Exception {
     Session sessao = WCMCoreUtils.getSystemSessionProvider()
                                  .getSession(WORKSPACE,
                                              servicoRepositorio.getCurrentRepository());
@@ -227,7 +285,8 @@ public class ConectorDlpRegex extends FileDlpConnector {
     try {
       no = ((ExtendedSession) sessao).getNodeByIdentifier(entityId);
     } catch (javax.jcr.ItemNotFoundException e) {
-      // Item removido entre o enfileiramento e a varredura. Nao e' erro.
+      // Item removido entre o enfileiramento e a varredura. Nao e' erro, e
+      // nao e' varredura incompleta: nao ha' item nenhum a julgar.
       return null;
     }
     if (no == null) {
@@ -241,11 +300,11 @@ public class ConectorDlpRegex extends FileDlpConnector {
     }
 
     if (!no.hasNode(NO_CONTEUDO)) {
-      return texto.toString();
+      return TextoExtraido.parcial(texto.toString(), "item sem conteudo binario associado");
     }
     Node conteudo = no.getNode(NO_CONTEUDO);
     if (!conteudo.hasProperty(PROP_DADOS)) {
-      return texto.toString();
+      return TextoExtraido.parcial(texto.toString(), "item sem propriedade de dados binarios");
     }
 
     long tamanho = conteudo.getProperty(PROP_DADOS).getLength();
@@ -253,9 +312,11 @@ public class ConectorDlpRegex extends FileDlpConnector {
       // Arquivo grande demais para extrair com seguranca de memoria. NAO e'
       // tratado como limpo: o nome e o titulo ja' foram varridos, e o caso
       // fica no log para a administracao decidir.
-      LOG.info("DLP por padrao: item {} tem {} bytes, acima do teto de {} - varrido so' por nome/titulo",
+      LOG.info("DLP por padrao: item {} tem {} bytes, acima do teto de {} ; varrido so' por nome e titulo",
                entityId, tamanho, tetoBytesArquivo);
-      return texto.toString();
+      return TextoExtraido.parcial(texto.toString(),
+          "arquivo de " + tamanho + " bytes acima do teto de " + tetoBytesArquivo
+              + "; varrido so' por nome e titulo");
     }
 
     String mime = conteudo.hasProperty(PROP_MIME)
@@ -271,16 +332,17 @@ public class ConectorDlpRegex extends FileDlpConnector {
       // e' vazamento de descritor a cada item varrido.
       try (InputStream fluxo = conteudo.getProperty(PROP_DADOS).getStream()) {
         texto.append(extrator.extrair(fluxo, no.getName(), mime));
-        return texto.toString();
+        return TextoExtraido.completo(texto.toString());
       } catch (Extrator.ExtracaoIndisponivelException e) {
         LOG.debug("DLP por padrao: {} nao leu o item {} ({}) - tentando o proximo extrator",
                   extrator.getClass().getSimpleName(), entityId, e.getMessage());
       }
     }
 
-    LOG.info("DLP por padrao: nenhum extrator leu o conteudo do item {} - varrido so' por nome/titulo",
+    LOG.info("DLP por padrao: nenhum extrator leu o conteudo do item {} ; provavel digitalizacao",
              entityId);
-    return texto.toString();
+    return TextoExtraido.parcial(texto.toString(),
+        "nenhum extrator leu o binario: provavel digitalizacao, exige OCR");
   }
 
   /**

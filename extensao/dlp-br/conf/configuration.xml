@@ -68,6 +68,21 @@
           <value>${exo.dlp.regex.acao:ALERTAR}</value>
         </value-param>
 
+        <!-- ACAO PARA VARREDURA INCOMPLETA. Documento que o motor nao
+             conseguiu abrir por inteiro (acima do teto, sem binario, ou PDF
+             digitalizado sem camada de texto) NAO e' documento limpo. Antes
+             desta chave existir, esses casos saiam do motor com laudo
+             "completo e limpo" e um PDF escaneado passava por PUBLICO.
+
+             Nasce em REGISTRAR: num acervo com muita digitalizacao, ALERTAR
+             de saida produz enxurrada no primeiro job, e alerta em massa e'
+             alerta que se aprende a ignorar. Mede-se o volume, sobe-se para
+             ALERTAR depois. O que nao pode e' voltar a ser tratado como limpo. -->
+        <value-param>
+          <name>dlp.regex.acaoQuandoIncompleta</name>
+          <value>${exo.dlp.regex.acaoQuandoIncompleta:REGISTRAR}</value>
+        </value-param>
+
         <value-param>
           <name>dlp.regex.minimoOcorrencias</name>
           <value>${exo.dlp.regex.minimoOcorrencias:1}</value>
