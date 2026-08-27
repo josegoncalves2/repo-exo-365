@@ -1,0 +1,5 @@
+2026-08-27 11:01:11,042 | [34mINFO [0;39m | A Malware detection connector has been added: trendMicro [32m[o.e.a.service.MalwareDetectionService[0;39m[36m<main>[0;39m[32m][0;39m 
+2026-08-27 11:01:38,422 | [34mINFO [0;39m | A Malware detection connector has been added: ClamAV [32m[o.e.a.service.MalwareDetectionService[0;39m[36m<main>[0;39m[32m][0;39m 
+2026-08-27 11:01:47,908 | [34mINFO [0;39m | Start process malware detection [32m[o.e.antimalware.job.MalwareDetectionJob[0;39m[36m<ExoScheduler_Worker-6>[0;39m[32m][0;39m 
+2026-08-27 11:01:47,916 | [34mINFO [0;39m | ClamAV scan found 1 infected item(s) [32m[o.e.a.c.ClamAVMalwareDetectionConnector[0;39m[36m<ExoScheduler_Worker-6>[0;39m[32m][0;39m 
+2026-08-27 11:01:47,929 | [34mINFO [0;39m | End process malware detection [32m[o.e.antimalware.job.MalwareDetectionJob[0;39m[36m<ExoScheduler_Worker-6>[0;39m[32m][0;39m 

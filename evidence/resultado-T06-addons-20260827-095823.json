@@ -1,0 +1,82 @@
+{
+  "label": "T06-addons",
+  "run_id": "20260827-095823",
+  "base": "http://192.168.1.59",
+  "started": 1787836487.165277,
+  "duration_s": 6.9,
+  "total": 7,
+  "passed": 7,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-06.1",
+      "name": "Manifesto de add-ons confere com o catalogo oficial da eXo",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "15 add-on(s) conferem com o catalogo",
+      "proof": "C      INST   DIST   FAIXA\n--------------------------------------------------------------------------------------------\nexo-addons-manager                   7.2.1-exo      AGPLv3   instav ok     [7.2.1-exo]\nexo-data-upgrade                     7.2.1          AGPLv3   estav  no-cmp [7.2.1]\nexo-dlp                              7.2.1          AGPLv3   estav  no-cmp [7.2.1]\nexo-multifactor-authentication       7.2.1          AGPLv3   estav  no-cmp [7.2.1]\nexo-anti-malware                     7.2.1          AGPLv4   estav  no-cmp [7.2.1]\nexo-anti-bruteforce                  7.2.1          AGPLv5   estav  no-cmp [7.2.1]\nexo-saml                             7.2.1          AGPLv3   estav  ok     [7.2.1]\nexo-jwt-authentication               7.2.0          LGPLv3   estav  no-cmp [7.2-m1,)\nexo-mail-integration                 7.2.1          AGPLv3   estav  no-cmp [7.2.1]\nexo-agenda-connectors                7.2.1          AGPLv6   estav  no-cmp [7.2.1]\nexo-cloud-drive-connectors           7.2.1          AGPLv3   estav  no-cmp [7.2.1]\nexo-automatic-translation            7.2.1          AGPLv3   estav  ok     [7.2.1]\nmeeds-ai                             7.2.1-exo      LGPLv3   instav no-cmp [7.2.1]\nexo-jitsi                            7.2.1          AGPLv3   estav  ok     [7.2.1]\nexo-glpi-integration                 7.2.0          LGPLv3   estav  no-cmp [7.2-m1,)\n\n  portao jakarta (javax.servlet nao roda em Tomcat 10):\n    15 add-on(s) medidos no binario\n\n  manifesto e catalogo conferem.\n",
+      "duration_s": 3.99,
+      "steps": []
+    },
+    {
+      "tid": "T-06.2",
+      "name": "sha256 de cada zip bate com o selado no manifesto",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "15 zip(s) com sha256 identico ao selado",
+      "proof": "cache=/opt/projetos/exo/conf/addons/cache, conferidos=15, ruins=[]",
+      "duration_s": 0.09,
+      "steps": []
+    },
+    {
+      "tid": "T-06.3",
+      "name": "Todo arquivo que o gerenciador diz ter instalado existe no disco",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "76 arquivo(s) de 14 add-on(s), todos presentes",
+      "proof": "{\"exo-agenda-connectors\": 5, \"exo-anti-bruteforce\": 2, \"exo-anti-malware\": 2, \"exo-automatic-translation\": 4, \"exo-cloud-drive-connectors\": 4, \"exo-data-upgrade\": 11, \"exo-dlp\": 3, \"exo-glpi-integration\": 3, \"exo-jitsi\": 2, \"exo-jwt-authentication\": 1, \"exo-mail-integration\": 3, \"exo-multifactor-authentication\": 2, \"exo-saml\": 3, \"meeds-ai\": 31}",
+      "duration_s": 0.09,
+      "steps": []
+    },
+    {
+      "tid": "T-06.4",
+      "name": "Nenhuma propriedade de exo.properties e ficticia",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "23 propriedade(s) conferida(s), todas lidas pela plataforma",
+      "proof": "orfas=[]",
+      "duration_s": 2.11,
+      "steps": []
+    },
+    {
+      "tid": "T-06.5",
+      "name": "A tela de chamados do GLPI esta em portugues",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "39/39 chaves em pt-BR, nenhuma sobrou em ingles",
+      "proof": "{\"en\": 39, \"pt\": 39, \"faltando\": [], \"ainda_em_ingles\": [\"glpi.connection.user.token.label\"]}",
+      "duration_s": 0.1,
+      "steps": []
+    },
+    {
+      "tid": "T-06.6",
+      "name": "O portal continua de pe e autenticavel com os add-ons novos",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "login ok (form:/portal/login) e API social respondeu 200",
+      "proof": "auth=form:/portal/login status=200",
+      "duration_s": 0.28,
+      "steps": []
+    },
+    {
+      "tid": "T-06.7",
+      "name": "Nenhuma webapp de add-on falhou ao subir",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "nenhuma falha de deploy no log do Tomcat",
+      "proof": "0 linha(s) de falha em 44257 do log",
+      "duration_s": 0.27,
+      "steps": []
+    }
+  ]
+}

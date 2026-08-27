@@ -212,6 +212,12 @@ services:
         -Donlyoffice.documentserver.secret=${ONLYOFFICE_JWT_SECRET}
     volumes:
       - ./data/exo:/srv/exo
+      # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
+      # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
+      # do scanner, e o relatorio precisa de escrita dos dois lados — o
+      # ClamAV anexa as deteccoes, o eXo trunca depois de processar.
+      # Ver servico `clamav` no fim deste arquivo.
+      - ./data/antimalware:/srv/antimalware:rw
       # CHAVES DE CRIPTOGRAFIA — copiar sempre junto com ./data/mysql
       - ./data/exo-codec:/etc/exo/codec:rw
       - ./data/exo-logs:/var/log/exo
@@ -777,6 +783,82 @@ services:
       timeout: 10s
       retries: 15
       start_period: 40s
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # ClamAV — MOTOR de varredura do add-on exo-anti-malware
+  #
+  # POR QUE ESTE SERVICO EXISTE
+  # ---------------------------
+  # O exo-anti-malware 7.2.1 estava instalado SEM MOTOR NENHUM. Medido em
+  # 2026-08-27 abrindo o proprio zip do add-on: seu
+  # lib/anti-malware-services.jar!conf/portal/configuration.xml registra
+  # apenas o conector TrendMicro (produto pago, e ainda por cima com
+  # isDefault=false) e os conectores de item (files/jcr). O
+  # ClamAVMalwareDetectionConnector existe no jar, mas como @Component do
+  # Spring, e nao havia ClamAV algum nesta stack para alimenta-lo.
+  # Resultado: o MalwareDetectionJob rodava a cada 5 min e nao escaneava nada.
+  #
+  # CONTRATO COM O ADD-ON (lido das constantes da classe, nao suposto)
+  #   exo.malwareDetection.connector.clamav.report.path  arquivo que o eXo LE
+  #   exo.malwareDetection.connector.clamav.isDefault    precisa ser true
+  # O eXo le as linhas terminadas em "FOUND", parte no primeiro ":" e toma a
+  # esquerda como caminho do arquivo infectado -- a saida crua do `clamscan`.
+  #
+  # POR ISSO O ALVO E' MONTADO NO MESMO CAMINHO DOS DOIS LADOS (/srv/exo/files):
+  # o relatorio carrega caminhos ABSOLUTOS, e o eXo os resolve no proprio
+  # sistema de arquivos. Montar em outro ponto aqui geraria caminhos que o
+  # portal nao encontra, e nenhuma deteccao seria processada -- falha
+  # silenciosa, que e' a pior especie.
+  #
+  # ALVO SOMENTE-LEITURA, DE PROPOSITO: o ClamAV nao precisa escrever nos
+  # documentos do portal, e quem coloca em quarentena e' o eXo. `:ro` remove
+  # a possibilidade de o scanner corromper o acervo. Quem escreve e' so' o
+  # relatorio, em ./data/antimalware, volume separado.
+  # ---------------------------------------------------------------------------
+  clamav:
+    image: ${CLAMAV_IMAGE}
+    container_name: exo-clamav
+    environment:
+      TZ: ${TZ}
+      CLAMAV_ALVO: /srv/exo/files
+      CLAMAV_RELATORIO: /srv/antimalware/clamav-report.txt
+      CLAMAV_JANELA: ${CLAMAV_JANELA}
+      CLAMAV_NA_PARTIDA: ${CLAMAV_NA_PARTIDA}
+      # A imagem oficial sobe clamd + freshclam + milter pelo entrypoint.
+      # Aqui NADA disso sobe: o `command` abaixo substitui o entrypoint e
+      # chama o freshclam pontualmente, so' antes de cada varredura. E' o que
+      # mantem o custo permanente em ~50 MiB em vez de ~1,3 GiB residentes.
+      CLAMAV_NO_CLAMD: "true"
+      CLAMAV_NO_FRESHCLAMD: "true"
+      CLAMAV_NO_MILTERD: "true"
+    entrypoint: ["/bin/sh", "/opt/clamav-varredura.sh"]
+    # A imagem sobe como root por padrao (medido: `id` -> uid=0). Um scanner
+    # que abre 927 arquivos de origem externa nao tem por que ser root:
+    # 1000:1000 e' o usuario `clamav` da propria imagem, dono de
+    # /var/lib/clamav e ja' esperado pelo freshclam (DatabaseOwner clamav).
+    user: "1000:1000"
+    volumes:
+      # Acervo do portal — SOMENTE LEITURA, no mesmo caminho que o eXo usa.
+      - ./data/exo/files:/srv/exo/files:ro
+      # Relatorio: unico ponto de escrita, compartilhado com o exo-app.
+      - ./data/antimalware:/srv/antimalware:rw
+      # Base de assinaturas persistida: sao ~300 MiB por download. Sem isto
+      # cada restart do container baixa tudo de novo do mirror.
+      - ./data/clamav:/var/lib/clamav:rw
+      - ./scripts/clamav-varredura.sh:/opt/clamav-varredura.sh:ro
+    # 1,3 GiB e' o pico real do clamscan carregando a base. O teto fica acima
+    # disso para o OOM killer nao matar a varredura no meio, e ABAIXO do que
+    # sobra no host para nao levar o portal junto.
+    mem_limit: ${MEM_LIMIT_CLAMAV}
+    healthcheck:
+      # Saudavel = a base de assinaturas existe. Nao ha porta nem daemon para
+      # sondar: entre janelas este container esta dormindo, de proposito.
+      test: ["CMD-SHELL", "test -s /var/lib/clamav/daily.cvd -o -s /var/lib/clamav/daily.cld || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 20
+      start_period: 600s
     logging: *default-logging
 
 networks:

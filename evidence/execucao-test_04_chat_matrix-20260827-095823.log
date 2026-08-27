@@ -1,0 +1,11 @@
+===================================================================
+ T-08 — Chat / Matrix  (RUN_ID 20260827-095823)
+===================================================================
+[PASSOU] T-08 (A-maquina) Dois usuarios trocam mensagens reais pelo Matrix — dois usuarios trocaram mensagens nos dois sentidos e um anexo, com conteudo conferido
+[PASSOU] T-08 (A-maquina) eXo integrado ao homeserver (parametros conferidos) — eXo e Synapse compartilham exatamente os mesmos segredos, com algoritmo coerente
+[PASSOU] T-08 (B-usuario) Usuario final abre o chat no portal (navegador real) — a aplicacao de chat carrega para o usuario final, sem erro de servidor
+
+== t08-chat-20260827-095823: 3 passaram, 0 falharam -> evidence/resultado-t08-chat-20260827-095823-20260827-095823.json
+-------------------------------------------------------------------
+ T-08: 3 passaram, 0 falharam
+ Evidencia: /opt/projetos/exo/evidence/resultado-t08-chat-20260827-095823-20260827-095823.json

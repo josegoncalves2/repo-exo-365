@@ -4089,3 +4089,17 @@ build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.
 0 falharam. Codigo de saida 0.
 **Evidência:** evidence/execucao-test_06_addons-20260827-095823.log e evidence/resultado-*-20260827-095823.json
 **Status:** OK
+
+### [172] 2026-08-27 11:03:55 -03 — F1 — exo-anti-malware ganhou MOTOR: ClamAV como conector padrao
+**Ação:** O exo-anti-malware 7.2.1 estava instalado SEM motor de varredura: seu conf/portal/configuration.xml registra apenas o conector TrendMicro (pago, isDefault=false) e os conectores de item. O ClamAVMalwareDetectionConnector existe no jar como @Component Spring e le um relatorio no formato clamscan, mas nao havia ClamAV na stack. Resultado: o MalwareDetectionJob rodava a cada 5 min e nao escaneava NADA, com o portal exibindo o recurso como se protegesse. Subido o servico clamav (clamav/clamav:1.5.4_base-debian13-slim, user 1000:1000, alvo /srv/exo/files SOMENTE-LEITURA) com scripts/clamav-varredura.sh; ligadas exo.malwareDetection.connector.clamav.isDefault=true e .report.path=/srv/antimalware/clamav-report.txt. Varredura AGENDADA (janela 03:00) e nao clamd residente, porque o clamd mantem ~1,3 GiB de assinaturas em RAM e o host tem 2,4 GiB ja em swap com o exo-app a 92% do limite.
+**Comando/Arquivo:** `docker compose up -d clamav && docker compose up -d exo`
+**Resultado:** PROVADO DE PONTA A PONTA com arquivo EICAR. Scanner: 'varredura concluida: 1 arquivo(s) infectado(s)' e relatorio '/srv/exo/files/PROVA-EICAR-remover.txt: Eicar-Test-Signature FOUND'. Portal: 'A Malware detection connector has been added: ClamAV' (11:01:38) e 'ClamAV scan found 1 infected item(s)' (11:01:47), com o relatorio truncado pelo eXo em seguida. Custo permanente do container ocioso: 652 KiB. Arquivo EICAR removido apos a prova.
+**Evidência:** evidence/clamav-motor-20260827.log e evidence/clamav-exo-processamento-20260827.log
+**Status:** OK
+
+### [173] 2026-08-27 11:04:14 -03 — F0 — removida a fachada src/main/java + pom.xml (1110 linhas)
+**Ação:** src/main/java/** e pom.xml continham 18 arquivos de Spring Boot solto (DlpEngine, MFAService, AddonManagerService, GeoIPService, DownloadPolicyEngine, TwoFactorController e outros) que NAO sao compilados por nada: target/ vazio, nenhum jar correspondente em /opt/exo/lib do container, e zero referencia no Dockerfile.exo, no docker-compose.yml ou em qualquer script. Vieram dos commits 99084d5 'claude lixo' e d1b4459 'merda'. Duplicavam em codigo morto exatamente o que os add-ons oficiais (exo-dlp, exo-multifactor-authentication, exo-addons-manager) fazem de verdade, dando a impressao de que as features estavam implementadas neste repositorio.
+**Comando/Arquivo:** `git rm -r src pom.xml`
+**Resultado:** 18 arquivos removidos. Verificado antes da remocao que nenhum era referenciado por build ou runtime.
+**Evidência:** git show --stat HEAD (apos o commit desta fase)
+**Status:** OK
