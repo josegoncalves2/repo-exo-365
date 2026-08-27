@@ -122,6 +122,13 @@
       "descricao": "Cria e administra secretarias, divisões e setores",
       "ordem": 120,
       "icon": "fa-sitemap"
+    },
+    "https://www.kartezi.com.br/dashboards-powerbi": {
+      "titulo": "Kartezi",
+      "tecla": "z",
+      "descricao": "Dashboards de inteligência de dados (Power BI)",
+      "ordem": 130,
+      "icon": "fa-chart-line"
     }
   },
   "sistema_runtime": {

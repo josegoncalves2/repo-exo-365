@@ -3962,3 +3962,130 @@ build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.
 4. `docker restart exo-app` limpou o cache `ai.providers.remoteModels` — após o restart a lista de modelos passou a mostrar os 8 modelos novos (llama-3.3-70b-fp8-fast, llama-3.2-3b/1b, llama-3.1-8b-fp8, qwen3-embedding-0.6b, bge-m3, bge-base/large).
 **Resultado:** `git push origin main` → `f8605ad..52ae15e main -> main` OK. Provider `cloudflare` enabled=true com 8 modelos validados. Chat e embeddings funcionando de ponta a ponta.
 **Status:** OK
+
+### [158] 2026-08-27 09:34:11 -03 — Execucao da suite test_00_infra (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_00_infra`
+**Resultado:** 8 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_00_infra-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** OK
+
+### [159] 2026-08-27 09:34:36 -03 — Execucao da suite test_01_features_api (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_01_features_api`
+**Resultado:** 10 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_01_features_api-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** OK
+
+### [160] 2026-08-27 09:47:07 -03 — Execucao da suite test_02_features_browser (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_02_features_browser`
+**Resultado:** 9 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_02_features_browser-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** OK
+
+### [161] 2026-08-27 09:50:05 -03 — Execucao da suite test_03_onlyoffice_edicao (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_03_onlyoffice_edicao`
+**Resultado:** 4 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_03_onlyoffice_edicao-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** OK
+
+### [162] 2026-08-27 09:50:41 -03 — Execucao da suite test_04_chat_matrix (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_04_chat_matrix`
+**Resultado:** 3 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_04_chat_matrix-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** OK
+
+### [163] 2026-08-27 09:50:42 -03 — Execucao da suite test_05_padronizacao (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_05_padronizacao`
+**Resultado:** 3 testes passaram, 1 falharam. Codigo de saida 1.
+**Evidência:** evidence/execucao-test_05_padronizacao-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** FALHA
+
+### [164] 2026-08-27 09:52:17 -03 — Execucao da suite test_06_addons (RUN_ID 20260827-093357)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_06_addons`
+**Resultado:** 7 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_06_addons-20260827-093357.log e evidence/resultado-*-20260827-093357.json
+**Status:** OK
+
+### [165] 2026-08-27 09:58:33 -03 — Execucao da suite test_00_infra (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_00_infra`
+**Resultado:** 8 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_00_infra-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
+
+### [166] 2026-08-27 09:58:56 -03 — Execucao da suite test_01_features_api (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_01_features_api`
+**Resultado:** 10 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_01_features_api-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
+
+---
+
+### [163] 2026-08-27 12:30:00 -03 — Verificação ao vivo dos 7 itens + correções (IA token via UI, ícones atalhos, Kartezi no padrão)
+
+**Acao:** Verificacao botao a botao no Playwright dos 7 itens reportados e correcao das falhas reais encontradas.
+**Feito (evidencias ao vivo):**
+1. **IA (item 1):** A caixa **API Key** EXISTE no formulario Edit Provider (Url/API Key/Completion API Path). Token `sk-31a82590du1029d02ud019u2aadasd12` digitado na caixa e salvo com "Provider updated successfully" (hasKey=true). O 500 na pagina Models foi causado por modelo orfao (ID 21 apontava para provider `cloudflare2` inexistente → NPE no EntityBuilder) — corrigido para `cloudflare`.
+2. **DLP (item 2):** Quarentena (switch ativo, palavras CPF/CNPJ/NOME, tabela), Regras de transferência (suspender download/compartilhamento), MFA (OTP, acesso protegido, páginas protegidas) — todas confirmadas ao vivo.
+3. **Add-on Manager (item 3):** `exo-addons-manager` instalado (am.properties, catálogo remoto meeds.io), 14 addons nos archives/statuses.
+4. **Integrações (item 4):** Chat (Matrix) com switchs ativos + templates de espaço; Visio (Jitsi) ativo; Tradução automática; Configurações do documento; Agenda — todas no menu Aplicações.
+5. **GLPI (item 5):** Integração REAL confirmada — `POST /rest/v1/glpi-integration/settings` retornou **201 CREATED** (serverApiUrl+appToken+maxTickets), endpoints /tickets, /token, /image/{docId}. Nao é atalho.
+6. **Migration Manager (item 6):** `UpgradeProductService` roda no startup (todos os plugins em 7.2.1-exo) + addon exo-data-upgrade com 11 libs de migração instaladas.
+7. **Ícones de atalhos (item 7):** 6 atalhos estavam com ICON NULL (bug antigo) — `padronizar-atalhos.py --aplicar` gravou fa-headset/envelope/key/city/mobile-alt/chart-bar. Kartezi (ID 19) tinha título fora do padrão e sem ícone — adicionado ao padrao.json (título "Kartezi", tecla z, icon fa-chart-line, ordem 130) e labels de metadata (itens 18/19) corrigidos de "Pmeto Pilot"/inglês para "Assistente de IA"/pt-BR.
+**Resultado:** T-05 4/4 (T-05.4 que falhava passou: 18 rótulos no padrão). Suite completa em execução.
+**Status:** OK
+
+### [167] 2026-08-27 10:11:24 -03 — Execucao da suite test_02_features_browser (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_02_features_browser`
+**Resultado:** 9 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_02_features_browser-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
+
+### [168] 2026-08-27 10:14:17 -03 — Execucao da suite test_03_onlyoffice_edicao (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_03_onlyoffice_edicao`
+**Resultado:** 4 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_03_onlyoffice_edicao-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
+
+### [169] 2026-08-27 10:14:46 -03 — Execucao da suite test_04_chat_matrix (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_04_chat_matrix`
+**Resultado:** 3 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_04_chat_matrix-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
+
+### [170] 2026-08-27 10:14:47 -03 — Execucao da suite test_05_padronizacao (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_05_padronizacao`
+**Resultado:** 4 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_05_padronizacao-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
+
+### [171] 2026-08-27 10:14:54 -03 — Execucao da suite test_06_addons (RUN_ID 20260827-095823)
+**Ação:** Execucao automatizada de testes sob dupla abordagem (A: maquina/API, B: usuario final em navegador real).
+**Comando/Arquivo:** `tests/run_all.sh test_06_addons`
+**Resultado:** 7 testes passaram, 0
+0 falharam. Codigo de saida 0.
+**Evidência:** evidence/execucao-test_06_addons-20260827-095823.log e evidence/resultado-*-20260827-095823.json
+**Status:** OK
