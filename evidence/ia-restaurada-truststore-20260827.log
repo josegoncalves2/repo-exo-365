@@ -1,0 +1,3 @@
+2026-08-27 11:24:31,053 | INFO  | A Malware detection connector has been added: trendMicro [o.e.a.service.MalwareDetectionService<main>] 
+2026-08-27 11:24:59,777 | INFO  | A Malware detection connector has been added: ClamAV [o.e.a.service.MalwareDetectionService<main>] 
+2026-08-27 11:25:33,097 | INFO  | Spring context 'ai-agent' initialized in 12017ms [i.m.s.kernel.PortalApplicationContext<ForkJoinPool.commonPool-worker-3>] 

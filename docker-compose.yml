@@ -210,8 +210,31 @@ services:
         -Donlyoffice.documentserver.allowedhosts=localhost,onlyoffice,${EXO_PROXY_VHOST}
         -Donlyoffice.documentserver.accessOnly=false
         -Donlyoffice.documentserver.secret=${ONLYOFFICE_JWT_SECRET}
+        -Djavax.net.ssl.trustStore=/etc/exo/truststore/truststore-pmo.p12
+        -Djavax.net.ssl.trustStoreType=PKCS12
+        -Djavax.net.ssl.trustStorePassword=${EXO_TRUSTSTORE_PASSWORD}
     volumes:
       - ./data/exo:/srv/exo
+      # Truststore da JVM (ACRESCENTADA em 2026-08-27, nada foi substituido).
+      #
+      # POR QUE EXISTE: o add-on de IA (ai-mcp-client) resolve o cliente OAuth2
+      # chamando ClientRegistrations.fromIssuerLocation() contra
+      # https://${EXO_PROXY_VHOST}/auth-server/.well-known/openid-configuration.
+      # Esse endereco usa a PKI interna (PMO eXo Root CA -> Intermediate), que
+      # NAO esta na cacerts da imagem. O handshake morria com
+      #   PKIX path building failed: unable to find valid certification path
+      # -> sem documento de descoberta -> "tokenUri cannot be empty" -> o
+      # contexto Spring 'ai-agent' INTEIRO falhava, derrubando o assistente.
+      # Medido no platform.log em 2026-08-27 11:18:54.
+      #
+      # O arquivo e' a cacerts da PROPRIA imagem com as duas CAs internas
+      # ACRESCENTADAS: 111 -> 113 entradas, delta 2 conferido no keytool.
+      # Superconjunto estrito, entao MySQL/ES/SMTP/ONLYOFFICE seguem confiando
+      # exatamente no que confiavam antes -- trocar a truststore por uma que
+      # contivesse SO' a CA interna quebraria toda saida TLS para a internet.
+      #
+      # Ele guarda apenas certificados PUBLICOS: nao ha chave privada aqui.
+      - ./conf/truststore/truststore-pmo.p12:/etc/exo/truststore/truststore-pmo.p12:ro
       # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
       # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
       # do scanner, e o relatorio precisa de escrita dos dois lados — o

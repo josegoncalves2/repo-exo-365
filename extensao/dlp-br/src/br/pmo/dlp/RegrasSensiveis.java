@@ -74,6 +74,28 @@ public final class RegrasSensiveis {
       }
       return achados;
     }
+
+    /**
+     * As ocorrencias CONFIRMADAS, com a posicao de cada uma.
+     *
+     * <p>Acrescimo de 2026-08-27. {@link #contarEm} continua existindo e
+     * intacto: quem so' quer contagem nao paga o custo de montar a lista, e
+     * nenhum chamador antigo muda de comportamento. Este metodo e' o que
+     * alimenta mascaramento e desduplicacao, que precisam saber ONDE.
+     */
+    List<Ocorrencia> ocorrenciasEm(String texto) {
+      List<Ocorrencia> encontradas = new ArrayList<>();
+      if (texto == null || texto.isEmpty()) {
+        return encontradas;
+      }
+      Matcher m = padrao.matcher(texto);
+      while (m.find()) {
+        if (validador == null || validador.confirma(m.group())) {
+          encontradas.add(new Ocorrencia(m.group(), m.start(), m.end()));
+        }
+      }
+      return encontradas;
+    }
   }
 
   /** Confirmacao aritmetica do candidato casado pela regex. */
@@ -150,6 +172,19 @@ public final class RegrasSensiveis {
   });
 
   private RegrasSensiveis() {
+  }
+
+  /**
+   * O catalogo, em ordem de prioridade. Acrescimo de 2026-08-27, para que o
+   * motor ({@link Varredura}) percorra as regras sem duplicar a lista.
+   *
+   * <p>A ORDEM E' CONTRATO, nao detalhe: e' ela que decide quem sobrevive
+   * quando dois achados ocupam o mesmo trecho -- CPF antes de CNH, ambos antes
+   * de TELEFONE. Devolve lista imutavel: catalogo alterado em tempo de execucao
+   * seria regra de seguranca mudando debaixo de quem ja' esta' varrendo.
+   */
+  public static List<Regra> regras() {
+    return REGRAS;
   }
 
   /**
