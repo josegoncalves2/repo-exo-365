@@ -20,6 +20,7 @@ final class ProvaExtrator {
     codificacaoBrasileira();
     marcacaoNaoColaNumeros();
     naoExtrairNaoEStringVazia();
+    osTresFurosDaAuditoria();
   }
 
   private static void aceitaOqueDeveAceitar() {
@@ -84,7 +85,17 @@ final class ProvaExtrator {
     ResultadoVarredura r = new Varredura().varrer(texto);
     Prova.igual("os dois CPFs da tabela foram achados", 2,
                 r.getAchado("CPF") == null ? 0 : r.getAchado("CPF").getQuantidade());
-    Prova.certo("o conteudo de <script> foi descartado", !texto.contains("var cpf"));
+    // ASSEVERACAO INVERTIDA em 2026-08-27, e de proposito. Ela afirmava
+    // "o conteudo de <script> foi descartado", que era o comportamento ANTIGO e
+    // era o defeito: descartar script desligava em silencio a regra
+    // SEGREDO_EM_TEXTO_CLARO deste mesmo pacote, que procura senha= e api_key=
+    // justamente dentro de script e de bloco de configuracao. Uma prova que
+    // trava o comportamento errado e' pior que prova nenhuma, porque impede a
+    // correcao com ar de rigor.
+    Prova.certo("o conteudo de <script> agora e' VARRIDO, nao descartado",
+                texto.contains("var cpf"));
+    Prova.certo("mas as etiquetas continuam virando espaco",
+                !texto.contains("<script>") && !texto.contains("</script>"));
 
     String xml = "<pessoas><p><cpf>" + ProvaRegras.CPF_VALIDO_1 + "</cpf><idade>2</idade></p></pessoas>";
     ResultadoVarredura rx = new Varredura()
@@ -131,6 +142,124 @@ final class ProvaExtrator {
 
     String vazio = extrair(new byte[0], "vazio.txt");
     Prova.igual("arquivo realmente vazio devolve texto vazio (isso e' legitimo)", "", vazio);
+  }
+
+  /**
+   * Regressao dos tres furos achados na auditoria de 2026-08-27, disparada pelo
+   * aviso da sessao projetos-97 ("correcao esquecida num ramo e' correcao nao
+   * feita" e "confere onde tu decides por prefixo").
+   */
+  private static void osTresFurosDaAuditoria() {
+    Prova.secao("Extrator — FURO 1: binario escondido depois dos primeiros 8 KiB");
+
+    // 8 KiB de texto legitimo na frente, binario atras. A checagem antiga so'
+    // olhava o comeco e daria o arquivo por texto.
+    StringBuilder disfarce = new StringBuilder();
+    while (disfarce.length() < 9000) {
+      disfarce.append("relatorio administrativo sem dado pessoal. ");
+    }
+    byte[] cabeca = disfarce.toString().getBytes(StandardCharsets.ISO_8859_1);
+    byte[] arquivo = new byte[cabeca.length + 64];
+    System.arraycopy(cabeca, 0, arquivo, 0, cabeca.length);
+    for (int i = 0; i < 64; i++) {
+      arquivo[cabeca.length + i] = (byte) (i % 2 == 0 ? 0 : 0xC3);
+    }
+
+    boolean recusou = false;
+    String motivo = null;
+    try {
+      new ExtratorTextoSimples()
+          .extrair(new ByteArrayInputStream(arquivo), "disfarce.txt", "text/plain");
+    } catch (ExtracaoIndisponivelException e) {
+      recusou = true;
+      motivo = e.getMessage();
+    } catch (Exception e) {
+      Prova.certo("excecao inesperada: " + e, false);
+    }
+    Prova.certo("binario apos 8 KiB de texto e' recusado (varre o buffer inteiro)", recusou);
+    System.out.println("   ..   " + motivo);
+
+    Prova.secao("Extrator — FURO 2: BOM desviava da checagem de binario");
+
+    // Prefixar FF FE a um binario qualquer tomava o ramo do BOM, que declarava
+    // "nao binario" sem olhar mais nada. O binario virava UTF-16, virava lixo,
+    // nao casava com regra nenhuma e saia do motor como DOCUMENTO LIMPO.
+    byte[] lixo = new byte[512];
+    for (int i = 0; i < lixo.length; i++) {
+      lixo[i] = (byte) ((i * 37 + 11) & 0xFF);
+    }
+    byte[] comBomFalso = new byte[2 + lixo.length];
+    comBomFalso[0] = (byte) 0xFF;
+    comBomFalso[1] = (byte) 0xFE;
+    System.arraycopy(lixo, 0, comBomFalso, 2, lixo.length);
+
+    boolean recusouBom = false;
+    String motivoBom = null;
+    try {
+      new ExtratorTextoSimples()
+          .extrair(new ByteArrayInputStream(comBomFalso), "planilha.csv", "text/csv");
+    } catch (ExtracaoIndisponivelException e) {
+      recusouBom = true;
+      motivoBom = e.getMessage();
+    } catch (Exception e) {
+      Prova.certo("excecao inesperada: " + e, false);
+    }
+    Prova.certo("binario com BOM falso NAO passa mais por texto", recusouBom);
+    System.out.println("   ..   " + motivoBom);
+
+    // O criterio tem de separar com folga, nao por um fio. Estes tres sao os
+    // que quase viraram falso positivo: acentuacao, escrita nao latina, e
+    // emoji -- que e' PAR DE SUBSTITUTOS e reprovaria numa contagem por char.
+    String acentuado = "Deliberou-se pela aprovacao do parecer no 004/2026, a unanimidade."
+        + " Acao, coracao, atencao, execucao,. Texto longo o bastante para a proporcao valer.";
+    Prova.certo("documento com acentuacao passa",
+                extrair(acentuado.getBytes(StandardCharsets.UTF_8), "parecer.txt").length() > 0);
+
+    StringBuilder cjk = new StringBuilder();
+    for (int i = 0; i < 300; i++) {
+      cjk.append((char) (0x4E00 + i));
+    }
+    Prova.certo("texto CJK passa (escrita nao latina nao e' lixo)",
+                extrair(cjk.toString().getBytes(StandardCharsets.UTF_8), "cjk.txt").length() > 0);
+
+    StringBuilder comEmoji = new StringBuilder("Relatorio mensal aprovado pela comissao. ");
+    for (int i = 0; i < 60; i++) {
+      comEmoji.appendCodePoint(0x1F600 + (i % 60));
+    }
+    Prova.certo("texto com EMOJI passa — contagem por code point, nao por char",
+                extrair(comEmoji.toString().getBytes(StandardCharsets.UTF_8), "chat.txt").length() > 0);
+
+    // E o inverso tem de continuar valendo: UTF-16 de verdade e' texto.
+    String oficio = "OFICIO 145/2026 — requerente CPF " + ProvaRegras.CPF_VALIDO_1
+                    + ", contato gabinete@pmo.gov.br, e mais texto para passar do minimo.";
+    byte[] utf16 = new byte[2 + oficio.getBytes(java.nio.charset.StandardCharsets.UTF_16LE).length];
+    utf16[0] = (byte) 0xFF;
+    utf16[1] = (byte) 0xFE;
+    System.arraycopy(oficio.getBytes(java.nio.charset.StandardCharsets.UTF_16LE), 0,
+                     utf16, 2, utf16.length - 2);
+    String lidoUtf16 = extrair(utf16, "oficio.txt");
+    Prova.certo("UTF-16 legitimo continua sendo lido", lidoUtf16.contains("OFICIO 145/2026"));
+    Prova.certo("e o CPF dentro dele e' achado",
+                new Varredura().varrer(lidoUtf16).getAchado("CPF") != null);
+
+    Prova.secao("Extrator — FURO 3: comentario e <script> eram descartados COM o conteudo");
+
+    String html = "<html><body>"
+        + "<!-- CPF do requerente: " + ProvaRegras.CPF_VALIDO_1 + " -->"
+        + "<p>Pagina publica sem dados.</p>"
+        + "<script>var conf = {senha: \"correiacavalobateria\"};</script>"
+        + "</body></html>";
+    String texto = extrair(html.getBytes(StandardCharsets.UTF_8), "pagina.html");
+    ResultadoVarredura r = new Varredura().varrer(texto);
+    System.out.println("   ..   " + r.resumo());
+
+    Prova.certo("o CPF escondido no COMENTARIO agora e' achado", r.getAchado("CPF") != null);
+    Prova.certo("a senha dentro de <script> tambem — a regra propria voltou a valer",
+                r.getAchado("SEGREDO_EM_TEXTO_CLARO") != null);
+    Prova.igual("e o documento e' classificado como SIGILOSO",
+                Classificacao.SIGILOSO, r.getClassificacao());
+    Prova.certo("as etiquetas continuam virando espaco (nao colam numeros)",
+                !texto.contains("<p>") && !texto.contains("</script>"));
   }
 
   private static String extrair(byte[] bytes, String nome) {

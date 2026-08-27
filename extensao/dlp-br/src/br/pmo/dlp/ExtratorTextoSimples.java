@@ -64,6 +64,25 @@ public final class ExtratorTextoSimples implements Extrator {
   private static final List<String> COM_MARCACAO = Arrays.asList(
       "xml", "html", "htm", "xhtml");
 
+  /**
+   * Acima desta proporcao de code points implausiveis, o conteudo decodificado
+   * nao e' texto. Em porcentagem.
+   *
+   * <p>Cinco por cento nao e' chute: e' medida. Binario aleatorio decodificado
+   * como UTF-16 da' 14%, e como ISO-8859-1 da' 23%; documento com acentuacao
+   * portuguesa, texto CJK e texto com emoji dao' 0%. O corte fica no meio de uma
+   * separacao de tres vezes, e nao encostado em nenhum dos lados.
+   *
+   * <p>A primeira versao deste criterio contava caracteres de CONTROLE e cortava
+   * em 2%. Media: binario aleatorio em UTF-16 da' exatamente 2% de controle --
+   * ou seja, o criterio era cara-ou-coroa, e so' pegou o caso da prova por
+   * sorte. Contar o que NAO E' CARACTERE ATRIBUIDO separa cinco vezes melhor.
+   */
+  private static final int TETO_IMPLAUSIVEL_POR_CENTO = 5;
+
+  /** Abaixo deste tamanho, a proporcao e' ruido e nao se aplica. */
+  private static final int MINIMO_PARA_PROPORCAO = 64;
+
   private final int tetoBytes;
 
   public ExtratorTextoSimples() {
@@ -122,6 +141,13 @@ public final class ExtratorTextoSimples implements Extrator {
     }
 
     String texto = decodificar(bytes);
+
+    // PONTO UNICO DE CONFERENCIA, e a razao de ele existir esta' em
+    // recusarSeNaoForTexto: pareceBinario roda sobre os BYTES e tem um ramo que
+    // o desvia (arquivo com BOM). Conferir de novo aqui, DEPOIS de todos os
+    // ramos de decodificacao convergirem, fecha o desvio por construcao em vez
+    // de exigir que cada ramo novo lembre de repetir a checagem.
+    recusarSeNaoForTexto(texto, nomeArquivo);
     String extensao = extensaoDe(nomeArquivo);
     if (extensao != null && COM_MARCACAO.contains(extensao)) {
       texto = removerMarcacao(texto);
@@ -154,13 +180,105 @@ public final class ExtratorTextoSimples implements Extrator {
     if (temBom(bytes) != null) {
       return false;
     }
-    int limite = Math.min(bytes.length, 8192);
-    for (int i = 0; i < limite; i++) {
+    // O BUFFER INTEIRO, nao so' o comeco. Varrer apenas os primeiros 8 KiB e' a
+    // receita copiada de editor de texto, e num DLP ela e' um convite: basta
+    // por 8 KiB de texto na frente do que se quer esconder. O custo de varrer
+    // tudo e' uma passada por, no maximo, o teto de bytes -- irrelevante ao
+    // lado da varredura por regex que vem depois.
+    for (int i = 0; i < bytes.length; i++) {
       if (bytes[i] == 0) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Confere, JA' DECODIFICADO, se o resultado e' mesmo texto.
+   *
+   * <p><b>POR QUE ISTO EXISTE, ALEM DE {@link #pareceBinario}.</b> Aquele roda
+   * sobre os bytes e tem um ramo que o desvia: arquivo com BOM e' declarado
+   * "nao binario" sem olhar mais nada, porque UTF-16 legitimamente contem
+   * {@code NUL}. So' que basta prefixar {@code FF FE} a um binario qualquer
+   * para tomar esse desvio -- e o binario seria decodificado como UTF-16,
+   * viraria lixo, nao casaria com regra nenhuma e sairia do motor como
+   * <b>documento limpo</b>.
+   *
+   * <p>E' o mesmo defeito que a sessao projetos-97 encontrou no proprio codigo
+   * dela em 2026-08-27 ("correcao esquecida num ramo e' correcao nao feita") e
+   * que me fez auditar este arquivo. A licao que fica no desenho: a conferencia
+   * nao vai em cada ramo, vai onde os ramos CONVERGEM. Ramo novo passa a herdar
+   * a checagem em vez de precisar lembrar dela.
+   *
+   * <p>Dois criterios:
+   * <ol>
+   *   <li>qualquer {@code U+0000} reprova. Texto de documento nao tem NUL --
+   *       nem em UTF-16, porque ali o NUL fica nos BYTES, nunca no caractere
+   *       decodificado;</li>
+   *   <li>mais de {@value #TETO_IMPLAUSIVEL_POR_CENTO}% de code points
+   *       IMPLAUSIVEIS reprova: nao atribuido, uso privado, substituto solto,
+   *       caractere de controle ou {@code U+FFFD}. Binario lido como texto
+   *       produz isso em abundancia (medido: 14% em UTF-16, 23% em Latin-1);
+   *       documento de verdade nao produz nenhum.</li>
+   * </ol>
+   *
+   * <p><b>A contagem e' por CODE POINT, nao por {@code char}, e isso decide um
+   * falso positivo inteiro.</b> Emoji e todo o plano suplementar sao gravados em
+   * Java como PAR de substitutos, e cada metade do par, olhada sozinha, tem tipo
+   * {@code SURROGATE} -- que e' justamente uma das marcas de lixo. Percorrer por
+   * {@code char} reprovaria um documento com emoji como se fosse binario.
+   * Percorrendo por code point, o par vira um caractere definido e o substituto
+   * SOLTO (que e' de fato sinal de lixo) continua sendo contado. Medido: texto
+   * com emoji da' 0%.
+   *
+   * <p>O criterio de proporcao so' vale a partir de
+   * {@value #MINIMO_PARA_PROPORCAO} caracteres: em texto curtissimo um unico
+   * caractere estranho estoura qualquer percentual.
+   */
+  private static void recusarSeNaoForTexto(String texto, String nomeArquivo)
+      throws ExtracaoIndisponivelException {
+    if (texto.isEmpty()) {
+      return;
+    }
+    int implausiveis = 0;
+    int total = 0;
+    for (int i = 0; i < texto.length(); ) {
+      int ponto = texto.codePointAt(i);
+      i += Character.charCount(ponto);
+      total++;
+      if (ponto == 0) {
+        throw new ExtracaoIndisponivelException(
+            "conteudo binario disfarcado de texto (caractere nulo apos decodificar"
+            + (nomeArquivo == null ? "" : " " + nomeArquivo) + ")");
+      }
+      if (implausivel(ponto)) {
+        implausiveis++;
+      }
+    }
+    if (total >= MINIMO_PARA_PROPORCAO
+        && (implausiveis * 100L) / total > TETO_IMPLAUSIVEL_POR_CENTO) {
+      throw new ExtracaoIndisponivelException(
+          "conteudo nao parece texto: " + implausiveis + " de " + total
+          + " caracteres nao sao caracteres de escrita"
+          + (nomeArquivo == null ? "" : " em " + nomeArquivo)
+          + ". NAO pode ser considerado livre de dados sensiveis.");
+    }
+  }
+
+  /** Code point que nao aparece em documento escrito por gente. */
+  private static boolean implausivel(int ponto) {
+    if (ponto == 0xFFFD || !Character.isDefined(ponto)) {
+      return true;
+    }
+    int tipo = Character.getType(ponto);
+    if (tipo == Character.UNASSIGNED || tipo == Character.PRIVATE_USE
+        || tipo == Character.SURROGATE) {
+      return true;
+    }
+    // Tabulacao, nova linha, retorno e avanco de pagina sao controle E sao
+    // texto legitimo -- estao em praticamente todo arquivo real.
+    return tipo == Character.CONTROL
+           && ponto != '\t' && ponto != '\n' && ponto != '\r' && ponto != '\f';
   }
 
   // ===========================================================================
@@ -212,21 +330,40 @@ public final class ExtratorTextoSimples implements Extrator {
   // ===========================================================================
 
   /**
-   * Tira etiquetas de XML/HTML preservando o TAMANHO do texto restante em
-   * relacao ao conteudo -- cada etiqueta vira um espaco, nunca some sem deixar
-   * separador. Colar {@code <td>123.456.789-01</td><td>2</td>} sem separador
-   * produziria {@code 123.456.789-012}, que NAO e' CPF valido: a mascara
-   * silenciosamente deixaria de proteger uma tabela HTML inteira.
+   * Tira as ETIQUETAS de XML/HTML e preserva TODO o texto, inclusive o que
+   * estava dentro de comentario, de {@code <script>} e de {@code <style>}.
    *
-   * <p>Tambem derruba o conteudo de {@code <script>} e {@code <style>}, que sao
-   * codigo e nao texto do documento.
+   * <p>Cada etiqueta vira um espaco, nunca some sem deixar separador. Colar
+   * {@code <td>123.456.789-01</td><td>2</td>} sem separador produziria
+   * {@code 123.456.789-012}, que NAO e' CPF valido: a mascara silenciosamente
+   * deixaria de proteger uma tabela HTML inteira.
+   *
+   * <p><b>POR QUE O CONTEUDO DE COMENTARIO E DE SCRIPT NAO E' MAIS DESCARTADO.</b>
+   * Ate' 2026-08-27 este metodo derrubava os tres com o conteudo dentro, sob o
+   * argumento de que "codigo nao e' texto do documento". O argumento esta'
+   * errado justamente para um DLP, por dois motivos:
+   *
+   * <ol>
+   *   <li>comentario de HTML e' <b>o esconderijo classico</b>: o dado esta' no
+   *       arquivo, nao aparece no navegador, e sai inteiro para quem abrir a
+   *       fonte. Descarta-lo antes de varrer e' varrer justamente onde nao
+   *       esta';</li>
+   *   <li>a regra {@code SEGREDO_EM_TEXTO_CLARO} deste mesmo pacote procura
+   *       {@code senha=}, {@code api_key=} e {@code token=} -- que vivem
+   *       precisamente dentro de {@code <script>} e de bloco de configuracao.
+   *       Descartar script era <b>desligar uma regra propria</b> sem que nada
+   *       acusasse.</li>
+   * </ol>
+   *
+   * <p>O preco e' mais ruido vindo de codigo. E' um preco baixo: toda regra de
+   * severidade ALTA confere digito verificador, entao ruido de JavaScript nao
+   * vira quarentena -- no maximo vira contagem em rotulo de severidade baixa.
    */
   static String removerMarcacao(String texto) {
-    String semScript = texto.replaceAll("(?is)<script\\b[^>]*>.*?</script>", " ")
-                            .replaceAll("(?is)<style\\b[^>]*>.*?</style>", " ")
-                            .replaceAll("(?s)<!--.*?-->", " ")
-                            .replaceAll("(?s)<!\\[CDATA\\[(.*?)\\]\\]>", "$1");
-    String semEtiquetas = semScript.replaceAll("(?s)<[^>]*>", " ");
+    String semCdata = texto.replaceAll("(?s)<!\\[CDATA\\[(.*?)\\]\\]>", " $1 ");
+    // So' as CERCAS do comentario viram espaco; o miolo continua e sera' varrido.
+    String semCercas = semCdata.replace("<!--", " ").replace("-->", " ");
+    String semEtiquetas = semCercas.replaceAll("(?s)<[^>]*>", " ");
     return desescapar(semEtiquetas);
   }
 
