@@ -170,7 +170,14 @@ public final class InstantaneoConformidade {
     String risco = "=".repeat(70);
     sb.append(risco).append('\n').append(titulo).append('\n');
     sb.append("Periodo: ").append(quando(inicio)).append("  ate  ").append(quando(fim)).append('\n');
-    sb.append("Itens analisados: ").append(total).append('\n');
+    sb.append("Varreduras registradas: ").append(total).append('\n');
+    // PRECISAO QUE MUDA A LEITURA DO NUMERO: o acumulador conta VARREDURAS, nao
+    // documentos distintos. Um documento editado tres vezes e' enfileirado tres
+    // vezes e conta tres. Chamar isso de "itens do acervo" inflaria justamente a
+    // linha que sustenta pedido de orcamento -- a de "provavel digitalizacao".
+    // Para retrato do acervo, o relatorio tem de ser de UMA passada completa,
+    // com instancia propria, e nao o acumulado desde que o portal subiu.
+    sb.append("(varreduras, nao documentos distintos: item reenfileirado conta de novo)\n");
     sb.append(risco).append("\n\n");
 
     sb.append("SITUACAO DO ACERVO\n");

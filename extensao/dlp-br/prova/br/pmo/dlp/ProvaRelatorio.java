@@ -26,6 +26,53 @@ final class ProvaRelatorio {
     contagemSobreviveAConcorrencia();
     csvNaoExecutaFormula();
     saidaLegivel();
+    falhaDeVarreduraNaoSome();
+  }
+
+  /**
+   * O sumidouro que a integracao do ConectorDlpRegex ainda tinha: item que
+   * estoura excecao no meio da varredura nao passava por gaveta nenhuma.
+   */
+  private static void falhaDeVarreduraNaoSome() {
+    Prova.secao("Relatorio — item que fez o DLP falhar tem de aparecer, nao sumir");
+
+    RelatorioConformidade relatorio = new RelatorioConformidade("com falha");
+    relatorio.registrar("ok.txt", new Varredura().varrer("Ata comum."));
+    // E' assim que o bloco catch registra: sem laudo, com o motivo ja' sabido.
+    relatorio.registrar("quebrou.pdf", null, MotivoNaoVarrido.FALHA_NA_VARREDURA);
+    InstantaneoConformidade foto = relatorio.instantaneo();
+
+    Prova.igual("as duas varreduras contam", 2, foto.getTotal());
+    Prova.igual("a que falhou entra como NAO VARRIDO", 1,
+                foto.getQuantidade(CategoriaConformidade.NAO_VARRIDO));
+    Prova.igual("na gaveta de FALHA, nao na de digitalizacao", 1,
+                foto.getQuantidade(MotivoNaoVarrido.FALHA_NA_VARREDURA));
+    Prova.igual("e a gaveta de OCR fica ZERADA — senao o bug viraria pedido de orcamento",
+                0, foto.getQuantidade(MotivoNaoVarrido.PROVAVEL_DIGITALIZACAO));
+    Prova.certo("o encaminhamento manda ler o log, nao comprar nada",
+                MotivoNaoVarrido.FALHA_NA_VARREDURA.getEncaminhamento().contains("log"));
+    Prova.certo("a referencia do item quebrado esta' na amostra",
+                foto.getAmostras(MotivoNaoVarrido.FALHA_NA_VARREDURA).contains("quebrou.pdf"));
+
+    Prova.certo("registrar(ref, null) sem motivo ainda conta, em OUTRO",
+                contarComLaudoNulo() == 1);
+
+    Prova.secao("Relatorio — o numero e' de VARREDURAS, e o relatorio diz isso");
+    RelatorioConformidade repetido = new RelatorioConformidade("repeticao");
+    ResultadoVarredura mesmo = new Varredura().varrer("Ata comum.");
+    repetido.registrar("mesmo-arquivo.txt", mesmo);
+    repetido.registrar("mesmo-arquivo.txt", mesmo);
+    repetido.registrar("mesmo-arquivo.txt", mesmo);
+    InstantaneoConformidade tres = repetido.instantaneo();
+    Prova.igual("o mesmo documento tres vezes conta tres", 3, tres.getTotal());
+    Prova.certo("e o texto avisa que sao varreduras, nao documentos distintos",
+                tres.emTexto().contains("nao documentos distintos"));
+  }
+
+  private static int contarComLaudoNulo() {
+    RelatorioConformidade r = new RelatorioConformidade("nulo");
+    r.registrar("x", null);
+    return r.instantaneo().getQuantidade(MotivoNaoVarrido.OUTRO);
   }
 
   private static void categoriasParticionam() {

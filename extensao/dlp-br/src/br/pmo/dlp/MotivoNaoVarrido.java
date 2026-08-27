@@ -68,6 +68,23 @@ public enum MotivoNaoVarrido {
   /** Item sem binario associado. Costuma ser pasta, atalho ou registro vazio. */
   SEM_CONTEUDO_BINARIO("Sem conteudo binario", "normalmente inofensivo"),
 
+  /**
+   * O DLP ERROU ao varrer este item: excecao de leitura, de repositorio, de
+   * rede. Nao e' limitacao de formato -- e' defeito nosso ou da infraestrutura.
+   *
+   * <p>Gaveta propria porque o encaminhamento e' oposto ao dos vizinhos:
+   * {@link #PROVAVEL_DIGITALIZACAO} manda comprar OCR e
+   * {@link #ACIMA_DO_TETO_DE_BYTES} manda mexer na configuracao; esta manda ler
+   * o log e corrigir codigo. Somada a qualquer uma das outras, viraria pedido de
+   * orcamento para consertar um bug.
+   *
+   * <p>Existe tambem para tapar um sumidouro: item que estoura excecao no meio
+   * da varredura nao aparecia em gaveta nenhuma, e o relatorio dizia ter
+   * analisado menos itens do que de fato encontrou -- cobertura sub-relatada,
+   * que e' pior do que relatorio nenhum porque PARECE cobertura.
+   */
+  FALHA_NA_VARREDURA("Falha na varredura (erro do DLP)", "ler o log e corrigir"),
+
   /** Nao reconhecido. Ver as amostras impressas no relatorio. */
   OUTRO("Outro", "ver amostras no relatorio");
 
@@ -136,6 +153,9 @@ public enum MotivoNaoVarrido {
     }
     if (contem(m, "sem conteudo binario", "sem propriedade de dados", "sem dados binarios")) {
       return SEM_CONTEUDO_BINARIO;
+    }
+    if (contem(m, "excecao", "exception", "falhou ao varrer", "erro ao varrer")) {
+      return FALHA_NA_VARREDURA;
     }
     return OUTRO;
   }
