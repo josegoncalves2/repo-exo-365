@@ -18,6 +18,25 @@
         <spring.boot.version>3.1.5</spring.boot.version>
     </properties>
 
+    <!-- ================================================================
+         ACRESCENTADO 2026-08-27: repositorios da eXo.
+
+         Sem isto o build morre em
+           "Could not find artifact org.exoplatform:exo-kernel-commons:jar:7.2.1
+            in central (https://repo.maven.apache.org/maven2)"
+         porque os artefatos da plataforma nao sao publicados no Maven
+         Central -- ficam no repositorio publico da propria eXo.
+         ================================================================ -->
+    <repositories>
+        <repository>
+            <id>exo-public</id>
+            <name>eXo Platform Public Repository</name>
+            <url>https://repository.exoplatform.org/public</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- Spring Boot -->
         <dependency>
