@@ -115,34 +115,111 @@ public final class Zona {
    * isenta. Por isso so' se aceita literal.
    */
   private static byte[] interpretarEndereco(String texto, String original) {
-    if (!pareceEnderecoLiteral(texto)) {
+    byte[] bytes = analisarLiteral(texto);
+    if (bytes == null) {
       throw new IllegalArgumentException(
-          "'" + original + "' nao e' um endereco literal (nome de maquina nao e' aceito)");
+          "'" + original + "' nao e' um endereco literal em forma canonica "
+          + "(nome de maquina e formas abreviadas de IPv4 nao sao aceitos)");
     }
-    try {
-      byte[] bytes = InetAddress.getByName(texto).getAddress();
-      return desmapear(bytes);
-    } catch (UnknownHostException e) {
-      throw new IllegalArgumentException("endereco invalido em '" + original + "'", e);
-    }
+    return bytes;
   }
 
-  /** Literal e' o que so' tem digito, ponto, dois-pontos e hexadecimal. */
-  private static boolean pareceEnderecoLiteral(String texto) {
-    if (texto.isEmpty()) {
-      return false;
+  /**
+   * Interpreta um endereco literal. Devolve os bytes, ou {@code null} quando o
+   * texto NAO e' um endereco.
+   *
+   * <p><b>POR QUE NAO SE USA InetAddress.getByName DIRETO.</b> Um fiscal provou
+   * o furo: o reconhecedor anterior aceitava qualquer texto formado por
+   * {@code [0-9a-fA-F.:%]}, e existem dominios inteiros dentro desse alfabeto
+   * ({@code .ac .ad .ae .af .ba .be .cc .cd .cf .de .ec .ee}). O texto
+   * {@code f00dbabe.cafe.ac} passava, e {@code getByName} entao fazia
+   * <b>CONSULTA DE DNS</b> ; medida em 187 ms ; dentro do caminho da
+   * requisicao. Tres consequencias, todas graves:
+   *
+   * <ol>
+   *   <li>quem controla o dominio escolhia em que zona cair: bastava apontar
+   *       o registro A para o endereco do proxy e virar "proxy confiavel";</li>
+   *   <li>um servidor autoritativo que simplesmente nao responde prendia uma
+   *       thread do Tomcat ; negacao de servico com um cabecalho HTTP;</li>
+   *   <li>o javadoc que prometia "nao resolve nome" era falso.</li>
+   * </ol>
+   *
+   * <p>Agora IPv4 e' analisado AQUI, digito a digito, e IPv6 so' e' entregue ao
+   * JDK depois de confirmado que contem {@code ':'} ; caractere que nome de
+   * maquina nao pode ter, o que torna a consulta de DNS impossivel por
+   * construcao, e nao por promessa.
+   */
+  private static byte[] analisarLiteral(String texto) {
+    if (texto == null || texto.isEmpty()) {
+      return null;
     }
-    for (int i = 0; i < texto.length(); i++) {
-      char c = texto.charAt(i);
-      boolean aceitavel = (c >= '0' && c <= '9')
-                          || (c >= 'a' && c <= 'f')
-                          || (c >= 'A' && c <= 'F')
-                          || c == '.' || c == ':' || c == '%';
-      if (!aceitavel) {
-        return false;
+    if (texto.indexOf(':') >= 0) {
+      // IPv6. Nome de maquina nao pode conter ':', entao getByName aqui nunca
+      // consulta DNS: ou interpreta como literal, ou lanca.
+      try {
+        return desmapear(InetAddress.getByName(texto).getAddress());
+      } catch (UnknownHostException | IllegalArgumentException e) {
+        return null;
       }
     }
-    return true;
+    return analisarIpv4(texto);
+  }
+
+  /**
+   * IPv4 em forma canonica e SO' nela: exatamente quatro grupos decimais de
+   * 0 a 255.
+   *
+   * <p>O JDK aceita formas que ninguem mais aceita, e o fiscal provou o
+   * estrago: {@code 10.5} virava {@code 10.0.0.5}, {@code 2130706433} virava
+   * {@code 127.0.0.1}, {@code 0000010.0.0.5} era aceito. Alem do casamento
+   * inesperado, o motivo gravado na auditoria ("origem 10.5 esta' na zona
+   * isenta") nao e' o que nginx, iptables ou o SIEM entendem pelo mesmo texto
+   * ; e uma contestacao futura fica impossivel de arbitrar.
+   *
+   * <p>Zero a' esquerda tambem e' recusado: em varios interpretadores isso e'
+   * OCTAL, e {@code 010} vale 8 num e 10 noutro. Divergencia de leitura entre
+   * a regra e o firewall e' o comeco de um furo.
+   */
+  private static byte[] analisarIpv4(String texto) {
+    byte[] bytes = new byte[4];
+    int grupo = 0;
+    int i = 0;
+    int n = texto.length();
+
+    while (i < n) {
+      int inicio = i;
+      int valor = 0;
+      while (i < n && texto.charAt(i) >= '0' && texto.charAt(i) <= '9') {
+        valor = valor * 10 + (texto.charAt(i) - '0');
+        if (valor > 255) {
+          return null;
+        }
+        i++;
+      }
+      int digitos = i - inicio;
+      if (digitos == 0 || digitos > 3) {
+        return null;
+      }
+      // Zero a' esquerda so' e' aceito no proprio zero ("0").
+      if (digitos > 1 && texto.charAt(inicio) == '0') {
+        return null;
+      }
+      if (grupo > 3) {
+        return null;
+      }
+      bytes[grupo++] = (byte) valor;
+
+      if (i < n) {
+        if (texto.charAt(i) != '.') {
+          return null;
+        }
+        i++;
+        if (i == n) {
+          return null;
+        }
+      }
+    }
+    return grupo == 4 ? bytes : null;
   }
 
   /**
@@ -185,13 +262,8 @@ public final class Zona {
     if (porcento > 0) {
       limpo = limpo.substring(0, porcento);
     }
-    if (!pareceEnderecoLiteral(limpo)) {
-      return false;
-    }
-    byte[] candidato;
-    try {
-      candidato = desmapear(InetAddress.getByName(limpo).getAddress());
-    } catch (UnknownHostException | IllegalArgumentException e) {
+    byte[] candidato = analisarLiteral(limpo);
+    if (candidato == null) {
       return false;
     }
 
@@ -233,15 +305,7 @@ public final class Zona {
     if (porcento > 0) {
       limpo = limpo.substring(0, porcento);
     }
-    if (!pareceEnderecoLiteral(limpo)) {
-      return false;
-    }
-    try {
-      InetAddress.getByName(limpo);
-      return true;
-    } catch (UnknownHostException e) {
-      return false;
-    }
+    return analisarLiteral(limpo) != null;
   }
 
   public int getBitsPrefixo() {

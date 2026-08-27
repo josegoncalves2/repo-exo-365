@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Registro do filtro de restricoes avancadas de download e compartilhamento.
+
+  ENCAIXE: ExtensibleFilter mais FilterDefinitionPlugin, o mesmo mecanismo que
+  o proprio add-on de MFA usa. Prioridade 7, depois do filtro de MFA por zona
+  (6) e do filtro nativo de MFA (5): primeiro se resolve QUEM e' o usuario e se
+  ele passou pelo segundo fator, depois se decide o que ele pode transferir.
+
+  NASCE EM OBSERVACAO. Registrar o filtro NAO bloqueia nada. As rotas por onde
+  um arquivo realmente sai do portal nao estao declaradas em lugar algum que se
+  possa ler com certeza (tudo e' mapeado em /* no eXo 7.2.1), e bloquear por
+  suposicao erra dos dois lados em silencio.
+-->
+<configuration
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.web.filter.ExtensibleFilter</target-component>
+    <component-plugin>
+      <name>Filtro Restricoes de Transferencia</name>
+      <set-method>addFilterDefinitions</set-method>
+      <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
+      <priority>7</priority>
+      <init-params>
+        <object-param>
+          <name>Filtro Restricoes de Transferencia</name>
+          <object type="org.exoplatform.web.filter.FilterDefinition">
+            <field name="filter">
+              <object type="br.pmo.transferencia.exo.FiltroTransferencia"/>
+            </field>
+            <field name="patterns">
+              <collection type="java.util.ArrayList" item-type="java.lang.String">
+                <value>
+                  <string>.*</string>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+</configuration>

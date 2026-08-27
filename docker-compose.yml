@@ -271,6 +271,28 @@ services:
       #
       # NASCE INERTE: sem exo.mfa.zonas.exigir preenchido, nada muda.
       - ./extensao/mfa-zona/target/mfa-zona.jar:/opt/exo/lib/zz-mfa-zona.jar:ro
+      # Extensao RESTRICOES AVANCADAS DE DOWNLOAD E COMPARTILHAMENTO
+      # (ACRESCENTADA em 2026-08-27).
+      #
+      # O nativo (TransferRulesRestService) sao DOIS INTERRUPTORES GLOBAIS
+      # guardados no SettingService: sharedDocumentStatus e
+      # downloadDocumentStatus. Liga e desliga, para o portal inteiro, para
+      # todo mundo. O briefing pede restricao "com base em permissoes e
+      # politicas da empresa" ; dois interruptores globais sao um disjuntor,
+      # nao uma politica.
+      #
+      # A extensao traz motor de regras (grupo, grupo-excluido, extensao,
+      # tamanho, zona de rede, operacao), primeira-que-casa, com a regra
+      # responsavel NOMEADA em cada decisao para poder responder "por que nao
+      # consigo baixar este arquivo".
+      #
+      # DEPENDE de zz-mfa-zona.jar (br.pmo.mfa.Zona) para as condicoes de
+      # rede. Reaproveitar em vez de copiar evita duas implementacoes de CIDR
+      # divergindo com o tempo. O prefixo "zzz-" garante a ordem de carga
+      # depois da dependencia.
+      #
+      # NASCE EM OBSERVACAO: avalia, registra o que impediria, e NAO impede.
+      - ./extensao/transferencia/target/transferencia.jar:/opt/exo/lib/zzz-transferencia.jar:ro
       # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
       # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
       # do scanner, e o relatorio precisa de escrita dos dois lados — o

@@ -45,6 +45,7 @@ public final class Provas {
     provaPrecedenciaDoCatalogo();
     provaEstadoInerte();
     provaIndeterminado();
+    provaAchadosDoFiscal();
 
     System.out.println();
     System.out.println("RESULTADO: " + (ok + falhas) + " asseveracoes, " + falhas + " falhas.");
@@ -180,8 +181,13 @@ public final class Provas {
     checa("XFF nulo vindo do proxy: devolve o proxy",
           "172.18.0.5".equals(origem.resolver("172.18.0.5", null)));
 
-    checa("entrada ilegivel interrompe a cadeia na borda conhecida",
-          "172.18.0.5".equals(origem.resolver("172.18.0.5", "192.168.1.42, lixo-nao-e-ip")));
+    // Esta asseveracao AFIRMAVA o comportamento inseguro ate' 2026-08-27:
+    // entrada ilegivel devolvia o endereco do proxy, e como o proxy costuma
+    // estar em faixa isenta, isso zerava a exigencia de segundo fator. Uma
+    // prova que cristaliza a falha aberta e' pior que prova nenhuma: da'
+    // confianca. Agora afirma o oposto, que e' o correto.
+    checa("entrada ilegivel devolve INDETERMINADO (falha FECHADA, nao o proxy)",
+          origem.resolver("172.18.0.5", "192.168.1.42, lixo-nao-e-ip") == null);
 
     checa("endereco com porta e' aceito sem a porta",
           "192.168.1.42".equals(origem.resolver("172.18.0.5", "192.168.1.42:53122")));
@@ -232,6 +238,77 @@ public final class Provas {
           !vazio.decidir(null).exigeSegundoFator());
     checa("e o motivo diz que esta' inerte",
           vazio.decidir("203.0.113.9").getMotivo().contains("inerte"));
+  }
+
+  /**
+   * Achados de revisao adversarial em 2026-08-27. Cada um foi PROVADO
+   * explorável antes de ser corrigido; ficam aqui para nao voltarem.
+   */
+  private static void provaAchadosDoFiscal() {
+    secao("Achados do fiscal (regressao)");
+
+    // ACHADO 3 (ALTA): nome de maquina formado so' por caracteres hexadecimais
+    // atravessava o reconhecedor e ia parar em getByName, que fazia DNS
+    // SINCRONO no caminho da requisicao ; quem controlasse o dominio escolhia
+    // a propria zona, e um servidor de DNS que nao responde prendia a thread.
+    checa("hostname hexadecimal NAO e' aceito como endereco",
+          !Zona.enderecoValido("f00dbabe.cafe.ac"));
+    checa("hostname hexadecimal NAO e' aceito como faixa", lanca("f00dbabe.cafe.ac/32"));
+    checa("hostname hexadecimal nao casa faixa nenhuma",
+          !Zona.de("0.0.0.0/0").contem("f00dbabe.cafe.ac"));
+    checa("dominio .de tambem nao passa", !Zona.enderecoValido("dead.beef.de"));
+
+    // ACHADO 7 (MEDIA): o JDK aceita formas abreviadas e decimais de IPv4.
+    // Alem do casamento inesperado, o texto gravado na auditoria deixava de
+    // ser o mesmo que nginx/iptables/SIEM entendem.
+    checa("10.5 NAO e' 10.0.0.5", !Zona.de("10.0.0.0/8").contem("10.5"));
+    checa("10.0.5 NAO e' 10.0.0.5", !Zona.de("10.0.0.0/8").contem("10.0.5"));
+    checa("2130706433 NAO e' 127.0.0.1", !Zona.de("127.0.0.0/8").contem("2130706433"));
+    checa("zero a esquerda e' recusado (seria octal em outros interpretadores)",
+          !Zona.de("10.0.0.0/8").contem("0000010.0.0.5"));
+    checa("mas a forma canonica segue valendo", Zona.de("10.0.0.0/8").contem("10.0.0.5"));
+    checa("e o zero sozinho continua valido", Zona.de("0.0.0.0/8").contem("0.0.0.1"));
+
+    // ACHADO 4 (ALTA): o ramo dos colchetes devolvia sem validar ; o MESMO
+    // furo que a validacao ao lado dizia ter fechado, por caminho paralelo.
+    OrigemRequisicao origem = new OrigemRequisicao(
+        Collections.singletonList(Zona.de("172.18.0.0/16")));
+    checa("[lixo] entre colchetes NAO vira endereco",
+          origem.resolver("172.18.0.5", "[lixo]") == null);
+    checa("[nao-e-ip] tambem nao", origem.resolver("172.18.0.5", "[nao-e-ip]") == null);
+    checa("[../etc] tambem nao", origem.resolver("172.18.0.5", "[../etc]") == null);
+    checa("[] vazio tambem nao", origem.resolver("172.18.0.5", "[]") == null);
+    checa("mas IPv6 legitimo entre colchetes segue valendo",
+          "2001:db8::1".equals(origem.resolver("172.18.0.5", "[2001:db8::1]:443")));
+
+    // ACHADO 6 (MEDIA): entrada ilegivel devolvia o endereco do PROPRIO proxy.
+    // Como o proxy costuma estar em faixa isenta, tornar a entrada ilegivel
+    // zerava a exigencia. Agora devolve null -> indeterminado -> EXIGIR.
+    checa("entrada ilegivel devolve INDETERMINADO, nao o proxy",
+          origem.resolver("172.18.0.5", "192.168.1.42, lixo-nao-e-ip") == null);
+
+    CatalogoZonas comIndeterminado = new CatalogoZonas(
+        CatalogoZonas.interpretarLista("0.0.0.0/0,::/0"),
+        CatalogoZonas.interpretarLista("172.18.0.0/16"),
+        QuandoIndeterminado.EXIGIR);
+    checa("e indeterminado EXIGE, em vez de cair na zona isenta do proxy",
+          comIndeterminado.decidir(origem.resolver("172.18.0.5", "[lixo]")).exigeSegundoFator());
+
+    // ACHADO 5 (MEDIA): 0.0.0.0/0 nao cobre IPv6, e o nginx escuta em [::].
+    CatalogoZonas soV4 = new CatalogoZonas(
+        CatalogoZonas.interpretarLista("0.0.0.0/0"),
+        CatalogoZonas.interpretarLista(""),
+        QuandoIndeterminado.EXIGIR);
+    checa("0.0.0.0/0 sozinho ISENTA a pilha IPv6 inteira (por isso o exemplo mudou)",
+          !soV4.decidir("2804:14d:1::9").exigeSegundoFator());
+
+    CatalogoZonas ambas = new CatalogoZonas(
+        CatalogoZonas.interpretarLista("0.0.0.0/0,::/0"),
+        CatalogoZonas.interpretarLista(""),
+        QuandoIndeterminado.EXIGIR);
+    checa("com ::/0 junto, IPv6 passa a exigir",
+          ambas.decidir("2804:14d:1::9").exigeSegundoFator());
+    checa("e IPv4 continua exigindo", ambas.decidir("203.0.113.9").exigeSegundoFator());
   }
 
   private static void provaIndeterminado() {

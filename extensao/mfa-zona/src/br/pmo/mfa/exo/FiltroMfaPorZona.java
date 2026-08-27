@@ -79,17 +79,40 @@ public class FiltroMfaPorZona implements Filter {
   private static final String SESSAO_URI_INICIAL = "initialUri";
 
   /**
-   * Recursos que nao podem ser redirecionados. Redirecionar folha de estilo ou
-   * chamada REST quebra a propria tela de segundo fator ; o usuario veria uma
-   * pagina sem CSS e sem conseguir enviar o codigo.
+   * Recursos ESTATICOS que nao podem ser redirecionados: redirecionar folha de
+   * estilo ou script quebra a propria tela de segundo fator, e o usuario veria
+   * uma pagina sem CSS e sem conseguir enviar o codigo.
+   *
+   * <p><b>/portal/rest FOI RETIRADO DESTA LISTA.</b> Isenta-lo em bloco era um
+   * desvio direto: bastava o usuario, em vez de abrir a pagina, chamar
+   * {@code GET /portal/rest/v1/social/users},
+   * {@code /portal/rest/v1/social/spaces} ou {@code /portal/rest/documents/...}
+   * para receber tudo sem segundo fator. A API e' justamente onde os dados
+   * estao ; isentar a API e exigir na pagina protege a moldura e entrega o
+   * quadro. Achado em revisao adversarial.
    */
-  private static final List<String> PREFIXOS_LIVRES =
+  private static final List<String> PREFIXOS_ESTATICOS_LIVRES =
       Collections.unmodifiableList(Arrays.asList("/portal/javascript",
-                                                 "/portal/rest",
                                                  "/portal/scripts",
                                                  "/portal/skins",
                                                  "/portal/service-worker.js",
                                                  URI_SEGUNDO_FATOR));
+
+  /**
+   * As UNICAS rotas REST liberadas: as que a propria tela de segundo fator
+   * precisa chamar para o usuario conseguir se autenticar. Sem elas a tela
+   * carrega e nao funciona, e o usuario fica preso sem caminho de saida.
+   *
+   * <p>Vieram das classes do add-on ({@code MfaRestService},
+   * {@code OtpRestService}), e nao de suposicao.
+   */
+  private static final List<String> PREFIXOS_REST_LIVRES =
+      Collections.unmodifiableList(Arrays.asList("/portal/rest/mfa",
+                                                 "/portal/rest/otp",
+                                                 "/portal/rest/v1/mfa",
+                                                 "/portal/rest/v1/otp"));
+
+  private static final String PREFIXO_REST = "/portal/rest";
 
   /**
    * Configuracao interpretada uma vez. {@code volatile} porque o filtro e'
@@ -181,11 +204,20 @@ public class FiltroMfaPorZona implements Filter {
 
     try {
       if (deveIntervir(req)) {
+        String caminho = caminhoNormalizado(req);
+        if (caminho != null && caminho.startsWith(PREFIXO_REST + "/")) {
+          // Chamada de API com segundo fator pendente. Responder com
+          // redirecionamento seria inutil: o XHR seguiria o 302, receberia o
+          // HTML da tela de OTP e o front-end o interpretaria como dado ;
+          // produzindo erro incompreensivel em vez de exigencia clara.
+          // 403 e' a resposta correta e o cliente sabe o que fazer com ela.
+          res.sendError(HttpServletResponse.SC_FORBIDDEN,
+                        "segundo fator exigido para esta zona de rede");
+          return;
+        }
         HttpSession sessao = req.getSession(true);
         sessao.setAttribute(SESSAO_URI_INICIAL, uriCompleta(req));
-        res.sendRedirect(req.getContextPath() == null
-                         ? URI_SEGUNDO_FATOR
-                         : URI_SEGUNDO_FATOR);
+        res.sendRedirect(URI_SEGUNDO_FATOR);
         return;
       }
     } catch (RuntimeException e) {
@@ -211,12 +243,17 @@ public class FiltroMfaPorZona implements Filter {
       return false;
     }
 
-    String uri = req.getRequestURI();
+    String uri = caminhoNormalizado(req);
     if (uri == null) {
       return false;
     }
-    for (String livre : PREFIXOS_LIVRES) {
-      if (uri.startsWith(livre)) {
+    for (String livre : PREFIXOS_ESTATICOS_LIVRES) {
+      if (casaSegmento(uri, livre)) {
+        return false;
+      }
+    }
+    for (String livre : PREFIXOS_REST_LIVRES) {
+      if (casaSegmento(uri, livre)) {
         return false;
       }
     }
@@ -243,6 +280,49 @@ public class FiltroMfaPorZona implements Filter {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Caminho JA' NORMALIZADO pelo container.
+   *
+   * <p>{@code getRequestURI()} devolve a URI CRUA ; nao decodificada e nao
+   * normalizada ; enquanto o Tomcat escolhe o servlet pela copia normalizada.
+   * A divergencia e' explorada assim:
+   * {@code GET /portal/rest/%2e%2e/dw/pagina-protegida} faz um filtro que le a
+   * URI crua concluir "comeca com /portal/rest, e' livre", e o container serve
+   * {@code /portal/dw/pagina-protegida}. Somar servletPath com pathInfo usa o
+   * que o proprio container ja' resolveu, e a divergencia deixa de existir.
+   */
+  private static String caminhoNormalizado(HttpServletRequest req) {
+    String servlet = req.getServletPath();
+    String extra = req.getPathInfo();
+    if (servlet == null && extra == null) {
+      return req.getRequestURI();
+    }
+    String contexto = req.getContextPath();
+    StringBuilder caminho = new StringBuilder();
+    if (contexto != null) {
+      caminho.append(contexto);
+    }
+    if (servlet != null) {
+      caminho.append(servlet);
+    }
+    if (extra != null) {
+      caminho.append(extra);
+    }
+    return caminho.toString();
+  }
+
+  /**
+   * Casa por SEGMENTO de caminho, nunca por prefixo textual solto.
+   *
+   * <p>{@code startsWith("/portal/rest")} tambem casa {@code /portal/restrito};
+   * {@code startsWith("/portal/skins")} casa {@code /portal/skinsecreta}. Foi
+   * provado em revisao adversarial: qualquer pagina do portal cujo nome
+   * comecasse com essas letras nascia isenta de segundo fator.
+   */
+  private static boolean casaSegmento(String uri, String prefixo) {
+    return uri.equals(prefixo) || uri.startsWith(prefixo + "/");
   }
 
   /**

@@ -117,10 +117,17 @@ public final class OrigemRequisicao {
     for (int i = cadeia.length - 1; i >= 0; i--) {
       String candidato = normalizar(cadeia[i]);
       if (candidato == null) {
-        // Entrada ilegivel na cadeia. Nao se pula em silencio: dali para a
-        // esquerda nada mais e' confiavel, porque nao da' para saber quem
-        // escreveu o que. Para na borda conhecida.
-        return remoto;
+        // Entrada ilegivel na cadeia: origem INDETERMINADA, e nao "o proxy".
+        //
+        // Antes devolvia-se o endereco do proprio proxy. Isso era falha
+        // ABERTA: o nginx costuma estar numa faixa isenta (rede interna do
+        // docker), entao quem conseguisse tornar ilegivel a entrada mais a'
+        // direita ficava, por construcao, dentro da zona isenta ; zerando a
+        // exigencia de segundo fator.
+        //
+        // Devolver null joga a decisao para
+        // CatalogoZonas.QuandoIndeterminado, que nasce EXIGIR. Falha fechada.
+        return null;
       }
       if (!ehProxyConfiavel(candidato)) {
         return candidato;
@@ -150,8 +157,15 @@ public final class OrigemRequisicao {
     // quando ha' EXATAMENTE um, ou quando esta' na forma [ipv6]:porta.
     if (limpo.startsWith("[")) {
       int fecha = limpo.indexOf(']');
-      if (fecha > 0) {
-        return limpo.substring(1, fecha);
+      if (fecha > 1) {
+        // VALIDA TAMBEM AQUI. Este ramo devolvia sem validar, e era o MESMO
+        // furo que a validacao abaixo dizia ter fechado, por um caminho
+        // paralelo: "X-Forwarded-For: [lixo]" saia daqui como endereco "lixo",
+        // o catalogo o classificava como "fora de toda zona protegida" e
+        // DISPENSAVA o segundo fator. Achado por revisao adversarial, com
+        // prova. Correcao esquecida em um ramo e' correcao nao feita.
+        String interno = limpo.substring(1, fecha);
+        return Zona.enderecoValido(interno) ? interno : null;
       }
       return null;
     }
