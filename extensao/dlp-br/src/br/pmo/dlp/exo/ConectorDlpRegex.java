@@ -30,6 +30,7 @@ import br.pmo.dlp.Achado;
 import br.pmo.dlp.Extrator;
 import br.pmo.dlp.ExtratorTextoSimples;
 import br.pmo.dlp.PoliticaDlp;
+import br.pmo.dlp.MotivoNaoVarrido;
 import br.pmo.dlp.RelatorioConformidade;
 import br.pmo.dlp.RegrasSensiveis.Severidade;
 import br.pmo.dlp.ResultadoVarredura;
@@ -234,6 +235,18 @@ public class ConectorDlpRegex extends FileDlpConnector {
       // de todos os outros.
       LOG.error("DLP por padrao falhou no item {} - seguindo com a deteccao nativa por palavra-chave",
                 entityId, e);
+      // O RAMO QUE EU TINHA ESQUECIDO. Meu proprio criterio diz que sair mais
+      // cedo por qualquer ramo faz o acervo parecer menor do que e' ; e o
+      // catch e' sair mais cedo por um ramo. Sem esta linha, todo item cujo
+      // scan estoura (IOException de extrator, RepositoryException do JCR,
+      // disco lento, no' corrompido) sumia da estatistica em silencio.
+      //
+      // Gaveta PROPRIA, e nao a do OCR: o encaminhamento e' OPOSTO ao dos
+      // vizinhos. PROVAVEL_DIGITALIZACAO manda comprar OCR;
+      // FALHA_NA_VARREDURA manda ler o log e corrigir codigo. Somar as duas
+      // faria um defeito nosso virar pedido de orcamento ; entregando o
+      // argumento errado justamente na decisao sobre OCR.
+      relatorio.registrar(entityId, null, MotivoNaoVarrido.FALHA_NA_VARREDURA);
     }
     return delegarAoNativo(entityId);
   }

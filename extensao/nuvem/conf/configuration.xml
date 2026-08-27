@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Registro do conector Nextcloud/WebDAV no Cloud Drive da eXo.
+
+  COMO ISTO ENTRA EM VIGOR
+  ===
+  O kernel da eXo le conf/portal/configuration.xml de TODO jar do classpath.
+  Este arquivo acrescenta um plugin ao CloudDriveService com o mesmo
+  set-method que o add-on usa (addPlugin), com provider-id "nextcloud".
+
+  CONFIGURACAO (vem de exo.properties, nunca chumbada):
+    exo.nuvem.nextcloud.server-url   = nuvem.pmo.gov.br
+    exo.nuvem.nextcloud.schema       = https
+    exo.nuvem.nextcloud.client-id    = <id do app OAuth2 no Nextcloud>
+    exo.nuvem.nextcloud.client-secret= <segredo do app OAuth2>
+    exo.nuvem.nextcloud.redirect-uri = https://192.168.1.59/portal/clouddrive/callback
+
+  SEM credencial configurada o conector registra e fica DESLIGADO
+  (disable=true) — o que e' diferente de ausente: a tela aparece no menu de
+  administracao e diz "aguardando configuracao", em vez de nao existir.
+-->
+<configuration
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+
+  <!-- Conector Nextcloud no Cloud Drive -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.cms.clouddrives.CloudDriveService</target-component>
+    <component-plugin>
+      <name>add.nextcloudprovider</name>
+      <set-method>addPlugin</set-method>
+      <type>br.pmo.nuvem.exo.NextcloudDriveConnector</type>
+      <init-params>
+        <properties-param>
+          <name>drive-configuration</name>
+          <property name="provider-id" value="nextcloud"/>
+          <property name="provider-name" value="Nextcloud"/>
+          <property name="provider-client-id" value="${exo.nuvem.nextcloud.client-id:}"/>
+          <property name="provider-client-secret" value="${exo.nuvem.nextcloud.client-secret:}"/>
+          <property name="connector-host" value="${exo.nuvem.nextcloud.server-url:}"/>
+          <property name="connector-schema" value="${exo.nuvem.nextcloud.schema:https}"/>
+          <property name="disable" value="${exo.nuvem.nextcloud.disable:true}"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+  <!-- Namespace JCR do Nextcloud (padrao do add-on gdrive/onedrive) -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.jcr.RepositoryService</target-component>
+    <component-plugin>
+      <name>add.namespaces</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.services.jcr.impl.AddNamespacesPlugin</type>
+      <init-params>
+        <properties-param>
+          <name>namespaces</name>
+          <property name="nuvem" value="http://www.pmo.gov.br/jcr/nextcloud/1.0/"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+</configuration>

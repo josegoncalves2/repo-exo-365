@@ -89,6 +89,13 @@ RUN set -eux; \
 # 3) webdav-web.xml (CORS/options-preflight) e fragmento de CSS do agenda.
 # ---------------------------------------------------------------------------
 COPY conf/webdav-web.xml /build/webdav/WEB-INF/web.xml
+# ACRESCENTADO 2026-08-27. O webapp `rest` responde no contexto /rest e nao
+# declarava org.exoplatform.web.filter.GenericFilter ; sem ela a cadeia do
+# ExtensibleFilter nao roda, e com isso as extensoes proprias (2FA por zona,
+# restricoes de transferencia) nao eram chamadas. O log de acesso prova o uso
+# real por esse caminho: /rest/v1/social/users/root, /rest/v1/users. Fechar
+# /portal/rest e deixar /rest aberto e' fechar a porta e deixar a janela.
+COPY conf/rest-web.xml /build/rest/WEB-INF/web.xml
 COPY conf/css/agenda-widget-fix.css /build/css/agenda-widget-fix.css
 
 # ---------------------------------------------------------------------------
@@ -244,6 +251,10 @@ RUN set -eux; \
     test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -ge 1881; \
     test "$(unzip -l /opt/exo/webapps/social.war | tail -1 | awk '{print $2}')" -le 1900; \
     unzip -p /opt/exo/webapps/webdav.war WEB-INF/web.xml | grep -q 'options-preflight'; \
+    unzip -p /opt/exo/webapps/webdav.war WEB-INF/web.xml \
+      | grep -q 'org.exoplatform.web.filter.GenericFilter'; \
+    unzip -p /opt/exo/webapps/rest.war WEB-INF/web.xml \
+      | grep -q 'org.exoplatform.web.filter.GenericFilter'; \
     test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -ge 51; \
     test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -le 60; \
     unzip -p /opt/exo/webapps/agenda.war WEB-INF/classes/locale/portlet/Agenda_pt_BR.properties \
