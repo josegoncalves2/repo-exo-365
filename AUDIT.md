@@ -3950,3 +3950,15 @@ build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.
 - `GET /ai-agent/rest/administration/providers/cloudflare/models` → 200 com 8 modelos Cloudflare.
 - UI `/administration/home/ai/models` → provider "Open AI Compatible" (fallback de título) aparece na lista de Providers.
 **Status:** OK
+
+---
+
+### [157] 2026-08-26 18:10:00 -03 — Segurança: token Cloudflare movido para Worker Secret + push no GitHub
+
+**Acao:** O primeiro push foi bloqueado pelo GitHub Push Protection (GH013) porque o token real `cfat_...` estava hardcoded em `conf/cloudflare-worker.js`. Correção definitiva:
+1. Token movido para **Worker Secret** (`API_TOKEN`, tipo secret_text) via `PUT .../workers/scripts/exo-ai-openai/secrets`.
+2. Código do Worker reescrito para ler o token do ambiente (`globalThis.API_TOKEN`) — **zero segredos no arquivo versionado** (`grep -c "cfat_" conf/cloudflare-worker.js` → 0).
+3. Commit corrigido via `git commit --amend` (o anterior, `c5f09f8`, nunca chegou ao remoto) e push limpo.
+4. `docker restart exo-app` limpou o cache `ai.providers.remoteModels` — após o restart a lista de modelos passou a mostrar os 8 modelos novos (llama-3.3-70b-fp8-fast, llama-3.2-3b/1b, llama-3.1-8b-fp8, qwen3-embedding-0.6b, bge-m3, bge-base/large).
+**Resultado:** `git push origin main` → `f8605ad..52ae15e main -> main` OK. Provider `cloudflare` enabled=true com 8 modelos validados. Chat e embeddings funcionando de ponta a ponta.
+**Status:** OK
