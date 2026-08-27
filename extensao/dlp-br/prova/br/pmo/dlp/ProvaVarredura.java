@@ -17,6 +17,7 @@ final class ProvaVarredura {
     ordenaPorGravidade();
     naoInventaEmTextoLimpo();
     documentoGrandeNaoViraLimpo();
+    textoCapengaNaoViraLimpo();
   }
 
   private static void achaOqueTem() {
@@ -107,6 +108,55 @@ final class ProvaVarredura {
     Prova.certo("documento limpo", r.isLimpo());
     Prova.igual("classificado como PUBLICO", Classificacao.PUBLICO, r.getClassificacao());
     Prova.certo("e a varredura foi completa", r.isCompleta());
+  }
+
+  /**
+   * O caso que o adaptador do portal vive todo dia: PDF digitalizado, arquivo
+   * acima do teto de bytes, formato sem extrator. O texto chega capenga ANTES
+   * de entrar no motor, e o motor nao tem como perceber sozinho.
+   */
+  private static void textoCapengaNaoViraLimpo() {
+    Prova.secao("Motor — texto que chegou capenga tambem sai marcado NAO VARRIDO");
+
+    // O que o conector consegue quando nenhum extrator le o binario: so' o nome.
+    String soONome = "ficha-funcional-servidor.pdf\nFicha Funcional\n";
+
+    ResultadoVarredura ingenuo = new Varredura().varrer(soONome);
+    Prova.certo("varrendo so' o nome, o laudo sai LIMPO e COMPLETO...",
+                ingenuo.isLimpo() && ingenuo.isCompleta());
+    Prova.igual("...e classificado como PUBLICO — este e' o buraco",
+                Classificacao.PUBLICO, ingenuo.getClassificacao());
+    Prova.igual("e a politica padrao nao faria nada", PoliticaDlp.Acao.REGISTRAR,
+                PoliticaDlp.padrao().decidir(ingenuo).getAcao());
+
+    ResultadoVarredura honesto = new Varredura().varrerParcial(
+        soONome, "nenhum extrator leu o binario: provavel digitalizacao, exige OCR");
+    Prova.certo("declarando parcial, o mesmo texto sai INCOMPLETO", !honesto.isCompleta());
+    Prova.certo("com o motivo preservado",
+                honesto.getMotivoIncompleta().contains("OCR"));
+    Prova.igual("e a politica padrao passa a ALERTAR", PoliticaDlp.Acao.ALERTAR,
+                PoliticaDlp.padrao().decidir(honesto).getAcao());
+    System.out.println("   ..   " + PoliticaDlp.padrao().decidir(honesto).getMotivo());
+
+    boolean recusou = false;
+    try {
+      new Varredura().varrerParcial(soONome, "   ");
+    } catch (IllegalArgumentException e) {
+      recusou = true;
+    }
+    Prova.certo("parcial SEM motivo escrito e' recusada (alerta injulgavel)", recusou);
+
+    // Os dois motivos coexistem: capenga na entrada E estourou o teto interno.
+    StringBuilder grande = new StringBuilder(soONome);
+    while (grande.length() < 3000) {
+      grande.append("texto administrativo comum. ");
+    }
+    ResultadoVarredura dois = new Varredura(500, 10_000L)
+        .varrerParcial(grande.toString(), "extracao parcial do PDF");
+    System.out.println("   ..   " + dois.getMotivoIncompleta());
+    Prova.certo("motivo externo e motivo do teto se SOMAM, nenhum e' perdido",
+                dois.getMotivoIncompleta().contains("extracao parcial do PDF")
+                && dois.getMotivoIncompleta().contains("teto"));
   }
 
   /**

@@ -96,21 +96,75 @@ public final class Varredura {
    * @return o laudo, nunca nulo
    */
   public ResultadoVarredura varrer(String texto) {
+    return varrer(texto, null);
+  }
+
+  /**
+   * Varre um texto que quem chama SABE ser apenas parte do documento.
+   *
+   * <p><b>POR QUE ISTO PRECISA EXISTIR, E POR QUE O MOTIVO E' OBRIGATORIO.</b>
+   * O motor so' enxerga a {@code String} que recebe. Ele consegue perceber que
+   * ESTOUROU o proprio teto, mas nao tem como saber que o texto chegou
+   * capenga antes de entrar aqui -- e chega capenga o tempo todo:
+   *
+   * <ul>
+   *   <li>PDF digitalizado, sem camada de texto: nenhum extrator le, e o
+   *       chamador acaba varrendo so' o NOME do arquivo;</li>
+   *   <li>arquivo acima do teto de bytes do chamador, que nem e' aberto;</li>
+   *   <li>documento cifrado, corrompido, ou de formato sem extrator.</li>
+   * </ul>
+   *
+   * <p>Nesses casos {@link #varrer(String)} devolveria {@code completa=true} e
+   * {@code limpo=true} -- ou seja, <b>a ficha funcional digitalizada seria
+   * classificada como PUBLICO</b>, e a politica nao teria como distinguir isso
+   * de um documento realmente inofensivo. Este metodo fecha esse buraco: o
+   * laudo sai marcado incompleto e {@link PoliticaDlp#getAcaoQuandoIncompleta()}
+   * dispara.
+   *
+   * <p>O motivo e' OBRIGATORIO de proposito. Varredura parcial sem motivo
+   * escrito e' um alerta que o administrador nao consegue julgar, e alerta que
+   * nao se consegue julgar e' alerta que se aprende a ignorar.
+   *
+   * @param texto            o pedaco de texto que se conseguiu obter
+   * @param motivoIncompleta por que o texto e' parcial, em portugues, para ir
+   *                         direto ao relatorio e a' tela; nulo ou em branco
+   *                         significa varredura completa e cai em
+   *                         {@link #varrer(String)}
+   */
+  public ResultadoVarredura varrerParcial(String texto, String motivoIncompleta) {
+    if (motivoIncompleta == null || motivoIncompleta.trim().isEmpty()) {
+      throw new IllegalArgumentException(
+          "varredura parcial exige motivo escrito: sem ele o alerta nao e' julgavel");
+    }
+    return varrer(texto, motivoIncompleta.trim());
+  }
+
+  /**
+   * O corpo comum. {@code motivoExterno} nao nulo forca {@code completa=false}
+   * antes mesmo de a varredura comecar.
+   */
+  private ResultadoVarredura varrer(String texto, String motivoExterno) {
     long inicio = System.currentTimeMillis();
 
     if (texto == null || texto.isEmpty()) {
-      return new ResultadoVarredura(new ArrayList<>(), true, null, 0, 0L);
+      return new ResultadoVarredura(new ArrayList<>(),
+                                    motivoExterno == null,
+                                    motivoExterno,
+                                    0,
+                                    0L);
     }
 
     String alvo = texto;
-    boolean completa = true;
-    String motivo = null;
+    boolean completa = motivoExterno == null;
+    String motivo = motivoExterno;
 
     if (alvo.length() > tetoCaracteres) {
       alvo = alvo.substring(0, tetoCaracteres);
       completa = false;
-      motivo = "documento maior que o teto de " + tetoCaracteres
-               + " caracteres; varridos os primeiros " + tetoCaracteres;
+      // ACUMULA, nao substitui: um documento pode chegar capenga do extrator E
+      // ainda assim estourar o teto. Sobrescrever perderia metade do diagnostico.
+      motivo = juntar(motivo, "documento maior que o teto de " + tetoCaracteres
+                              + " caracteres; varridos os primeiros " + tetoCaracteres);
     }
 
     // Fase 1: coleta bruta, regra a regra, na ordem do catalogo.
@@ -119,8 +173,9 @@ public final class Varredura {
       long gasto = System.currentTimeMillis() - inicio;
       if (gasto > tetoMilissegundos) {
         completa = false;
-        motivo = "orcamento de " + tetoMilissegundos + " ms esgotado apos "
-                 + gasto + " ms; regras restantes nao foram aplicadas";
+        motivo = juntar(motivo, "orcamento de " + tetoMilissegundos
+                                + " ms esgotado apos " + gasto
+                                + " ms; regras restantes nao foram aplicadas");
         break;
       }
       for (Ocorrencia ocorrencia : regra.ocorrenciasEm(alvo)) {
@@ -238,6 +293,11 @@ public final class Varredura {
         .comparing((Achado a) -> a.getSeveridade(), Comparator.reverseOrder())
         .thenComparingInt(a -> ordens.get(a.getRotulo())));
     return achados;
+  }
+
+  /** Encadeia motivos de incompletude sem perder nenhum. */
+  private static String juntar(String anterior, String novo) {
+    return anterior == null || anterior.isEmpty() ? novo : anterior + "; " + novo;
   }
 
   /** Par regra+ocorrencia, vivo so' entre as fases 1 e 3. */
