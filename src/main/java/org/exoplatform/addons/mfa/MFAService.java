@@ -184,6 +184,10 @@ public class MFAService {
         public Instant getExpiresAt() { return expiresAt; }
         public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
         public int getAttempts() { return attempts; }
+        // ACRESCENTADO 2026-08-27: generateOTP() ja' chamava setAttempts(0) na
+        // linha 73, mas o metodo nunca existiu — era o unico erro de compilacao
+        // do modulo depois de corrigida a coordenada Maven da dependencia.
+        public void setAttempts(int attempts) { this.attempts = attempts; }
         public void incrementAttempts() { this.attempts++; }
     }
 }

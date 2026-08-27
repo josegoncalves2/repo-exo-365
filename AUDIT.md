@@ -4110,3 +4110,10 @@ build reprodutível, `conferir` sem divergência, e boot com 0 ERROR/SEVERE.
 **Resultado:** CORRIGIDO E VERIFICADO. No container iniciado as 11:23:11: 'Spring context ai-agent initialized in 12017ms' as 11:25:33 e ZERO ocorrencias de 'PKIX path building failed' (antes: falha em 11:02:02 e 11:18:54). Os ERROR de 11:23:00 pertencem ao container ANTIGO, que servia ate 11 segundos antes da troca.
 **Evidência:** evidence/ia-restaurada-truststore-20260827.log
 **Status:** OK
+
+### [175] 2026-08-27 11:34:40 -03 — pom.xml passa a compilar: coordenada Maven corrigida + setter que faltava
+**Ação:** Por ordem do operador, o modulo exo-features-complete foi restaurado e posto para compilar, em vez de removido. Tres impedimentos reais, todos corrigidos de forma aditiva: (1) faltava declarar o repositorio publico da eXo, sem o qual nenhum artefato da plataforma resolve; (2) a dependencia org.exoplatform:exo-kernel-commons:7.2.1 NAO EXISTE em repositorio algum — a coordenada correta foi LIDA do jar em producao (/opt/exo/lib/exo.core.component.security.core.jar, META-INF/maven/pom.properties) e e io.meeds.core:exo.core.component.security.core:7.2.1-exo; a coordenada antiga foi preservada dentro de um comentario no proprio pom; (3) MFAService.UserMFASession nao tinha setAttempts(int), embora generateOTP() ja o chamasse na linha 73 — o metodo foi ACRESCENTADO. Unico import eXo em todo src/main/java: org.exoplatform.services.security.Identity.
+**Comando/Arquivo:** `mvn -B package -DskipTests (em container maven:3.9-eclipse-temurin-21)`
+**Resultado:** BUILD SUCCESS. 13 fontes compilados, artefato target/exo-features-complete-7.2.1.jar com 40842 bytes. OBSERVACAO HONESTA: compilar nao e' o mesmo que estar em uso — o jar ainda NAO e' copiado para /opt/exo/lib pelo Dockerfile.exo, entao o codigo compila mas nao roda dentro do portal. Ligar isso e passo separado, a decidir.
+**Evidência:** target/exo-features-complete-7.2.1.jar
+**Status:** OK

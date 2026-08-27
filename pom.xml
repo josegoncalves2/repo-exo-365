@@ -25,7 +25,7 @@
            "Could not find artifact org.exoplatform:exo-kernel-commons:jar:7.2.1
             in central (https://repo.maven.apache.org/maven2)"
          porque os artefatos da plataforma nao sao publicados no Maven
-         Central -- ficam no repositorio publico da propria eXo.
+         Central; ficam no repositorio publico da propria eXo.
          ================================================================ -->
     <repositories>
         <repository>
@@ -45,11 +45,29 @@
             <version>${spring.boot.version}</version>
         </dependency>
 
-        <!-- eXo Platform -->
+        <!-- eXo Platform
+
+             CORRIGIDO 2026-08-27. A coordenada anterior era, textualmente:
+
+                 <groupId>org.exoplatform</groupId>
+                 <artifactId>exo-kernel-commons</artifactId>
+                 <version>7.2.1</version>
+
+             e ela NAO EXISTE: nem no Maven Central, nem no repositorio
+             publico da eXo. O build parava em
+               "Could not find artifact org.exoplatform:exo-kernel-commons:jar:7.2.1"
+             e por isso este modulo nunca chegou a compilar.
+
+             A coordenada abaixo foi lida do jar que roda em producao
+             (/opt/exo/lib/exo.core.component.security.core.jar,
+              META-INF/maven/.../pom.properties), e nao adivinhada. E' o
+             unico artefato da plataforma de que este codigo precisa: o
+             unico import eXo em todo src/main/java e'
+             org.exoplatform.services.security.Identity. -->
         <dependency>
-            <groupId>org.exoplatform</groupId>
-            <artifactId>exo-kernel-commons</artifactId>
-            <version>7.2.1</version>
+            <groupId>io.meeds.core</groupId>
+            <artifactId>exo.core.component.security.core</artifactId>
+            <version>7.2.1-exo</version>
             <scope>provided</scope>
         </dependency>
 
