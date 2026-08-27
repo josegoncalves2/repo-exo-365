@@ -90,4 +90,48 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
+  <!--
+    Enfileiramento proprio para a varredura por padrao.
+
+    A acao oficial FileDLPAction so' enfileira quando ha' palavra-chave
+    cadastrada. Deteccao por padrao nao pode depender disso: um CPF e' um CPF
+    independentemente de alguem ter digitado alguma palavra numa tela.
+
+    Este plugin e' ACRESCENTADO com nome proprio; o plugin "addActions" do
+    add-on continua registrado e continua valendo. As duas acoes convivem.
+
+    A acao so' enfileira de fato se o conector de padrao estiver registrado ;
+    ver as travas em AcaoEnfileirarDlp.
+  -->
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.jcr.impl.ext.action.SessionActionCatalog</target-component>
+    <component-plugin>
+      <name>acoesDlpPadrao</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.services.jcr.impl.ext.action.AddActionsPlugin</type>
+      <description>Enfileira arquivos para a varredura DLP por padrao</description>
+      <init-params>
+        <object-param>
+          <name>actions</name>
+          <object type="org.exoplatform.services.jcr.impl.ext.action.AddActionsPlugin$ActionsConfig">
+            <field name="actions">
+              <collection type="java.util.ArrayList">
+                <value>
+                  <object type="org.exoplatform.services.jcr.impl.ext.action.ActionConfiguration">
+                    <field name="workspace"><string>collaboration</string></field>
+                    <field name="eventTypes"><string>addNode,addProperty,changeProperty</string></field>
+                    <field name="nodeTypes"><string>nt:file,nt:resource</string></field>
+                    <field name="path"><string>/</string></field>
+                    <field name="isDeep"><boolean>true</boolean></field>
+                    <field name="actionClassName"><string>br.pmo.dlp.exo.AcaoEnfileirarDlp</string></field>
+                  </object>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
 </configuration>

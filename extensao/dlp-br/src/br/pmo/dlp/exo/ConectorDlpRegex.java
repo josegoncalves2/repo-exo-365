@@ -104,6 +104,7 @@ public class ConectorDlpRegex extends FileDlpConnector {
   private static final String PROP_TITULO = "exo:title";
 
   private final RepositoryService servicoRepositorio;
+  private final DlpOperationProcessor processadorDlp;
   private final Varredura varredura;
   private final PoliticaDlp politica;
   private final boolean ligado;
@@ -124,6 +125,7 @@ public class ConectorDlpRegex extends FileDlpConnector {
     super(parametros, conectorBusca, servicoRepositorio, servicoIndexacao,
           processador, servicoRestaurados, gerenteLinks, servicoLixeira);
     this.servicoRepositorio = servicoRepositorio;
+    this.processadorDlp = processador;
 
     this.ligado = lerBooleano(parametros, "dlp.regex.enabled", true);
     Severidade corte = RegrasSensiveis_severidade(
@@ -151,7 +153,7 @@ public class ConectorDlpRegex extends FileDlpConnector {
   @Override
   public boolean processItem(String entityId) {
     if (!ligado) {
-      return super.processItem(entityId);
+      return delegarAoNativo(entityId);
     }
     try {
       String texto = extrairTexto(entityId);
@@ -182,6 +184,31 @@ public class ConectorDlpRegex extends FileDlpConnector {
       // de todos os outros.
       LOG.error("DLP por padrao falhou no item {} - seguindo com a deteccao nativa por palavra-chave",
                 entityId, e);
+    }
+    return delegarAoNativo(entityId);
+  }
+
+  /**
+   * Delegacao GUARDADA para a deteccao nativa por palavra-chave.
+   *
+   * <p><b>ESTA GUARDA IMPEDE UM DESASTRE.</b> {@code FileDlpConnector} nao
+   * confere se ha' palavras-chave configuradas ; quem conferia era
+   * {@code FileDLPAction}, do lado de fora, antes de enfileirar. Como a
+   * extensao passou a enfileirar por conta propria (para que a deteccao por
+   * padrao nao dependa de palavra-chave nenhuma), essa conferencia externa
+   * deixou de acontecer.
+   *
+   * <p>Sem esta guarda, com {@code exo.dlp.keywords} vazio ; que e' o estado
+   * desta instalacao ; a busca no Elasticsearch seria feita com termo vazio,
+   * que tende a casar com TUDO, e o acervo inteiro iria para a quarentena.
+   *
+   * <p>Sem palavras cadastradas, portanto, o item e' dado por tratado: nao ha'
+   * o que procurar, e devolver "tratado" e' o que o retira da fila.
+   */
+  private boolean delegarAoNativo(String entityId) {
+    String palavras = processadorDlp == null ? null : processadorDlp.getKeywords();
+    if (palavras == null || palavras.trim().isEmpty()) {
+      return true;
     }
     return super.processItem(entityId);
   }
