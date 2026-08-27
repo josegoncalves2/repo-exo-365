@@ -24,7 +24,17 @@ final class ProvaRegras {
   static final String CNPJ_VALIDO_2 = "19.098.765/0001-34";
   static final String PIS_VALIDO = "120.79046.40-5";
   static final String TITULO_VALIDO = "001020300175";
-  static final String CNH_VALIDA = "12345678900";
+  /**
+   * CNH valida que NAO fecha tambem em PIS nem em CPF. A escolha e' deliberada:
+   * a primeira tentativa deste arquivo usou 12345678900, que e' valido como PIS
+   * E como CNH ao mesmo tempo -- e a prova de desduplicacao "acusou" o motor de
+   * errar quando o motor estava certo. Constante de teste ambigua produz teste
+   * mentiroso.
+   */
+  static final String CNH_VALIDA = "09705132539";
+
+  /** PIS e CNH tem 11 digitos e ha' numero que fecha nos DOIS algoritmos. */
+  static final String PIS_E_CNH = "12345678900";
   static final String CARTAO_VALIDO = "4539 5787 6362 1486";
 
   /** Onze digitos que NAO fecham em CPF nem em CNH -- o numero de protocolo. */
@@ -55,7 +65,11 @@ final class ProvaRegras {
     Prova.certo("PIS 120.79046.40-5 e' valido", RegrasSensiveis.pisValido(PIS_VALIDO));
     Prova.certo("Titulo de eleitor 001020300175 e' valido",
                 RegrasSensiveis.tituloEleitorValido(TITULO_VALIDO));
-    Prova.certo("CNH 12345678900 e' valida", RegrasSensiveis.cnhValida(CNH_VALIDA));
+    Prova.certo("CNH " + CNH_VALIDA + " e' valida", RegrasSensiveis.cnhValida(CNH_VALIDA));
+    Prova.certo("e essa CNH NAO fecha em PIS nem em CPF (constante sem ambiguidade)",
+                !RegrasSensiveis.pisValido(CNH_VALIDA) && !RegrasSensiveis.cpfValido(CNH_VALIDA));
+    Prova.certo("ja' " + PIS_E_CNH + " fecha em PIS E em CNH ao mesmo tempo",
+                RegrasSensiveis.pisValido(PIS_E_CNH) && RegrasSensiveis.cnhValida(PIS_E_CNH));
     Prova.certo("Cartao 4539 5787 6362 1486 passa no Luhn",
                 RegrasSensiveis.luhnValido(CARTAO_VALIDO));
     Prova.certo("Cartao Mastercard de teste passa no Luhn",

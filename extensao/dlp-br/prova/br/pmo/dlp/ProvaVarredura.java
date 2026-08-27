@@ -60,6 +60,14 @@ final class ProvaVarredura {
     Prova.certo("numero que so' fecha em CNH e' reconhecido como CNH",
                 soCnh.getAchado("CNH") != null && soCnh.getAchado("CPF") == null);
 
+    ResultadoVarredura pisOuCnh = new Varredura().varrer("Registro " + ProvaRegras.PIS_E_CNH);
+    Prova.igual("numero valido como PIS E como CNH tambem gera UM achado so'", 1,
+                pisOuCnh.getAchados().size());
+    Prova.certo("empate de severidade (ambos ALTA) -> vence a ordem do catalogo: PIS",
+                pisOuCnh.getAchado("PIS_PASEP") != null);
+    Prova.certo("o que importa e' que o documento fica SIGILOSO de qualquer forma",
+                pisOuCnh.getClassificacao() == Classificacao.SIGILOSO);
+
     ResultadoVarredura telefone = new Varredura().varrer("Celular 11971295295 do requerente");
     Prova.certo("celular de 11 digitos vira TELEFONE, nao CPF",
                 telefone.getAchado("TELEFONE") != null && telefone.getAchado("CPF") == null);

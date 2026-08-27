@@ -25,7 +25,7 @@ final class ProvaMascarador {
 
     Prova.igual("CPF pontuado", "***.***.777-35",
                 Mascarador.mascarar("CPF", ProvaRegras.CPF_VALIDO_1));
-    Prova.igual("CPF sem pontuacao revela os MESMOS digitos", "********77735",
+    Prova.igual("CPF sem pontuacao revela os MESMOS digitos", "******77735",
                 Mascarador.mascarar("CPF", "11144477735"));
     Prova.igual("CNPJ revela a ordem do estabelecimento", "**.***.***/0001-**",
                 Mascarador.mascarar("CNPJ", ProvaRegras.CNPJ_VALIDO_1));

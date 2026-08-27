@@ -1,5 +1,7 @@
 package br.pmo.dlp;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -95,29 +97,67 @@ public final class Mascarador {
   /**
    * Reescreve o texto inteiro com todos os achados mascarados.
    *
-   * <p>Percorre de TRAS PARA FRENTE. Substituir do inicio deslocaria todos os
-   * indices seguintes a cada troca de comprimento diferente; de tras para
-   * frente, cada indice ainda vale quando chega a vez dele. Os achados ja'
-   * chegam ordenados e sem sobreposicao por {@link Varredura}.
+   * <p><b>A ORDEM DA SUBSTITUICAO E' O CONTRATO DESTE METODO, E ERRAR NELA
+   * VAZA EM SILENCIO.</b> Substituir do inicio para o fim desloca todos os
+   * indices seguintes assim que uma troca muda de comprimento -- e a mascara de
+   * segredo muda: {@code senha=umaSenhaLonga} (16 chars) vira
+   * {@code senha= ***} (10). Dai' em diante, cada indice aponta para o lugar
+   * errado, e o CPF que vinha depois sai INTACTO num texto que se anuncia
+   * mascarado.
+   *
+   * <p>Nao basta ir de tras para frente POR ACHADO: {@link Varredura} entrega
+   * os achados em ordem de SEVERIDADE, nao de posicao. Percorrer a lista ao
+   * contrario comeca pelo menos grave, que pode estar no COMECO do texto -- e o
+   * defeito reaparece igual. (Foi assim que ele existiu neste arquivo ate'
+   * 2026-08-27, e foi assim que a prova o pegou.)
+   *
+   * <p>Entao: todas as ocorrencias de todos os achados sao ACHATADAS numa lista
+   * so' e ordenadas por posicao DECRESCENTE. Ai' sim cada indice ainda vale
+   * quando chega a vez dele, qualquer que seja a ordem dos achados.
+   *
+   * @throws IllegalArgumentException se algum achado nao couber no texto -- e'
+   *         sinal de que laudo e texto vieram de origens diferentes. Falhar alto
+   *         e' obrigatorio aqui: devolver texto PARCIALMENTE mascarado seria
+   *         entregar um vazamento com aparencia de documento protegido, e quem
+   *         chama trataria como seguro.
    */
   public static String mascararTexto(String texto, List<Achado> achados) {
     if (texto == null || achados == null || achados.isEmpty()) {
       return texto;
     }
-    StringBuilder sb = new StringBuilder(texto);
-    for (int i = achados.size() - 1; i >= 0; i--) {
-      Achado achado = achados.get(i);
-      List<Ocorrencia> ocorrencias = achado.getOcorrencias();
-      for (int j = ocorrencias.size() - 1; j >= 0; j--) {
-        Ocorrencia oc = ocorrencias.get(j);
-        if (oc.getFim() > sb.length()) {
-          // Texto e achados de origens diferentes: nao corrompe, so' ignora.
-          continue;
+
+    List<Trecho> trechos = new ArrayList<>();
+    for (Achado achado : achados) {
+      for (Ocorrencia ocorrencia : achado.getOcorrencias()) {
+        if (ocorrencia.getFim() > texto.length()) {
+          throw new IllegalArgumentException(
+              "achado de " + achado.getRotulo() + " termina em " + ocorrencia.getFim()
+              + ", fora de um texto de " + texto.length()
+              + " caracteres: laudo e texto nao sao do mesmo documento");
         }
-        sb.replace(oc.getInicio(), oc.getFim(), mascarar(achado.getRotulo(), oc.getBruto()));
+        trechos.add(new Trecho(achado.getRotulo(), ocorrencia));
       }
     }
+    trechos.sort(Comparator.comparingInt((Trecho t) -> t.ocorrencia.getInicio()).reversed());
+
+    StringBuilder sb = new StringBuilder(texto);
+    for (Trecho trecho : trechos) {
+      sb.replace(trecho.ocorrencia.getInicio(),
+                 trecho.ocorrencia.getFim(),
+                 mascarar(trecho.rotulo, trecho.ocorrencia.getBruto()));
+    }
     return sb.toString();
+  }
+
+  /** Par rotulo+ocorrencia, vivo so' durante {@link #mascararTexto}. */
+  private static final class Trecho {
+    private final String rotulo;
+    private final Ocorrencia ocorrencia;
+
+    Trecho(String rotulo, Ocorrencia ocorrencia) {
+      this.rotulo = rotulo;
+      this.ocorrencia = ocorrencia;
+    }
   }
 
   // ===========================================================================
