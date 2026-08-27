@@ -235,6 +235,27 @@ services:
       #
       # Ele guarda apenas certificados PUBLICOS: nao ha chave privada aqui.
       - ./conf/truststore/truststore-pmo.p12:/etc/exo/truststore/truststore-pmo.p12:ro
+      # Extensao DLP por padrao (ACRESCENTADA em 2026-08-27).
+      #
+      # O add-on exo-dlp so' sabe casar PALAVRA-CHAVE contra o indice do
+      # Elasticsearch. Isso nao encontra "111.444.777-35" a menos que alguem
+      # cadastre esse CPF como palavra-chave, o que e' absurdo. A extensao
+      # acrescenta deteccao por PADRAO com digito verificador conferido, mais
+      # classificacao, mascaramento e politica central.
+      #
+      # E' UM ARQUIVO, nao um diretorio: montar um DIRETORIO sobre
+      # /opt/exo/lib esconderia os 567 jars da plataforma e o portal nao subiria.
+      #
+      # O nome comeca com "zz-" de proposito. A prioridade declarada no
+      # conf/portal/configuration.xml do jar (100) e' o que de fato decide a
+      # ordem de registro; o prefixo e' a segunda linha de defesa, para o caso
+      # de a varredura do classpath vir ordenada por nome.
+      #
+      # MODO DE FALHAR: se o registro nao prevalecer, o conector nativo
+      # permanece e o DLP se comporta exatamente como antes. Nunca pior.
+      # Construido por extensao/dlp-br/construir.sh, que compila DENTRO desta
+      # mesma imagem contra o /opt/exo/lib real.
+      - ./extensao/dlp-br/target/dlp-br.jar:/opt/exo/lib/zz-dlp-br.jar:ro
       # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
       # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
       # do scanner, e o relatorio precisa de escrita dos dois lados — o

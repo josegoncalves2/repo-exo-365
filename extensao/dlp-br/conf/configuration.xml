@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Registro do conector DLP por padrao no processador do add-on exo-dlp.
+
+  COMO ISTO ENTRA EM VIGOR
+  ===
+  O kernel da eXo le conf/portal/configuration.xml de TODO jar do classpath.
+  Este arquivo acrescenta um plugin ao DlpOperationProcessor com o mesmo
+  set-method que o add-on usa (addConnector).
+
+  O mapa de conectores e' indexado por TIPO. Como este conector declara
+  type=file ; o mesmo tipo com que FileDLPAction enfileira os itens =, ele
+  ocupa a mesma posicao do conector nativo. Isso e' intencional: conector de
+  tipo novo nao receberia item algum, porque nada enfileira outro tipo.
+
+  MODO DE FALHAR: se por ordem de carga este registro NAO prevalecer, o
+  conector nativo permanece e o DLP funciona exatamente como antes desta
+  extensao. Nunca pior. A prova de que prevaleceu esta' no log do boot:
+  "DLP por padrao: ligado=... severidadeMinima=... acao=..."
+-->
+<configuration
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.dlp.processor.DlpOperationProcessor</target-component>
+    <component-plugin>
+      <name>ConectorDlpRegex</name>
+      <set-method>addConnector</set-method>
+      <type>br.pmo.dlp.exo.ConectorDlpRegex</type>
+      <description>DLP por padrao: CPF, CNPJ, cartao, PIS, titulo, CNH, chave PIX e segredo em texto claro, com digito verificador</description>
+      <!-- PRIORIDADE: o kernel ordena os plugins de um mesmo alvo por este
+           numero antes de invocar o set-method, e quem e' aplicado por ULTIMO
+           fica com a chave "file" no mapa de conectores. O conector nativo nao
+           declara prioridade (0), entao 100 garante a ordem SEM depender da
+           ordem em que o classpath foi varrido ; que e' dependente de
+           sistema de arquivos e nao e' contrato de coisa nenhuma. -->
+      <priority>100</priority>
+      <init-params>
+        <!-- Palavras-chave nativas: repassadas ao comportamento herdado. -->
+        <value-param>
+          <name>dlp.keywords</name>
+          <value>${exo.dlp.keywords:}</value>
+        </value-param>
+
+        <!-- Liga/desliga so' a deteccao por padrao. Desligado, o conector se
+             comporta exatamente como o nativo. -->
+        <value-param>
+          <name>dlp.regex.enabled</name>
+          <value>${exo.dlp.regex.enabled:true}</value>
+        </value-param>
+
+        <!-- Corte de severidade. ALTA = so' o que tem digito verificador
+             conferido. Baixar para BAIXA faria e-mail e telefone contarem, o
+             que em documento administrativo e' praticamente todo arquivo. -->
+        <value-param>
+          <name>dlp.regex.severidadeMinima</name>
+          <value>${exo.dlp.regex.severidadeMinima:ALTA}</value>
+        </value-param>
+
+        <!-- ACAO. Nasce em ALERTAR de proposito: quarentena automatica por
+             padrao, num acervo em producao que nunca foi medido, retiraria
+             documento legitimo de circulacao em massa. Primeiro se le o laudo
+             no log, depois se endurece para QUARENTENAR. -->
+        <value-param>
+          <name>dlp.regex.acao</name>
+          <value>${exo.dlp.regex.acao:ALERTAR}</value>
+        </value-param>
+
+        <value-param>
+          <name>dlp.regex.minimoOcorrencias</name>
+          <value>${exo.dlp.regex.minimoOcorrencias:1}</value>
+        </value-param>
+
+        <!-- Teto de bytes por arquivo na extracao. Acima disso varre-se so'
+             nome e titulo: extrair um binario gigante ameaca um heap que ja'
+             opera perto do limite. -->
+        <value-param>
+          <name>dlp.regex.tetoBytesArquivo</name>
+          <value>${exo.dlp.regex.tetoBytesArquivo:16777216}</value>
+        </value-param>
+
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="enable" value="true"/>
+          <property name="displayName" value="file"/>
+          <property name="type" value="file"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+</configuration>
