@@ -1,0 +1,5 @@
+id=addon-manager
+nome=Gerenciador de Add-ons
+ativo=true
+versao=1.0.0
+descricao=Gerenciador interno de extensoes PMO (ativar/desativar/listar)

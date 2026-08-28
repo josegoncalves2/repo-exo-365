@@ -1,0 +1,5 @@
+id=dlp-br
+nome=DLP Brasil
+ativo=true
+versao=1.0.0
+descricao=Protecao contra Vazamento de Dados (DLP) com deteccao por padrao, classificacao, mascaramento e quarentena

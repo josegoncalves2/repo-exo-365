@@ -1,0 +1,5 @@
+id=wopi
+nome=Conector WOPI
+ativo=true
+versao=1.0.0
+descricao=Conector WOPI para integracao com ONLYOFFICE

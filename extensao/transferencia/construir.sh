@@ -110,7 +110,7 @@ if [ ! -f "${DEP_JAR}" ]; then
   exit 1
 fi
 
-docker run --rm --user root --memory=768m \
+docker run --rm --user "$(id -u):$(id -g)" --memory=768m \
   -v "${AQUI}:/ext" \
   -v "${DEP_JAR}:/dep/mfa-zona.jar:ro" \
   -w /ext \

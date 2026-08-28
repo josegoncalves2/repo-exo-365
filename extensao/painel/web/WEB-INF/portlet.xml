@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portlet 2.0, espaco de nomes javax.portlet.
+
+  ISTO FOI CONFERIDO NA IMAGEM, NAO SUPOSTO. javax.portlet.GenericPortlet mora
+  em /opt/exo/lib/pc-api.jar (e nao em pc-portlet.jar). Nao existe
+  jakarta.portlet nesta plataforma. Trocar o espaco de nomes aqui mata o portal
+  no arranque, que e' exatamente o acidente que ja' aconteceu neste projeto com
+  add-ons javax sob Tomcat 10.
+
+  Toda configuracao entra por init-param. Nenhum caminho, grupo, teto ou nome de
+  arquivo esta' fixo no codigo; o codigo so' guarda o PADRAO de cada um, e
+  registra no log quando um valor mal digitado o faz cair no padrao.
+-->
+<portlet-app xmlns="http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd" version="2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd
+   http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd">
+
+  <portlet>
+    <portlet-name>conformidadeDlp</portlet-name>
+    <display-name xml:lang="EN">DLP Compliance</display-name>
+    <portlet-class>br.pmo.painel.exo.PortletConformidade</portlet-class>
+
+    <init-param>
+      <description>Grupo cuja associacao e' exigida para ver a tela e para analisar texto.</description>
+      <name>grupo.administradores</name>
+      <value>/platform/administrators</value>
+    </init-param>
+    <init-param>
+      <description>Teto de caracteres aceito pela caixa de analise. Acima disso o texto e' cortado e o laudo sai marcado como incompleto, nunca como limpo.</description>
+      <name>teto.caracteres.entrada</name>
+      <value>100000</value>
+    </init-param>
+    <init-param>
+      <description>Nome sugerido ao navegador para o arquivo do relatorio.</description>
+      <name>arquivo.csv</name>
+      <value>conformidade-dlp.csv</value>
+    </init-param>
+    <init-param>
+      <description>Titulo gravado no relatorio de conformidade deste painel.</description>
+      <name>titulo.relatorio</name>
+      <value>Conformidade DLP: analises registradas neste painel</value>
+    </init-param>
+    <init-param>
+      <description>Teto de caracteres do motor de varredura.</description>
+      <name>varredura.teto.caracteres</name>
+      <value>2000000</value>
+    </init-param>
+    <init-param>
+      <description>Teto de tempo do motor de varredura, em milissegundos.</description>
+      <name>varredura.teto.milissegundos</name>
+      <value>10000</value>
+    </init-param>
+    <init-param>
+      <description>Severidade minima que dispara a politica: BAIXA, MEDIA ou ALTA.</description>
+      <name>politica.severidade.minima</name>
+      <value>ALTA</value>
+    </init-param>
+    <init-param>
+      <description>Quantas ocorrencias de um rotulo sao precisas para disparar.</description>
+      <name>politica.minimo.ocorrencias</name>
+      <value>1</value>
+    </init-param>
+    <init-param>
+      <description>Acao quando ha' achado acima do corte: IGNORAR, REGISTRAR, ALERTAR, MASCARAR, BLOQUEAR ou QUARENTENAR.</description>
+      <name>politica.acao</name>
+      <value>ALERTAR</value>
+    </init-param>
+    <init-param>
+      <description>Acao quando a analise sai incompleta. Nunca IGNORAR: incompleto nao e' liberacao.</description>
+      <name>politica.acao.incompleta</name>
+      <value>ALERTAR</value>
+    </init-param>
+
+    <expiration-cache>0</expiration-cache>
+    <supports>
+      <mime-type>text/html</mime-type>
+      <portlet-mode>VIEW</portlet-mode>
+    </supports>
+    <supported-locale>pt_BR</supported-locale>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.painel.Conformidade</resource-bundle>
+    <portlet-info>
+      <title>Conformidade DLP</title>
+      <short-title>DLP</short-title>
+      <keywords>dlp,conformidade,lgpd,seguranca</keywords>
+    </portlet-info>
+  </portlet>
+
+</portlet-app>

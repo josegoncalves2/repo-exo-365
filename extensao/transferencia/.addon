@@ -1,0 +1,5 @@
+id=transferencia
+nome=Restricoes Avancadas de Download
+ativo=true
+versao=1.0.0
+descricao=Restricoes de download e compartilhamento por regras (grupo, zona, extensao)

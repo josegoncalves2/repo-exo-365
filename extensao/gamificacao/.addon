@@ -1,0 +1,5 @@
+id=gamificacao
+nome=Conectores de Gamificacao
+ativo=true
+versao=1.0.0
+descricao=Gatilhos para gamificacao (GitHub, Twitter, Discord, LinkedIn, etc)

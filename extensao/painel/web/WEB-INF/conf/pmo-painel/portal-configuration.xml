@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Acrescenta UM no' ao menu de administracao e UMA pagina. Nada mais.
+
+  ================= O PONTO PERIGOSO DESTE ARQUIVO =================
+  importMode NUNCA pode ser overwrite. A propria plataforma avisa disso, com
+  todas as letras, no portal-configuration.xml do digital-workplace: com
+  overwrite o importador de paginas REMOVE as paginas de administracao que ja'
+  existem. O menu inteiro de administracao some, e volta so' com reimportacao.
+
+  Os quatro modos, lidos do bytecode de ImportMode nesta imagem, na forma
+  ImportConfig(destroyOrphan, updatedSame, createMissing):
+
+      CONSERVE  (false, false, true)
+      INSERT    (false, false, true)
+      MERGE     (false, true,  true)
+      OVERWRITE (true,  true,  true)
+
+  insert e' estritamente aditivo: cria o que falta, NAO altera o que ja' existe
+  e NAO apaga orfao. E' o unico modo aceitavel para uma extensao que so' quer
+  pendurar um no' num menu de outra pessoa.
+
+  O valor vem de propriedade para o operador poder ajusta-lo sem reconstruir o
+  WAR, mas o padrao embarcado e' insert.
+  ==================================================================
+
+  override=true e' o que faz a importacao acontecer em portal JA' inicializado.
+  Medido no bytecode de NewPortalConfigListener nesta imagem:
+
+      performImport() devolve falso quando o status de importacao ja' e' DONE,
+      que e' o caso de qualquer portal que ja' subiu uma vez;
+
+      initPageNavigationDB(config, performImport) so' importa quando
+      config.getOverrideMode() OU performImport. Ou seja: com override=false
+      este WAR nunca criaria o no', porque o portal deste projeto ja' foi
+      inicializado ha' muito tempo.
+
+  E' assim que o digital-workplace e o ai-agent fazem, e por isso os nos deles
+  aparecem.
+
+  A prioridade 1000 e' maior que a 900 do digital-workplace de proposito: o
+  no' "home/security" precisa JA' existir quando este arquivo pendurar o filho
+  nele.
+-->
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_3.xsd http://www.exoplatform.org/xml/ns/kernel_1_3.xsd"
+  xmlns="http://www.exoplatform.org/xml/ns/kernel_1_3.xsd">
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.portal.config.UserPortalConfigService</target-component>
+    <component-plugin>
+      <name>new.portal.config.user.listener</name>
+      <set-method>initListener</set-method>
+      <type>org.exoplatform.portal.config.NewPortalConfigListener</type>
+      <description>Acrescenta a tela Conformidade DLP em Administracao / Seguranca.</description>
+      <priority>1000</priority>
+      <init-params>
+        <object-param>
+          <name>portal.configuration</name>
+          <description>No' de menu e pagina do painel de conformidade DLP.</description>
+          <object type="org.exoplatform.portal.config.NewPortalConfig">
+            <field name="ownerType">
+              <string>portal</string>
+            </field>
+            <field name="predefinedOwner">
+              <collection type="java.util.HashSet">
+                <value>
+                  <string>administration</string>
+                </value>
+              </collection>
+            </field>
+            <field name="location">
+              <string>war:/conf/pmo-painel/sites</string>
+            </field>
+            <field name="override">
+              <boolean>${pmo.painel.portalConfig.metadata.override:true}</boolean>
+            </field>
+            <field name="importMode">
+              <string>${pmo.painel.portalConfig.metadata.importmode:insert}</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+</configuration>

@@ -1,0 +1,5 @@
+id=gestao
+nome=Gestao de Backup e Migracao
+ativo=true
+versao=1.0.0
+descricao=Snapshot de configuracao, validacao de integridade e scripts de restore

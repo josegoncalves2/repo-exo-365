@@ -1,0 +1,5 @@
+id=mfa-zona
+nome=2FA por Zona de Rede
+ativo=true
+versao=1.0.0
+descricao=Autenticacao em Dois Fatores por zona de rede (CIDR)

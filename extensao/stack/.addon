@@ -1,0 +1,5 @@
+id=stack
+nome=Gestao da Stack
+ativo=true
+versao=1.0.0
+descricao=Monitoramento e diagnostico da stack Docker Compose do eXo

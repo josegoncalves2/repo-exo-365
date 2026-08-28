@@ -306,6 +306,18 @@ services:
       # configurados no exo.properties, disable=true — a tela aparece no menu
       # de administracao e diz "aguardando configuracao".
       - ./extensao/nuvem/target/nuvem.jar:/opt/exo/lib/zz-nuvem.jar:ro
+      # Extensao ADD-ON MANAGER (ACRESCENTADA em 2026-08-28).
+      # Gerenciador interno de extensoes PMO: ativar, desativar, listar.
+      - ./extensao/addon-manager/target/addon-manager.jar:/opt/exo/lib/zz-addon-manager.jar:ro
+      # Extensao GESTAO DE BACKUP E MIGRACAO (ACRESCENTADA em 2026-08-28).
+      # Snapshot de configuracao, validacao de integridade, scripts de restore.
+      - ./extensao/gestao/target/gestao.jar:/opt/exo/lib/zz-gestao.jar:ro
+      # Extensao GESTAO DA STACK (ACRESCENTADA em 2026-08-28).
+      # Monitoramento e diagnostico da stack Docker Compose do eXo.
+      - ./extensao/stack/target/stack.jar:/opt/exo/lib/zz-stack.jar:ro
+      # Extensao CONECTORES DE GAMIFICACAO (ACRESCENTADA em 2026-08-28).
+      # Gatilhos para gamificacao (GitHub, Twitter, Discord, LinkedIn, etc).
+      - ./extensao/gamificacao/target/gamificacao.jar:/opt/exo/lib/zz-gamificacao.jar:ro
       # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
       # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
       # do scanner, e o relatorio precisa de escrita dos dois lados — o

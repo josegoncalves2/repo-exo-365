@@ -75,7 +75,7 @@ java -Dfile.encoding=UTF-8 \
 # 2. ADAPTADOR (dentro da imagem, contra o classpath real)
 # -------------------------------------------------------------------
 echo "==> adaptador eXo: compilando dentro de ${IMAGEM}"
-docker run --rm --user root --memory=768m \
+docker run --rm --user "$(id -u):$(id -g)" --memory=768m \
   -v "${AQUI}:/ext" \
   -w /ext \
   "${IMAGEM}" \

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Registra o CSS e o unico pedaco de JavaScript da tela.
+
+  O JavaScript existe por UM motivo so': montar o arquivo do botao "Baixar
+  relatorio em CSV". Ele nao busca dado nenhum e nao muda a tela; se estiver
+  desligado, todo o resto do painel continua funcionando, porque tudo o mais e'
+  renderizado no servidor.
+
+  application-name e' o nome do contexto do WAR (pmo-painel.war), e portlet-name
+  e' o portlet-name declarado no portlet.xml.
+-->
+<gatein-resources
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
+  xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
+
+  <portlet-skin>
+    <application-name>pmo-painel</application-name>
+    <portlet-name>conformidadeDlp</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <css-path>/skin/css/pmo-painel.css</css-path>
+  </portlet-skin>
+
+  <portlet>
+    <name>conformidadeDlp</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/pmo-painel.js</path>
+      </script>
+    </module>
+  </portlet>
+
+</gatein-resources>

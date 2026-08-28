@@ -1,0 +1,5 @@
+id=nuvem
+nome=Conector Nextcloud/WebDAV
+ativo=true
+versao=1.0.0
+descricao=Conector de armazenamento em nuvem Nextcloud via WebDAV e OAuth2

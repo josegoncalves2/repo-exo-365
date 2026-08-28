@@ -4216,3 +4216,21 @@ renderiza por causa disso. NAO e causado pelo conector nuvem.
 - `GET /portal/rest/clouddrive/provider/all` -> **200** com nextcloud+gdrive+onedrive.
 - UI: drawer de drives renderizado (Personal Documents / Documentos / Space Drives), sem erros.
 **Status:** OK — app Documentos restaurado; conector Nextcloud registrado e serializando.
+
+### [EXEC-017] 2026-08-28 08:00 — EXECUCAO DOS 9 PROMPTS (briefing completo)
+**Acao:** Execucao sistematica dos prompts 1 a 9 conforme solicitado.
+**Comando/Arquivo:**
+- Prompt 1 (provisionamento): ja executado em sessoes anteriores (stack completa UP).
+- Prompt 2 (recursos nativos): DLP, MFA, Transferencia, Nuvem, WOPI — ja implementados.
+- Prompt 3 (seguranca): DLP + MFA por zona ja implementados.
+- Prompt 4 (backup/migration): **CRIADO** `extensao/gestao/` — GestaoPlataforma.java (snapshot, validacao, restore).
+- Prompt 5 (gestao stack): **CRIADO** `extensao/stack/` — StackManager.java (servicos, dependencias).
+- Prompt 6 (gamificacao): **CRIADO** `extensao/gamificacao/` — GamificacaoConectores.java (12 plataformas).
+- Prompt 7 (addon-manager): **CRIADO** `extensao/addon-manager/` — AddonManager.java (ativar/desativar/listar).
+- Prompt 8 (validacao): Auditoria completa + correcoes.
+- Prompt 9 (correcoes): i18n uppercase, AI embedding capabilities, manifestos .addon.
+**Resultado:** 4 novas extensoes compiladas (addon-manager, gestao, stack, gamificacao).
+9 manifestos .addon criados (dlp-br, mfa-zona, nuvem, transferencia, wopi, addon-manager, gestao, stack, gamificacao).
+i18n: "notificações" -> "Notificações" (7 ocorrencias), "páginas" -> "Páginas" (1 ocorrencia).
+AI: modelo embedding ID 21 (qwen3-embedding-0.6b) recebeu capability "embedding".
+**Status:** OK — pendente de restart do exo-app para aplicar i18n e novos jars.
