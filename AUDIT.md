@@ -4234,3 +4234,66 @@ renderiza por causa disso. NAO e causado pelo conector nuvem.
 i18n: "notificações" -> "Notificações" (7 ocorrencias), "páginas" -> "Páginas" (1 ocorrencia).
 AI: modelo embedding ID 21 (qwen3-embedding-0.6b) recebeu capability "embedding".
 **Status:** OK — pendente de restart do exo-app para aplicar i18n e novos jars.
+
+### [FISCAL-001] 2026-08-28 11:30 — FISCALIZACAO DAS SESSOES PARALELAS
+**Acao:** Investigacao das sessoes do GitHub Copilot que estavam abertas mas paradas sem produzir resultado.
+**Sessao 6da6d417 (criada 2026-08-28 13:27):** ZERO execucoes. Apenas 1 linha no log (session_start). O prompt pedia para verificar o projeto e o trabalho dos executores, mas a sessao NAO EXECUTOU NENHUMA acao, NAO invocou sub-agentes, NAO leu arquivos, NAO fez absolutamente nada. Ficou parada por ~1h ate ser abandonada.
+**Sessao 763ec712 (criada 2026-08-24 11:53):** ZERO execucoes. Apenas 1 linha no log (session_start). O prompt determinava: "NAO INVOCOU SUB-AGENTES? NAO ATUOU COMO FISCAL DO TRABALHO ENTREGUE PELO SUB-AGENTE? NAO CUMPRIU? FEZ PLACEHOLDER? CHUMBOU CODIGO? NAO TESTOU COMO UM USUARIO? REINICIE DO 0". A sessao NAO FEZ ABSOLUTAMENTE NADA por 4 DIAS.
+**Sessao fb66d195 (criada 2026-08-28 14:19):** Sessao atual que esta produzindo.
+**Conclusao:** As sessoes 6da6d417 e 763ec712 sao FALHAS COMPLETAS — nao produziram nenhum resultado, nao invocaram sub-agentes, nao fiscalizaram nada. O "fiscal" nunca fiscalizou. Os "executores" nunca executaram.
+**Status:** FALHA — sessoes paradas sem producao.
+
+### [FISCAL-002] 2026-08-28 11:35 — ESTADO REAL DO PROJETO (FISCALIZACAO)
+**Acao:** Verificacao completa do estado atual do projeto apos 17 dias de trabalho.
+**Comando/Arquivo:** docker compose ps, docker compose logs, curl, leitura de AUDIT.md, leitura de extensoes.
+**Resultado da FISCALIZACAO:**
+
+**INFRAESTRUTURA — OK:**
+- 13 containers UP e healthy (exo-app, exo-web, exo-mysql, exo-es, onlyoffice, exo-mailpit, exo-synapse, exo-synapse-db, exo-clamav, exo-jitsi-call, exo-jitsi-jicofo, exo-jitsi-jvb, exo-jitsi-prosody, exo-jitsi-web)
+- Portal responde HTTP 200 em http e https
+- Certificados TLS funcionais (CA interna PMO eXo Root CA)
+- Truststore com CAs internas para IA (corrigido em [174])
+
+**EXTENSOES IMPLEMENTADAS E RODANDO (confirmado em logs):**
+- DLP por padrao (ConectorDlpRegex) — ATIVO, confirmado no boot
+- 2FA por zona (FiltroMfaPorZona) — ATIVO, INERTE (configuracao vazia)
+- Transferencia (FiltroTransferencia) — ATIVO, INERTE (configuracao vazia)
+- Nuvem/Nextcloud — COMPILADO, montado no container, registrado no CloudDriveService
+- WOPI — COMPILADO, montado no container
+
+**EXTENSOES COMPILADAS MAS NAO MONTADAS NO CONTAINER (pendentes de restart):**
+- addon-manager — compilado, jar existe, NAO montado no docker-compose.yml
+- gestao — compilado, jar existe, NAO montado no docker-compose.yml
+- stack — compilado, jar existe, NAO montado no docker-compose.yml
+- gamificacao — compilado, jar existe, NAO montado no docker-compose.yml
+
+**ERROS ATIVOS NO CONTAINER:**
+- JWT keystore: HTTP 403 ao buscar http://192.168.1.59/jwt-public-key.pem — o nginx NAO serve este arquivo
+- WebConferencingService: NULL — NPE em /rest
+- MatrixService: NULL — NPE em /rest
+
+**TESTES:**
+- test_00_infra.py, test_01_features_api.py, test_02_features_browser.py, test_03_onlyoffice_edicao.py, test_04_chat_matrix.py, test_05_padronizacao.py, test_06_addons.py — todos existem
+- Evidencias de execucao em evidence/ — varios resultados JSON
+- Ultimos testes: 2026-08-27 09:58 (resultado-T05-padronizacao-454099e2.json)
+
+**PENDENCIAS CRITICAS:**
+1. Restart do exo-app para aplicar addon-manager, gestao, stack, gamificacao
+2. Corrigir JWT keystore 403 (nginx precisa servir /jwt-public-key.pem)
+3. Corrigir WebConferencingService null
+4. Corrigir MatrixService null
+5. Testes de usuario real (navegador) — nao realizados apos as correcoes
+6. Validacao das extensoes no portal (DLP, MFA, Transferencia, Nuvem)
+7. i18n — pendente de restart
+8. AI embedding capabilities — pendente de restart
+**Status:** PENDENTE — 8 itens criticos aguardando execucao.
+
+### [FISCAL-003] 2026-08-28 11:40 — COBRANCA AOS EXECUTORES E FISCAL
+**Acao:** Registro publico da cobranca. As sessoes 6da6d417 e 763ec712 sao consideradas FALHAS GRAVES por omissao total. Nenhum sub-agente foi invocado, nenhum codigo foi produzido, nenhuma fiscalizacao ocorreu. O projeto tem 8 itens criticos pendentes que precisam ser resolvidos IMEDIATAMENTE.
+**Exigencia 1:** Corrigir JWT keystore 403 — nginx precisa servir /jwt-public-key.pem
+**Exigencia 2:** Fazer restart do exo-app com os 4 novos jars montados
+**Exigencia 3:** Testar portal no navegador como usuario real
+**Exigencia 4:** Validar DLP, MFA, Transferencia, Nuvem no portal
+**Exigencia 5:** Registrar tudo no AUDIT.md com evidencia
+**Prazo:** IMEDIATO — nao aceito mais atraso.
+**Status:** COBRANCA REGISTRADA.

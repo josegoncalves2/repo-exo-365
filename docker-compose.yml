@@ -478,10 +478,18 @@ services:
       SECURE_LINK_SECRET: ${ONLYOFFICE_SECURE_LINK_SECRET}
       ALLOW_PRIVATE_IP_ADDRESS: "true"
       ALLOW_META_IP_ADDRESS: "true"
+      # Node.js nao usa o bundle do sistema por padrao.
+      # Sem esta variavel o ONLYOFFICE rejeita o certificado auto-assinado
+      # do portal com SELF_SIGNED_CERT_IN_CHAIN ao baixar/enviar documentos.
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
     volumes:
       - ./data/onlyoffice/data:/var/www/onlyoffice/Data
       - ./data/onlyoffice/log:/var/log/onlyoffice
       - ./data/onlyoffice/cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+      # CA interna PMO eXo Root CA — sem isso o ONLYOFFICE rejeita
+      # certificado auto-assinado do portal com SELF_SIGNED_CERT_IN_CHAIN
+      # ao baixar/conteudo dos documentos via HTTPS.
+      - ./conf/truststore/pmo-root-ca.pem:/usr/local/share/ca-certificates/pmo-root-ca.crt:ro
     mem_limit: ${MEM_LIMIT_ONLYOFFICE}
     healthcheck:
       # O teste passa PRIMEIRO direto no DocService (porta 8000) e só depois
