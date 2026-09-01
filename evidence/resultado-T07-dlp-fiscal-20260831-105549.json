@@ -1,0 +1,38 @@
+{
+  "label": "T07-dlp",
+  "run_id": "fiscal-20260831-105549",
+  "base": "http://192.168.1.59",
+  "started": 1788185640.3156047,
+  "duration_s": 227.8,
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-07.1",
+      "name": "O conector de DLP ativo e' o do projeto, nao o nativo",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "exo.dlp.keywords esta vazio: qualquer deteccao por padrao so' pode vir do ConectorDlpRegex",
+      "proof": "exo.dlp.keywords=''",
+      "duration_s": 0.07,
+      "steps": []
+    },
+    {
+      "tid": "T-07.2",
+      "name": "Documento com CPF valido e' detectado pela plataforma",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "CPF detectado pela plataforma e fila sem linha invertida",
+      "proof": "antes=2 depois=3 ultimo='file\\tCPF\\troot' invertidas=0",
+      "duration_s": 227.71,
+      "steps": [
+        "DLP_POSITIVE_ITEMS antes: 2",
+        "PUT prova-dlp-1788185640.txt -> 201",
+        "DLP_POSITIVE_ITEMS depois: 3 (espera de ate' 660s pelo job)",
+        "ultimo positivo: 'file\\tCPF\\troot'",
+        "linhas de DLP_QUEUE com ENTITY_TYPE invertido: 0"
+      ]
+    }
+  ]
+}

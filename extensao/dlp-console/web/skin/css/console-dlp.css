@@ -1,0 +1,41 @@
+/*
+ * Skin do console de DLP.
+ *
+ * DELIBERADAMENTE MINIMA. Cor, tipografia, espacamento, aba, cartao, tabela,
+ * botao e tema claro/escuro vem do skin `Enterprise` da plataforma, herdado por
+ * <portlet-skin> no gatein-resources.xml. A versao anterior deste console
+ * trazia 80 linhas de <style> com paleta propria (#1a5fb4, #f6f8fa...) e por
+ * isso destoava de todo o resto do portal.
+ *
+ * Aqui so' entra o que o skin nao tem como saber: a apresentacao do JSON bruto
+ * de um incidente e do editor de politica. Nenhuma cor fixa — as duas regras
+ * usam `currentColor` e a variavel de superficie do proprio tema, para
+ * continuarem legiveis se o portal trocar de tema.
+ */
+
+.dlp-console .dlp-json {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 22rem;
+  overflow: auto;
+  padding: .6rem .8rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  opacity: .92;
+}
+
+.dlp-console .dlp-monoespaco textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
+/* Onze abas nao cabem em tela estreita; `show-arrows` no v-tabs cuida da
+   navegacao, e aqui so' se impede a quebra que deixaria o rotulo em duas
+   linhas de altura desigual. */
+.dlp-console .dlp-abas .v-tab {
+  white-space: nowrap;
+}

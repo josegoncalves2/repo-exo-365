@@ -1,0 +1,19 @@
+[FALHOU] T-09.1 (B-usuario) Console de DLP abre em Administracao e mostra o painel — TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".pmo-dlp") to be visible
+
+[FALHOU] T-09.2 (B-usuario) As onze abas do console abrem e renderizam — TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".pmo-dlp") to be visible
+
+[FALHOU] T-09.3 (B-usuario) Dicionario cadastrado na tela passa a ser detectado — TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".pmo-dlp") to be visible
+
+[FALHOU] T-09.4 (B-usuario) Quarentena: retem, mostra na tela, restaura e libera — TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".pmo-dlp") to be visible
+
+[PASSOU] T-09.5 (A-maquina) Aviso de DLP e' entregue de verdade no servidor de mail — CPF dentro do aviso: nao
+
+== test_09_dlp_console: 1 passaram, 4 falharam -> evidence/resultado-test_09_dlp_console-20260901-082848.json

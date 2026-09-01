@@ -34,7 +34,9 @@ PADRAO = os.path.join(RAIZ, "conf", "atalhos", "padrao.json")
 def carrega(caminho=None):
     with open(caminho or PADRAO, encoding="utf-8") as fh:
         d = json.load(fh)
-    teclas = [v["tecla"] for v in d["sistema"].values()] + [v["tecla"] for v in d["proprios"].values()]
+    teclas = ([v["tecla"] for v in d["sistema"].values()]
+              + [v["tecla"] for v in d["proprios"].values()]
+              + [v["tecla"] for v in d.get("sistema_runtime", {}).values()])
     if len(set(teclas)) != len(teclas):
         repetidas = sorted({t for t in teclas if teclas.count(t) > 1})
         sys.exit(f"padrao.json invalido: tecla repetida {repetidas} -- a regra 6 exige tecla unica")
@@ -71,17 +73,18 @@ def grava_json_no_jar(caminho, doc):
 
 def seed(libdir, padrao):
     alvos = {}
-    for nome, cfg in padrao["sistema"].items():
-        alvos.setdefault(cfg["jar"], {})[nome] = cfg
+    # sistema_runtime entra JUNTO: o atalho da IA e' injetado no boot pelo
+    # addon, mas o seed dele mora num jar (ai-agent-service.jar) igual aos
+    # outros. Ate' 2026-08-31 este laco pulava tudo que tivesse jar terminado
+    # em "(runtime)", apostando que o modo --aplicar do banco consertaria; mas
+    # banco() so' varre IS_SYSTEM=0 e o atalho da IA e' IS_SYSTEM=1. Resultado:
+    # ninguem renomeava, e o painel seguia em ingles ("Your Assistant").
+    for secao in ("sistema", "sistema_runtime"):
+        for nome, cfg in padrao.get(secao, {}).items():
+            alvos.setdefault(cfg["jar"], {})[nome] = cfg
 
     total = 0
     for jar, apps in sorted(alvos.items()):
-        if jar.endswith("(runtime)"):
-            # Atalho injetado em runtime pelo proprio addon (ex.: meeds-ai
-            # cria 'Pmeto Pilot' -> aiAgentChat no boot). Nao ha jar para
-            # corrigir seed; o titulo/tecla sao corrigidos no banco pelo modo
-            # --aplicar (IS_SYSTEM=1) e reaplicados por UPDATE ali.
-            continue
         caminho = os.path.join(libdir, jar)
         if not os.path.exists(caminho):
             sys.exit(f"FALTA {caminho} -- o seed dos atalhos de sistema mudou de jar nesta versao")
@@ -114,6 +117,48 @@ def seed(libdir, padrao):
 # --------------------------------------------------------------------------
 # LADO PROPRIO -- banco
 # --------------------------------------------------------------------------
+def metadados(aplicar):
+    """Alinha o snapshot de rotulo do App Center e remove o que ficou orfao.
+
+    Roda SEMPRE, independente de haver mudanca em AC_APPLICATION. Ate'
+    2026-08-31 este passo vivia no fim de banco(), depois de dois `return`
+    antecipados ('ja estao no padrao' e 'sem --aplicar'), entao no caso comum
+    -- atalhos ja' padronizados -- ele nunca rodava e os orfaos so' se
+    acumulavam."""
+    # O titulo mora em DOIS lugares: alem de AC_APPLICATION.TITLE, a eXo grava um
+    # snapshot em SOC_METADATA_ITEMS_PROPERTIES(label) quando o atalho e' fixado, e
+    # e' ESSE que a caixa desenha. Alinhado pelo proprio JOIN -- sem repetir nomes.
+    mysql("""
+      UPDATE SOC_METADATA_ITEMS_PROPERTIES p
+        JOIN SOC_METADATA_ITEMS i ON i.METADATA_ITEM_ID = p.METADATA_ITEM_ID
+        JOIN AC_APPLICATION a     ON a.ID = i.OBJECT_ID
+         SET p.VALUE = a.TITLE
+       WHERE p.NAME = 'label' AND i.OBJECT_TYPE = 'appCenter' AND p.VALUE <> a.TITLE;""")
+    # ORFAOS. O JOIN acima so' alcanca metadado cuja aplicacao ainda existe. O
+    # addon da IA recria o atalho com ID NOVO a cada vez (medido: 7 -> 18 -> 20
+    # -> 21), e o metadado do ID velho fica para tras apontando para aplicacao
+    # que nao existe mais. Era dai que vinham "Pmeto Pilot" e "Unlock the power
+    # of your platform with your AI Assistant" no T-05.4: rotulo de aplicacao
+    # apagada, que nenhum UPDATE alcanca e nenhuma tela mais desenha.
+    # Nao ha perda de funcionalidade em apagar: a aplicacao ja' nao existe.
+    orfaos = mysql("SELECT COUNT(*) FROM SOC_METADATA_ITEMS i "
+                   "LEFT JOIN AC_APPLICATION a ON a.ID = i.OBJECT_ID "
+                   "WHERE i.OBJECT_TYPE='appCenter' AND a.ID IS NULL;").strip()
+    if orfaos and orfaos != "0":
+        if aplicar:
+            mysql("""
+              DELETE p FROM SOC_METADATA_ITEMS_PROPERTIES p
+                JOIN SOC_METADATA_ITEMS i ON i.METADATA_ITEM_ID = p.METADATA_ITEM_ID
+                LEFT JOIN AC_APPLICATION a ON a.ID = i.OBJECT_ID
+               WHERE i.OBJECT_TYPE = 'appCenter' AND a.ID IS NULL;
+              DELETE i FROM SOC_METADATA_ITEMS i
+                LEFT JOIN AC_APPLICATION a ON a.ID = i.OBJECT_ID
+               WHERE i.OBJECT_TYPE = 'appCenter' AND a.ID IS NULL;""")
+            print(f"   {orfaos} metadado(s) de aplicacao inexistente removido(s)")
+        else:
+            print(f"   [seria removido] {orfaos} metadado(s) de aplicacao inexistente")
+
+
 def mysql(sql):
     senha = ""
     with open(os.path.join(RAIZ, ".env"), encoding="utf-8") as fh:
@@ -196,6 +241,7 @@ def banco(padrao, aplicar):
 
     if not mudancas and not criar:
         print("Banco: os atalhos proprios ja estao no padrao.")
+        metadados(aplicar)
         return
     if mudancas:
         print(f"{'ID':>3}  {'ATALHO':<28}  O QUE MUDA")
@@ -204,6 +250,7 @@ def banco(padrao, aplicar):
     if not aplicar:
         print(f"\n{len(mudancas)} alteracao(oes) e {len(criar)} criacao(oes). "
               "Rode com --aplicar para gravar.")
+        metadados(aplicar)
         return
 
     # CRIACAO primeiro: se um INSERT falhar, nada foi alterado ainda.
@@ -232,15 +279,7 @@ def banco(padrao, aplicar):
         for r in reverter:
             print("   " + r)
         mysql("\n".join(s for _, _, _, s in mudancas))
-    # O titulo mora em DOIS lugares: alem de AC_APPLICATION.TITLE, a eXo grava um
-    # snapshot em SOC_METADATA_ITEMS_PROPERTIES(label) quando o atalho e' fixado, e
-    # e' ESSE que a caixa desenha. Alinhado pelo proprio JOIN -- sem repetir nomes.
-    mysql("""
-      UPDATE SOC_METADATA_ITEMS_PROPERTIES p
-        JOIN SOC_METADATA_ITEMS i ON i.METADATA_ITEM_ID = p.METADATA_ITEM_ID
-        JOIN AC_APPLICATION a     ON a.ID = i.OBJECT_ID
-         SET p.VALUE = a.TITLE
-       WHERE p.NAME = 'label' AND i.OBJECT_TYPE = 'appCenter' AND p.VALUE <> a.TITLE;""")
+    metadados(aplicar)
     print(f"\n{len(mudancas)} atalho(s) padronizado(s) e {len(criar)} criado(s). O App Center")
     print("guarda a lista em memoria: o painel reflete tudo no proximo start do exo-app.")
 

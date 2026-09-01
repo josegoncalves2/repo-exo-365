@@ -1,0 +1,14 @@
+===================================================================
+ T-03 — Edicao de documentos ONLYOFFICE  (RUN_ID fiscal-20260831-105549)
+ Alvo: http://192.168.1.59
+===================================================================
+[PASSOU] T-03 (A-maquina) Conversao real de .docx para .txt pelo DocumentServer — texto extraido contem o marcador unico 'MARCADOR-T03-fiscal-20260831-105549-CONTEUDO-VERIFICAVEL' (131 bytes)
+[PASSOU] T-03 (A-maquina) Conversao real de .docx para .pdf pelo DocumentServer — PDF valido gerado: assinatura b'%PDF-1.7', 36832 bytes
+[PASSOU] T-03 (A-maquina) API do editor publicada na origem publica (porta 80) — o navegador do usuario consegue carregar a API do editor pela porta 80
+[PASSOU] T-03 (B-usuario) Usuario digita no editor e o texto PERSISTE no arquivo — o usuario digitou no editor e o texto foi PERSISTIDO no .docx gravado pelo servidor
+
+== t03-onlyoffice-fiscal-20260831-105549: 4 passaram, 0 falharam -> evidence/resultado-t03-onlyoffice-fiscal-20260831-105549-fiscal-20260831-105549.json
+-------------------------------------------------------------------
+ T-03: 4 passaram, 0 falharam
+ Evidencia: /opt/projetos/exo/evidence/resultado-t03-onlyoffice-fiscal-20260831-105549-fiscal-20260831-105549.json
+-------------------------------------------------------------------

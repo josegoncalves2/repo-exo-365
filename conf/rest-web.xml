@@ -73,10 +73,6 @@
     <filter-name>LocalizationFilter</filter-name>
     <filter-class>org.exoplatform.portal.application.localization.LocalizationFilter</filter-class>
   </filter>
-  <filter-mapping>
-    <filter-name>GenericFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
 
   <filter-mapping>
     <filter-name>PortalCheckInitFilter</filter-name>
@@ -93,6 +89,39 @@
 
   <filter-mapping>
     <filter-name>RestEncodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- ===================================================================
+       ORDEM CORRIGIDA 2026-08-31 ; O GenericFilter TEM QUE VIR DEPOIS DO
+       SetCurrentIdentityFilter.
+
+       O GenericFilter roda a cadeia do ExtensibleFilter, e os filtros dessa
+       cadeia resolvem seus servicos com
+       ExoContainerContext.getCurrentContainer(). Quem publica o
+       PortalContainer nessa ThreadLocal e' o SetCurrentIdentityFilter
+       (setCurrentContainer -> chain.doFilter -> restaura no finally).
+
+       Com o GenericFilter mapeado primeiro, a ThreadLocal ainda estava
+       vazia, getCurrentContainer() devolvia o RootContainer, e
+       getComponentInstanceOfType(MatrixService.class) devolvia null:
+
+         NullPointerException: Cannot invoke MatrixService.isServiceEnabled()
+         because "matrixService" is null
+           at io.meeds.chat.web.MatrixAuthJWTFilter.doFilter:58
+
+       Como o padrao do ExtensibleFilter e' /.*, isso derrubava /rest/*
+       INTEIRO com HTTP 500 (o mesmo endpoint via /portal/rest respondia 200,
+       porque no portal.war o GenericFilter ja' e' o ultimo da cadeia).
+
+       Esta ordem e' a mesma do portal.war. Nada foi removido: o
+       GenericFilter continua cobrindo /rest/*, entao 2FA por zona e
+       restricoes de transferencia seguem valendo aqui — e agora com a
+       identidade do usuario ja' resolvida, que e' o que esses filtros
+       precisam para decidir.
+       =================================================================== -->
+  <filter-mapping>
+    <filter-name>GenericFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 

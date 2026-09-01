@@ -1,0 +1,76 @@
+{
+  "label": "test_09_dlp_console",
+  "run_id": "20260901-094715",
+  "base": "http://192.168.1.59",
+  "started": 1788266835.322942,
+  "duration_s": 237.7,
+  "total": 5,
+  "passed": 1,
+  "failed": 4,
+  "results": [
+    {
+      "tid": "T-09.1",
+      "name": "Console abre pelo menu Seguranca, renomeado e sem no' duplicado",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n",
+      "proof": "",
+      "duration_s": 78.72,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.2",
+      "name": "As onze abas trocam o conteudo, e nao so' o destaque",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n",
+      "proof": "",
+      "duration_s": 52.98,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.3",
+      "name": "A tela usa os componentes da plataforma, sem CSS propria",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n",
+      "proof": "",
+      "duration_s": 52.88,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.4",
+      "name": "Dicionario cadastrado na tela chega ao servico",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n",
+      "proof": "",
+      "duration_s": 52.43,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator(\".v-tab\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.5",
+      "name": "Aviso de DLP e' entregue de verdade no servidor de mail",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "CPF dentro do aviso: nao",
+      "proof": "fila: {'PENDENTE': 0, 'ENVIADA': 2, 'FALHA': 0} | assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' | mensagens [DLP] no Mailpit: 2 | ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local'] | CPF dentro do aviso: nao",
+      "duration_s": 0.67,
+      "steps": [
+        "fila: {'PENDENTE': 0, 'ENVIADA': 2, 'FALHA': 0}",
+        "assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)'",
+        "mensagens [DLP] no Mailpit: 2",
+        "ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local']",
+        "CPF dentro do aviso: nao"
+      ]
+    }
+  ]
+}

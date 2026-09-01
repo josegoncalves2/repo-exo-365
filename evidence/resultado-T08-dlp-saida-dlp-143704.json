@@ -1,0 +1,43 @@
+{
+  "label": "T08-dlp-saida",
+  "run_id": "dlp-143704",
+  "base": "http://192.168.1.59",
+  "started": 1788197824.5664437,
+  "duration_s": 25.5,
+  "total": 2,
+  "passed": 1,
+  "failed": 1,
+  "results": [
+    {
+      "tid": "T-08D.1",
+      "name": "Download de documento com CPF gera incidente de SAIDA",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "o DLP viu o documento SAINDO, classificou por padrao (sem depender da palavra 'CPF') e guardou evidencia mascarada",
+      "proof": "incidente=5270bf0e-5922-488f-bde0-b032b1838886 canal=DOWNLOAD rotulos=['CPF'] vazou=False",
+      "duration_s": 21.9,
+      "steps": [
+        "incidentes antes: 0",
+        "autenticado na tela de login",
+        "documento gravado no portal: HTTP 201",
+        "download pela tela: HTTP 200",
+        "incidentes depois: 1",
+        "canal=DOWNLOAD severidade=ALTA classificadores=['CPF']",
+        "evidencia mascarada: ... O servidor de matricula 8812 informou o numero [***.***.***-25] para deposito da folha",
+        "valor bruto vazou na evidencia: nao"
+      ]
+    },
+    {
+      "tid": "T-08D.2",
+      "name": "Console de DLP responde DENTRO do portal",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "erro: Expecting ',' delimiter: line 1 column 401 (char 400)",
+      "proof": "",
+      "duration_s": 3.56,
+      "steps": [
+        "GET /portal/rest/dlp-pmo/painel -> 200"
+      ]
+    }
+  ]
+}

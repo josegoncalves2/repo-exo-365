@@ -1,0 +1,13 @@
+======================================================================
+T-08-DLP — protecao de dado SAINDO, em navegador real
+======================================================================
+[FALHOU] T-08D.1 (B-usuario) Download de documento com CPF gera incidente de SAIDA — erro: python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/urllib/request.py", line 639, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 401: Unauthorized
+
+[FALHOU] T-08D.2 (B-usuario) Console de DLP responde DENTRO do portal — console nao respondeu (HTTP 503)
+
+== T08-dlp-saida: 0 passaram, 2 falharam -> evidence/resultado-T08-dlp-saida-dlp-143210.json

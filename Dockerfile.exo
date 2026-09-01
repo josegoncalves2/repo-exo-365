@@ -255,6 +255,12 @@ RUN set -eux; \
       | grep -q 'org.exoplatform.web.filter.GenericFilter'; \
     unzip -p /opt/exo/webapps/rest.war WEB-INF/web.xml \
       | grep -q 'org.exoplatform.web.filter.GenericFilter'; \
+    unzip -p /opt/exo/webapps/rest.war WEB-INF/web.xml \
+      | sed -n '/<filter-mapping>/,/<\/filter-mapping>/p' | grep '<filter-name>' \
+      | grep -n . > /tmp/rest-ordem.txt; \
+    test "$(grep SetCurrentIdentityFilter /tmp/rest-ordem.txt | cut -d: -f1)" \
+       -lt "$(grep GenericFilter /tmp/rest-ordem.txt | cut -d: -f1)"; \
+    rm -f /tmp/rest-ordem.txt; \
     test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -ge 51; \
     test "$(unzip -l /opt/exo/webapps/webdav.war | tail -1 | awk '{print $2}')" -le 60; \
     unzip -p /opt/exo/webapps/agenda.war WEB-INF/classes/locale/portlet/Agenda_pt_BR.properties \
@@ -653,7 +659,8 @@ RUN set -eux; \
     chown exo:exo /opt/exo/lib/app-center-services.jar \
                   /opt/exo/lib/task-management-services.jar \
                   /opt/exo/lib/kudos-services.jar \
-                  /opt/exo/lib/gamification-services.jar; \
+                  /opt/exo/lib/gamification-services.jar \
+                  /opt/exo/lib/ai-agent-service.jar; \
     python3 /build/conferir-atalhos.py /opt/exo/lib /build/atalhos-padrao.json; \
     rm -f /build/padronizar-atalhos.py /build/atalhos-padrao.json /build/conferir-atalhos.py
 

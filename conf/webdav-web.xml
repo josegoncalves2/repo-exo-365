@@ -79,10 +79,6 @@
        o acervo e' alcancado por varios caminhos deste webapp, e um mapeamento
        parcial deixaria exatamente as rotas nao previstas de fora ; que sao as
        que interessam a quem procura desvio. -->
-  <filter-mapping>
-    <filter-name>GenericFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
 
   <filter-mapping>
     <filter-name>ResourceRequestFilter</filter-name>
@@ -96,6 +92,20 @@
   <filter-mapping>
     <filter-name>SetCurrentIdentityFilter</filter-name>
     <url-pattern>/drives/*</url-pattern>
+  </filter-mapping>
+
+  <!-- ORDEM CORRIGIDA 2026-08-31 ; mesma causa do rest-web.xml: os filtros da
+       cadeia do ExtensibleFilter resolvem servicos por
+       ExoContainerContext.getCurrentContainer(), e quem publica o
+       PortalContainer nessa ThreadLocal e' o SetCurrentIdentityFilter. Com o
+       GenericFilter mapeado antes dele, /drives/* pegaria o RootContainer e
+       cairia com NullPointerException no MatrixAuthJWTFilter. Aqui o defeito
+       ainda nao era alcancavel (o security-constraint devolve 401 antes da
+       cadeia), mas a ordem errada e' a mesma ; corrigida junto. Nada removido:
+       o GenericFilter continua cobrindo /*. -->
+  <filter-mapping>
+    <filter-name>GenericFilter</filter-name>
+    <url-pattern>/*</url-pattern>
   </filter-mapping>
 
   <security-constraint>

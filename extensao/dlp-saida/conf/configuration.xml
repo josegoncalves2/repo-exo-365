@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  DLP de SAIDA ; integracao do portal com o servico exo-dlp.
+
+  Registra duas coisas:
+    1. o filtro que inspeciona o conteudo SAINDO do portal;
+    2. o REST do console, que faz a gestao acontecer DENTRO do eXo.
+
+  A direcao importa: este filtro olha a RESPOSTA. DLP nao existe para impedir o
+  servidor publico de subir documento para o portal ; o portal e' o lugar
+  autorizado do dado. Existe para que o dado nao saia.
+-->
+<configuration
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+
+  <component>
+    <type>br.pmo.dlpsaida.exo.ConsoleDlpRest</type>
+  </component>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.web.filter.ExtensibleFilter</target-component>
+    <component-plugin>
+      <name>Filtro de saida do DLP</name>
+      <set-method>addFilterDefinitions</set-method>
+      <type>org.exoplatform.web.filter.FilterDefinitionPlugin</type>
+      <init-params>
+        <object-param>
+          <name>DLP Saida</name>
+          <object type="org.exoplatform.web.filter.FilterDefinition">
+            <field name="filter">
+              <object type="br.pmo.dlpsaida.exo.FiltroSaidaDlp" />
+            </field>
+            <!--
+              O padrao cobre tudo; a selecao fina das rotas de saida e' feita
+              DENTRO do filtro, a partir da lista levantada no log de acesso
+              real desta instalacao. Fazer a selecao aqui obrigaria a repetir a
+              lista em dois lugares, e um dia os dois divergiriam.
+            -->
+            <field name="patterns">
+              <collection type="java.util.ArrayList" item-type="java.lang.String">
+                <value><string>/.*</string></value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+</configuration>

@@ -487,8 +487,10 @@ def t12_admin(c: ExoClient, rec: Recorder) -> None:
     t0 = time.time()
     r = Result("T-12", "Administracao: ler grupos e alterar branding", "A-maquina")
     steps = []
-    st, grupos = c.json_get("/rest/v1/social/groups?limit=50")
-    n = len(grupos.get("groups", [])) if isinstance(grupos, dict) else 0
+    # A rota e' /rest/v1/groups (nao /rest/v1/social/groups, que nunca existiu
+    # nesta versao e devolvia 404) e a colecao vem em "entities", nao "groups".
+    st, grupos = c.json_get("/rest/v1/groups?limit=50")
+    n = len(grupos.get("entities", [])) if isinstance(grupos, dict) else 0
     steps.append(f"GET grupos -> status={st}, {n} grupo(s)")
 
     st2, brand = c.json_get("/rest/v1/platform/branding")
@@ -496,7 +498,10 @@ def t12_admin(c: ExoClient, rec: Recorder) -> None:
                  f"companyName={(brand or {}).get('companyName') if isinstance(brand,dict) else None!r}")
 
     r.steps = steps
-    r.passed = (st == 200 and n > 0) or st2 == 200
+    # Antes era um "ou": bastava o branding responder, e a leitura de grupos
+    # podia estar quebrada sem reprovar o teste. Com a rota certa, o teste
+    # cobra as duas coisas que o nome dele promete.
+    r.passed = (st == 200 and n > 0) and st2 == 200
     r.detail = (f"APIs administrativas acessiveis ({n} grupos)" if r.passed
                 else "APIs administrativas nao responderam como esperado")
     r.proof = f"grupos={n}; branding_status={st2}"

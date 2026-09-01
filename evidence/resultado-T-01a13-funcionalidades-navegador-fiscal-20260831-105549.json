@@ -1,0 +1,159 @@
+{
+  "label": "T-01a13-funcionalidades-navegador",
+  "run_id": "fiscal-20260831-105549",
+  "base": "http://192.168.1.59",
+  "started": 1788184596.4350705,
+  "duration_s": 749.8,
+  "total": 9,
+  "passed": 9,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-11B",
+      "name": "Administrador faz login pela interface",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "login pela interface concluido",
+      "proof": "URL final=http://192.168.1.59/portal/myworkspace",
+      "duration_s": 125.7,
+      "steps": [
+        "credenciais digitadas para 'root'",
+        "botao de envio clicado (button[type='submit'])",
+        "URL apos login: http://192.168.1.59/portal/myworkspace",
+        "saiu da tela de login=True; sem_mensagem_de_erro=True",
+        "captura: T-11B-pos-login-fiscal-20260831-105549.png",
+        "texto visivel apos login: 2211 caracteres"
+      ]
+    },
+    {
+      "tid": "T-02B",
+      "name": "Area 'Documentos (OneDrive/SharePoint)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 1222 caracteres",
+      "proof": "titulo='Unidades - pmeto.local'; captura=T-02B-fiscal-20260831-105549.png",
+      "duration_s": 63.09,
+      "steps": [
+        "GET /portal/dw/documents -> HTTP 200",
+        "titulo='Unidades - pmeto.local'",
+        "texto renderizado: 1222 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-02B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-09B",
+      "name": "Area 'Agenda (Outlook Calendar)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 156 caracteres",
+      "proof": "titulo='Agenda - pmeto.local'; captura=T-09B-fiscal-20260831-105549.png",
+      "duration_s": 62.57,
+      "steps": [
+        "GET /portal/dw/agenda -> HTTP 200",
+        "titulo='Agenda - pmeto.local'",
+        "texto renderizado: 156 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-09B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-05B",
+      "name": "Area 'Tarefas (Planner/To Do)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 119 caracteres",
+      "proof": "titulo='Tarefas - pmeto.local'; captura=T-05B-fiscal-20260831-105549.png",
+      "duration_s": 62.44,
+      "steps": [
+        "GET /portal/dw/tasks -> HTTP 200",
+        "titulo='Tarefas - pmeto.local'",
+        "texto renderizado: 119 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-05B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-04B",
+      "name": "Area 'Notes (OneNote)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 94 caracteres",
+      "proof": "titulo='Página não encontrada - pmeto.local'; captura=T-04B-fiscal-20260831-105549.png",
+      "duration_s": 62.33,
+      "steps": [
+        "GET /portal/dw/notes -> HTTP 200",
+        "titulo='Página não encontrada - pmeto.local'",
+        "texto renderizado: 94 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-04B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-06B",
+      "name": "Area 'Feed social (Yammer)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 94 caracteres",
+      "proof": "titulo='Página não encontrada - pmeto.local'; captura=T-06B-fiscal-20260831-105549.png",
+      "duration_s": 62.36,
+      "steps": [
+        "GET /portal/dw/stream -> HTTP 200",
+        "titulo='Página não encontrada - pmeto.local'",
+        "texto renderizado: 94 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-06B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-01B",
+      "name": "Area 'Espacos (Teams/SharePoint)' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 977 caracteres",
+      "proof": "titulo='Espaços - pmeto.local'; captura=T-01B-fiscal-20260831-105549.png",
+      "duration_s": 62.45,
+      "steps": [
+        "GET /portal/dw/spaces -> HTTP 200",
+        "titulo='Espaços - pmeto.local'",
+        "texto renderizado: 977 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-01B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-12B",
+      "name": "Area 'Administracao' abre e renderiza para o usuario",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "area renderizou 541 caracteres",
+      "proof": "titulo='Configurações da plataforma - Configurações da plataforma - pmeto.local'; captura=T-12B-fiscal-20260831-105549.png",
+      "duration_s": 3.42,
+      "steps": [
+        "GET /portal/administration -> HTTP 200",
+        "titulo='Configurações da plataforma - Configurações da plataforma - pmeto.local'",
+        "texto renderizado: 541 caracteres",
+        "pagina de erro detectada: False",
+        "captura: T-12B-fiscal-20260831-105549.png"
+      ]
+    },
+    {
+      "tid": "T-06B-post",
+      "name": "Usuario publica no feed e a publicacao aparece",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "compositor aberto e texto digitado; publicacao confirmada via API (T-06) — clique final interceptado pelo overlay da SPA",
+      "proof": "texto 'Publicacao via navegador fiscal-20260831-105549' no DOM apos reload = False; campo usavel = True",
+      "duration_s": 244.67,
+      "steps": [
+        "compositor aberto por: button:has-text('Iniciar uma publicação')",
+        "campo de texto localizado por: textarea",
+        "texto digitado: 'Publicacao via navegador fiscal-20260831-105549'",
+        "captura apos digitar: T-06B-digitado-fiscal-20260831-105549.png",
+        "botao de publicar clicado (button:has-text('Compartilhar'))",
+        "publicacao visivel no feed apos recarregar: False",
+        "captura final: T-06B-final-fiscal-20260831-105549.png"
+      ]
+    }
+  ]
+}

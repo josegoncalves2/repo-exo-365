@@ -195,8 +195,21 @@ def a_nenhuma_propriedade_ficticia(rec: Recorder) -> None:
         # Se alguma destas um dia deixar de existir no codigo, a chave volta a
         # ser acusada (a lista abaixo NAO remove a chave do arquivo — apenas
         # reconhece o mecanismo de leitura).
+        #   spring.security.oauth2.client.provider.mcp-internal.* -> ligadas
+        #      pelo POJO OAuth2ClientProperties$Provider do Spring Boot, cujos
+        #      nomes de campo (issuerUri/tokenUri/jwkSetUri) NAO aparecem como
+        #      texto em artefato nenhum -- nem como ${...}, nem em .class.
+        #      Duas delas (issuer-uri, jwk-set-uri) ate' existem definidas em
+        #      ai-agent.war!ai.properties; token-uri nao existe em lugar
+        #      algum, e ainda assim e' lida. PROVA de que as tres valem, no log
+        #      do boot de 2026-08-31 10:53: com elas o cliente monta e conclui
+        #      o handshake -- "Client initialize request ... Info:
+        #      Implementation[name=mcp-internal - server1]" seguido de "MCP
+        #      Client Initialized with 1 MCP Servers"; sem elas o contexto
+        #      'ai-agent' inteiro morria em Connection refused. Ver [FIX-004].
         isentas_api = re.compile(
-            r"^(exo\.jwt\.|meeds\.ai\.|exo\.portal\.name$|exo\.company\.name$|"
+            r"^(spring\.security\.oauth2\.client\.provider\.mcp-internal\.|"
+            r"exo\.jwt\.|meeds\.ai\.|exo\.portal\.name$|exo\.company\.name$|"
             r"onlyoffice\.|webconferencing\.enabled$|exo\.chat\.|exo\.notification\.|"
             r"exo\.public\.registration\.enabled$|exo\.agenda\.week\.firstDay$|"
             r"exo\.audit\.enabled$|exo\.es\.search\.connection\.timeout$|"
@@ -205,7 +218,18 @@ def a_nenhuma_propriedade_ficticia(rec: Recorder) -> None:
         saida = python_no_container(r'''
 import json, os, re, sys, zipfile
 chaves = json.loads(sys.stdin.read()) if False else %s
+# Duas formas de consumo, e a varredura tem de enxergar as duas:
+#  1. placeholder ${chave} em XML/properties (injecao do kernel eXo);
+#  2. a chave literal dentro de um .class — e' assim que aparecem tanto o
+#     @Value("${chave}") do Spring (ex.: ClamAVMalwareDetectionConnector, em
+#     anti-malware-services.jar) quanto o PropertyManager.getProperty("chave")
+#     (ex.: FiltroMfaPorZona, em zz-mfa-zona.jar). Varrer so' o item 1 acusava
+#     6 chaves como orfas que na verdade sao lidas em bytecode.
+# A chave literal so' vale como prova dentro de .class; em XML/properties
+# continua exigindo o ${...}, senao a propria linha de conf/exo.properties
+# copiada para dentro de um .war se auto-justificaria.
 pats = {c: re.compile((r"\$\{" + re.escape(c) + r"[:}]").encode()) for c in chaves}
+pats_class = {c: re.compile(re.escape(c).encode()) for c in chaves}
 lidas = set()
 for d in ("lib", "webapps"):
     for raizd, _, fs in os.walk(os.path.join("/opt/exo", d)):
@@ -215,12 +239,19 @@ for d in ("lib", "webapps"):
                 if f.endswith((".jar", ".war")):
                     with zipfile.ZipFile(p) as z:
                         for n in z.namelist():
-                            if not n.endswith((".xml", ".properties")):
+                            ehclass = n.endswith(".class")
+                            if not ehclass and not n.endswith((".xml", ".properties")):
                                 continue
                             dados = z.read(n)
-                            for c, pat in pats.items():
+                            usar = pats_class if ehclass else pats
+                            for c, pat in usar.items():
                                 if c not in lidas and pat.search(dados):
                                     lidas.add(c)
+                elif f.endswith(".class"):
+                    dados = open(p, "rb").read()
+                    for c, pat in pats_class.items():
+                        if c not in lidas and pat.search(dados):
+                            lidas.add(c)
                 elif f.endswith((".xml", ".properties")):
                     dados = open(p, "rb").read()
                     for c, pat in pats.items():

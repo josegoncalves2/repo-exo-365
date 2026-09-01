@@ -132,12 +132,22 @@
     }
   },
   "sistema_runtime": {
-    "aiAgentChat": {
-      "jar": "meeds-ai (runtime)",
+    "aiAgent": {
+      "jar": "ai-agent-service.jar",
       "titulo": "Assistente de IA",
       "tecla": "i",
-      "fonte": "addon meeds-ai injeta atalho de sistema no boot (Pmeto Pilot)",
-      "de": "Pmeto Pilot"
+      "fonte": "addon meeds-ai; titulo literal em ingles no seed, nunca traduzido",
+      "de": "Your Assistant"
     }
-  }
+  },
+  "_sistema_runtime": [
+    "Atalho que o addon injeta no boot. Ate' 2026-08-31 este bloco era so'",
+    "documental: o seed pulava tudo que tivesse 'jar' terminado em '(runtime)'",
+    "e o modo --aplicar do banco so' varre IS_SYSTEM=0, entao NINGUEM renomeava",
+    "o atalho da IA -- o painel seguia mostrando 'Your Assistant' em ingles.",
+    "A premissa do comentario antigo ('nao ha jar para corrigir seed') estava",
+    "errada: ai-agent-service.jar TEM applications.json, com o descritor",
+    "'aiAgent'. Entao ele e' seedado como qualquer outro, com override:true --",
+    "o mesmo mecanismo que ja' se provou duravel para os ids 1-6."
+  ]
 }

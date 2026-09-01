@@ -163,7 +163,9 @@ cita o nome de nenhum add-on.
 | Videoconferência | `exo-jitsi` | 7.2.1 |
 | Edição de documentos | OnlyOffice (já na imagem) | — |
 | Chamados dentro do portal | `exo-glpi-integration` | 7.2.0 |
-| **DLP** | `exo-dlp` | 7.2.1 |
+| **DLP — add-on nativo** | `exo-dlp` | 7.2.1 |
+| **DLP — motor proprio (deteccao, acoes, descoberta)** | `exo-dlp` (container, `dlp/`) | 1.1 |
+| **DLP — console de administracao** | `pmo-dlp-console` (portlet, `extensao/dlp-console/`) | 1.0 |
 | **2FA por grupo/zona** | `exo-multifactor-authentication` | 7.2.1 |
 | Antimalware / anti-força-bruta | `exo-anti-malware`, `exo-anti-bruteforce` | 7.2.1 |
 | SSO federado / API por token | `exo-saml`, `exo-jwt-authentication` | 7.2.1 / 7.2.0 |

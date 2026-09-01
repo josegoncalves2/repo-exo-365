@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copiado da forma que JA' esta' em producao nesta imagem (pmo-painel,
+  transfer-rules.war e ai-agent.war). Nada aqui e' invencao:
+
+  1. metadata-complete="true" com absolute-ordering vazio desligam a varredura
+     de anotacoes e a descoberta de fragmentos web. Sem isso o Tomcat 10 varre o
+     WAR atras de anotacoes jakarta e gasta arranque para nada, porque este WAR
+     nao tem nenhuma.
+
+  2. O listener PortalContainerConfigOwner e' o que faz o kernel da eXo enxergar
+     o WEB-INF/conf/configuration.xml deste WAR. SEM ELE o portlet ate' carrega,
+     mas o no' de menu e a pagina nunca sao criados.
+
+  A versao do descritor continua 3.0 com o espaco de nomes antigo de proposito:
+  e' o que os WAR da propria plataforma usam nesta imagem, e o Tomcat 10 os
+  aceita porque metadata-complete dispensa a migracao de anotacoes.
+-->
+<web-app
+    version="3.0"
+    metadata-complete="true"
+    xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+
+  <display-name>pmo-dlp-console</display-name>
+  <absolute-ordering/>
+
+  <listener>
+    <listener-class>org.exoplatform.container.web.PortalContainerConfigOwner</listener-class>
+  </listener>
+
+  <!--
+    ResourceRequestFilter: quem serve os recursos AGREGADOS do portal.
+
+    ADICIONADO EM 2026-09-01, depois de um 404 medido no navegador. O modulo
+    ficava corretamente registrado no carregador —
+
+      PORTLET/pmo-dlp-console/consoleDlp
+          -> /pmo-dlp-console/js/consoleDlp.js?hash=...&scope=PORTLET&minify=true
+
+    — mas essa URL nao e' um arquivo em disco: e' o recurso que o portal MONTA
+    a partir do <path> declarado em gatein-resources.xml. Sem este filtro o
+    Tomcat procura literalmente `js/consoleDlp.js`, nao acha (o arquivo se chama
+    consoleDlp.bundle.js) e devolve 404. O requirejs entao falha com
+    "Script error" e a tela fica vazia, sem uma linha no log do servidor.
+
+    A versao anterior deste WAR nao precisava do filtro porque nao servia
+    recurso nenhum: desenhava a pagina no servidor. Passou a precisar ao virar
+    portlet de verdade.
+
+    Copiado de /opt/exo/webapps/dlp/WEB-INF/web.xml, conferido no container.
+    O mapeamento cobre *.css tambem: e' por ele que o portlet-skin chega.
+  -->
+  <filter>
+    <filter-name>ResourceRequestFilter</filter-name>
+    <filter-class>org.exoplatform.portal.application.ResourceRequestFilter</filter-class>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>ResourceRequestFilter</filter-name>
+    <url-pattern>*.css</url-pattern>
+    <url-pattern>*.js</url-pattern>
+    <url-pattern>*.html</url-pattern>
+    <url-pattern>/images/*</url-pattern>
+  </filter-mapping>
+
+</web-app>

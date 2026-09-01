@@ -1,0 +1,81 @@
+{
+  "label": "test_09_dlp_console",
+  "run_id": "20260901-082848",
+  "base": "http://192.168.1.59",
+  "started": 1788262128.885944,
+  "duration_s": 167.8,
+  "total": 5,
+  "passed": 1,
+  "failed": 4,
+  "results": [
+    {
+      "tid": "T-09.1",
+      "name": "Console de DLP abre em Administracao e mostra o painel",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "proof": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "duration_s": 53.72,
+      "steps": [
+        "servico: 10 regra(s), 2 incidente(s)",
+        "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.2",
+      "name": "As onze abas do console abrem e renderizam",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "proof": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "duration_s": 34.89,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.3",
+      "name": "Dicionario cadastrado na tela passa a ser detectado",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "proof": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "duration_s": 34.25,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.4",
+      "name": "Quarentena: retem, mostra na tela, restaura e libera",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-dlp\") to be visible\n",
+      "proof": "politica de teste instalada (prioridade 1) | documento gravado no portal: HTTP 201 | download pela tela: HTTP 200 | CPF no corpo entregue ao navegador: SIM | politica original restaurada",
+      "duration_s": 44.4,
+      "steps": [
+        "politica de teste instalada (prioridade 1)",
+        "documento gravado no portal: HTTP 201",
+        "download pela tela: HTTP 200",
+        "CPF no corpo entregue ao navegador: SIM",
+        "politica original restaurada"
+      ]
+    },
+    {
+      "tid": "T-09.5",
+      "name": "Aviso de DLP e' entregue de verdade no servidor de mail",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "CPF dentro do aviso: nao",
+      "proof": "fila: {'PENDENTE': 0, 'ENVIADA': 1, 'FALHA': 0} | assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' | mensagens [DLP] no Mailpit: 1 | ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local'] | CPF dentro do aviso: nao",
+      "duration_s": 0.57,
+      "steps": [
+        "fila: {'PENDENTE': 0, 'ENVIADA': 1, 'FALHA': 0}",
+        "assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)'",
+        "mensagens [DLP] no Mailpit: 1",
+        "ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local']",
+        "CPF dentro do aviso: nao"
+      ]
+    }
+  ]
+}

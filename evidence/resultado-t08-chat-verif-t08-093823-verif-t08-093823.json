@@ -1,0 +1,65 @@
+{
+  "label": "t08-chat-verif-t08-093823",
+  "run_id": "verif-t08-093823",
+  "base": "http://192.168.1.59",
+  "started": 1788179904.0383654,
+  "duration_s": 29.0,
+  "total": 3,
+  "passed": 3,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-08",
+      "name": "Dois usuarios trocam mensagens reais pelo Matrix",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "dois usuarios trocaram mensagens nos dois sentidos e um anexo, com conteudo conferido",
+      "proof": "ida='Mensagem de ida verif-t08-093823 — c098649d' volta='Resposta de volta verif-t08-093823 — 36dcf275'",
+      "duration_s": 11.14,
+      "steps": [
+        "criando usuarios t08averif-t08-093823 e t08bverif-t08-093823",
+        "login A: @t08averif-t08-093823:192.168.1.59 | login B: @t08bverif-t08-093823:192.168.1.59",
+        "sala criada: HTTP 200 !chMmVHfwxOmpOngGaT:192.168.1.59",
+        "B aceitou o convite: HTTP 200",
+        "A enviou a mensagem: HTTP 200 event=$z7qFxi1yrkovFBI7x6VamS2Yz7_bJZdbhZRvV8N9x2M",
+        "B leu 10 eventos; encontrou a mensagem de A: True",
+        "remetente conferido: @t08averif-t08-093823:192.168.1.59",
+        "A recebeu a resposta de B: True",
+        "upload do anexo: HTTP 200 mxc://192.168.1.59/BaQltRGGMzpkmyeeTvEfWuSZ",
+        "B baixou o anexo: 640 bytes, identico ao enviado: True"
+      ]
+    },
+    {
+      "tid": "T-08",
+      "name": "eXo integrado ao homeserver (parametros conferidos)",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "eXo e Synapse compartilham exatamente os mesmos segredos, com algoritmo coerente",
+      "proof": "",
+      "duration_s": 0.18,
+      "steps": [
+        "meeds.matrix.server.url = http://synapse:8008",
+        "segredo JWT identico nos dois lados: True",
+        "shared_secret_registration identico: True",
+        "algoritmo do JWT: HS512 (tamanho do segredo: 64 bytes)",
+        "tamanho da chave coerente com o algoritmo: True"
+      ]
+    },
+    {
+      "tid": "T-08",
+      "name": "Usuario final abre o chat no portal (navegador real)",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "a aplicacao de chat carrega para o usuario final, sem erro de servidor",
+      "proof": "evidence/capturas/t08-chat-verif-t08-093823.png",
+      "duration_s": 17.72,
+      "steps": [
+        "login efetuado; URL atual: http://192.168.1.59/portal/myworkspace",
+        "botao de chat na barra superior: matrixChatButton",
+        "painel de chat aberto por clique real",
+        "texto visivel: 'Bate-papo Max Mena Você: ola 27/08/2026 Meu Espaço Painel Documentos Tarefas Agenda Notas Mais Bem-vindo, Root!  Your personal dashboard gives you quick and centralized access to your apps and tools:\\xa0'",
+        "captura: t08-chat-verif-t08-093823.png"
+      ]
+    }
+  ]
+}

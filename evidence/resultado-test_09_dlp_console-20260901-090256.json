@@ -1,0 +1,84 @@
+{
+  "label": "test_09_dlp_console",
+  "run_id": "20260901-090256",
+  "base": "http://192.168.1.59",
+  "started": 1788264176.489649,
+  "duration_s": 129.7,
+  "total": 5,
+  "passed": 2,
+  "failed": 3,
+  "results": [
+    {
+      "tid": "T-09.1",
+      "name": "Console de DLP abre em Administracao e mostra o painel",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "captura: evidence/capturas/T-09-01-painel-20260901-090256.png",
+      "proof": "servico: 10 regra(s), 3 incidente(s) | titulo na tela: 'Protecao de dados (DLP)' | abas visiveis: 11; cartoes de numero: 5 | captura: evidence/capturas/T-09-01-painel-20260901-090256.png",
+      "duration_s": 8.51,
+      "steps": [
+        "servico: 10 regra(s), 3 incidente(s)",
+        "titulo na tela: 'Protecao de dados (DLP)'",
+        "abas visiveis: 11; cartoes de numero: 5",
+        "captura: evidence/capturas/T-09-01-painel-20260901-090256.png"
+      ]
+    },
+    {
+      "tid": "T-09.2",
+      "name": "As onze abas do console abrem e renderizam",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Incidentes')\") to be visible\n",
+      "proof": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Incidentes')\") to be visible\n",
+      "duration_s": 38.36,
+      "steps": [
+        "painel -> aba ativa 'Painel', 637 caracteres",
+        "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Incidentes')\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.3",
+      "name": "Dicionario cadastrado na tela passa a ser detectado",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Dicionarios')\") to be visible\n",
+      "proof": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Dicionarios')\") to be visible\n",
+      "duration_s": 36.54,
+      "steps": [
+        "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Dicionarios')\") to be visible\n"
+      ]
+    },
+    {
+      "tid": "T-09.4",
+      "name": "Quarentena: retem, mostra na tela, restaura e libera",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".pmo-aba-atual:text-is('Quarentena')\") to be visible\n",
+      "proof": "politica de teste instalada (prioridade 1) | documento gravado no portal: HTTP 201 | download pela tela: HTTP 403 | CPF no corpo entregue ao navegador: nao | politica original restaurada",
+      "duration_s": 45.54,
+      "steps": [
+        "politica de teste instalada (prioridade 1)",
+        "documento gravado no portal: HTTP 201",
+        "download pela tela: HTTP 403",
+        "CPF no corpo entregue ao navegador: nao",
+        "politica original restaurada"
+      ]
+    },
+    {
+      "tid": "T-09.5",
+      "name": "Aviso de DLP e' entregue de verdade no servidor de mail",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "CPF dentro do aviso: nao",
+      "proof": "fila: {'PENDENTE': 0, 'ENVIADA': 2, 'FALHA': 0} | assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' | mensagens [DLP] no Mailpit: 2 | ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local'] | CPF dentro do aviso: nao",
+      "duration_s": 0.73,
+      "steps": [
+        "fila: {'PENDENTE': 0, 'ENVIADA': 2, 'FALHA': 0}",
+        "assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)'",
+        "mensagens [DLP] no Mailpit: 2",
+        "ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local']",
+        "CPF dentro do aviso: nao"
+      ]
+    }
+  ]
+}

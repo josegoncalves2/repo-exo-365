@@ -31,12 +31,45 @@
       <type>br.pmo.dlp.exo.ConectorDlpRegex</type>
       <description>DLP por padrao: CPF, CNPJ, cartao, PIS, titulo, CNH, chave PIX e segredo em texto claro, com digito verificador</description>
       <!-- PRIORIDADE: o kernel ordena os plugins de um mesmo alvo por este
-           numero antes de invocar o set-method, e quem e' aplicado por ULTIMO
-           fica com a chave "file" no mapa de conectores. O conector nativo nao
-           declara prioridade (0), entao 100 garante a ordem SEM depender da
-           ordem em que o classpath foi varrido ; que e' dependente de
-           sistema de arquivos e nao e' contrato de coisa nenhuma. -->
-      <priority>100</priority>
+           numero antes de invocar o set-method. O conector nativo nao declara
+           prioridade (0), entao a prioridade daqui decide quem chega primeiro.
+
+           CORRIGIDO 2026-08-31  ;  ERA 100, E ISSO INVERTIA O EFEITO.
+           A premissa anterior ("quem e' aplicado por ULTIMO fica com a chave
+           file") esta errada nos dois pontos, e as duas coisas foram lidas no
+           bytecode do add-on, nao supostas:
+
+             1. ComponentPlugin.compareTo devolve
+                  this.getPriority() - other.getPriority()
+                ou seja, ordenacao ASCENDENTE: prioridade MENOR e' aplicada
+                ANTES. Com 100, este conector era o ULTIMO.
+
+             2. DlpOperationProcessor.addConnector(c) chama
+                  addConnector(c, Boolean.FALSE)
+                e o corpo e'
+                  if (connectors.containsKey(c.getType()) && !override)
+                      LOGGER.error("Impossible to add connector {} ...");
+                  else
+                      connectors.put(c.getType(), c);
+                Isto e' FIRST-WINS: quem chega primeiro fica, e o segundo e'
+                DESCARTADO com ERROR  ;  nao sobrescreve.
+
+           Somando as duas: com prioridade 100 o conector nativo registrava a
+           chave "file" primeiro e ESTE conector era jogado fora a cada boot,
+           deixando no log exatamente a linha
+             ERROR | Impossible to add connector file. A connector with the
+                     same name has already been registered.
+           O log "DLP por padrao: ligado=true ..." logo acima dela vem do
+           CONSTRUTOR desta classe, que roda mesmo quando o objeto e'
+           descartado  ;  por isso a deteccao brasileira (CPF, CNPJ, cartao,
+           PIS, titulo, CNH, chave PIX) parecia ligada e nao estava.
+
+           Com prioridade negativa este conector chega primeiro e fica. Nada se
+           perde ao deslocar o nativo: ConectorDlpRegex EXTENDS
+           FileDlpConnector e chama super(...) no construtor, entao e'
+           superconjunto estrito  ;  o comportamento de palavras-chave nativo
+           continua valendo, por heranca. -->
+      <priority>-100</priority>
       <init-params>
         <!-- Palavras-chave nativas: repassadas ao comportamento herdado. -->
         <value-param>

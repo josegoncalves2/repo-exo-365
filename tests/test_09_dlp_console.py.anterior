@@ -1,0 +1,414 @@
+#!/usr/bin/env python3
+"""
+T-09-DLP — O CONSOLE de DLP e as ACOES QUE EXECUTAM, provados em navegador real.
+
+O QUE ESTE ARQUIVO EXISTE PARA IMPEDIR. Em 2026-08-31 a auditoria propria
+(dlp/PENDENCIAS.md) registrou que a politica declarava dez acoes e o codigo
+honrava duas: QUARENTENAR apenas bloqueava, NOTIFICAR nao avisava ninguem,
+MASCARAR devolvia um texto que o portal nunca usava, e a TELA do console nao
+existia -- a gestao so' era possivel por chamada REST na mao.
+
+Cada asseveracao aqui passa pela TELA, com mouse e teclado simulados em
+navegador de verdade, e grava captura em evidence/capturas/. Consulta de API
+aparece so' para CONFERIR o efeito, nunca como prova de que o usuario viu ou
+foi barrado.
+"""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from exolib import Recorder, Result  # noqa: E402
+
+RAIZ = Path(__file__).resolve().parent.parent
+CAPTURAS = RAIZ / "evidence" / "capturas"
+BASE = os.environ.get("EXO_BASE", "https://192.168.1.59")
+USUARIO = os.environ.get("EXO_ADMIN_USER", "root")
+SENHA = os.environ.get("EXO_ADMIN_PASS", "")
+MAILPIT = os.environ.get("MAILPIT_BASE", "http://192.168.1.59:8025")
+RUN_ID = os.environ.get("RUN_ID", time.strftime("%Y%m%d-%H%M%S"))
+# O no' fica pendurado em home/security do site `administration`, e a URL do
+# eXo carrega o CAMINHO INTEIRO do no', nao so' o nome da pagina. Conferido no
+# banco (PORTAL_NAVIGATION_NODES) em 2026-09-01, nao suposto.
+CONSOLE = f"{BASE}/portal/administration/home/security/console-dlp"
+
+# CPF de exemplo publico usado em documentacao de validacao. Nao pertence a
+# pessoa alguma. O documento NAO contem a palavra "CPF" -- e' esse o ponto.
+CPF_EXEMPLO = "529.982.247-25"
+
+
+def dlp(caminho: str, metodo: str = "GET", corpo: str = "") -> dict:
+    """Le o servico pela rede interna do compose, so' para CONFERIR o efeito."""
+    cmd = ["docker", "compose", "exec", "-T", "dlp", "python3", "-c", f'''
+import json, os, urllib.request
+cab = {{"Content-Type": "application/json"}}
+tk = os.environ.get("DLP_TOKEN", "")
+if tk:
+    cab["X-DLP-Token"] = tk
+r = urllib.request.Request("http://127.0.0.1:8480{caminho}", method="{metodo}",
+                           data={corpo!r}.encode() or None, headers=cab)
+print(urllib.request.urlopen(r, timeout=30).read().decode())
+''']
+    p = subprocess.run(cmd, capture_output=True, text=True, cwd=RAIZ, timeout=120)
+    if p.returncode:
+        raise RuntimeError(p.stderr[-400:])
+    return json.loads(p.stdout.strip().splitlines()[-1])
+
+
+def mailpit(caminho: str) -> dict:
+    with urllib.request.urlopen(f"{MAILPIT}{caminho}", timeout=20) as r:
+        return json.loads(r.read().decode())
+
+
+def _entrar(pagina) -> None:
+    pagina.goto(f"{BASE}/portal/login", wait_until="domcontentloaded", timeout=60000)
+    pagina.fill("input[name='username']", USUARIO)
+    pagina.fill("input[name='password']", SENHA)
+    pagina.click("button[type='submit'], input[type='submit']")
+    pagina.wait_for_load_state("domcontentloaded", timeout=60000)
+
+
+# Rotulo de cada aba, como aparece na navegacao. A aba e' aberta por CLIQUE,
+# e nao por URL montada a mao: num portlet, parametro cru no fim da URL nao
+# chega ao codigo -- so' o que a PortletURL codificou chega. Clicar tambem e'
+# o que o usuario faz.
+ABAS = {"painel": "Painel", "incidentes": "Incidentes", "revisao": "Revisao",
+        "quarentena": "Quarentena", "politica": "Politica",
+        "indices": "Indices", "dicionarios": "Dicionarios",
+        "descoberta": "Descoberta", "notificacoes": "Avisos",
+        "agentes": "Agentes", "auditoria": "Auditoria"}
+
+
+def _abrir_console(pagina, aba: str = "") -> None:
+    if ".pmo-dlp" not in (pagina.url or "") or not pagina.locator(".pmo-dlp").count():
+        pagina.goto(CONSOLE, wait_until="domcontentloaded", timeout=60000)
+    pagina.wait_for_selector(".pmo-dlp", timeout=30000)
+    if not aba or aba == "painel":
+        return
+    rotulo = ABAS[aba]
+    pagina.click(f".pmo-aba:text-is('{rotulo}')")
+    pagina.wait_for_selector(f".pmo-aba-atual:text-is('{rotulo}')", timeout=30000)
+
+
+def _captura(pagina, nome: str) -> str:
+    CAPTURAS.mkdir(parents=True, exist_ok=True)
+    caminho = CAPTURAS / f"T-09-{nome}-{RUN_ID}.png"
+    pagina.screenshot(path=str(caminho), full_page=True)
+    return str(caminho.relative_to(RAIZ))
+
+
+# ===========================================================================
+def b_console_abre(rec: Recorder) -> None:
+    """A tela existe, abre para o administrador e mostra numeros reais."""
+    r = Result("T-09.1", "Console de DLP abre em Administracao e mostra o painel",
+               "B-usuario")
+    t0, passos = time.time(), []
+    try:
+        from playwright.sync_api import sync_playwright
+        saude = dlp("/saude")
+        passos.append(f"servico: {saude['regras']} regra(s), "
+                      f"{saude['incidentes']} incidente(s)")
+        with sync_playwright() as p:
+            nav = p.chromium.launch(args=["--ignore-certificate-errors"])
+            ctx = nav.new_context(ignore_https_errors=True)
+            pagina = ctx.new_page()
+            _entrar(pagina)
+            _abrir_console(pagina)
+            titulo = pagina.inner_text(".pmo-titulo")
+            abas = pagina.locator(".pmo-aba").count()
+            cartoes = pagina.locator(".pmo-cartao").count()
+            texto = pagina.inner_text(".pmo-dlp")
+            passos.append(f"titulo na tela: {titulo!r}")
+            passos.append(f"abas visiveis: {abas}; cartoes de numero: {cartoes}")
+            arquivo = _captura(pagina, "01-painel")
+            passos.append(f"captura: {arquivo}")
+            nav.close()
+        r.passed = ("Protecao de dados" in titulo and abas >= 10
+                    and cartoes >= 5 and "Componentes" in texto)
+        r.steps = list(passos)
+        r.detail = passos[-1] if passos else ""
+        r.proof = " | ".join(passos)
+    except Exception as e:                                  # noqa: BLE001
+        r.passed = False
+        r.detail = f"{type(e).__name__}: {e}"
+        r.steps = list(passos) + [r.detail]
+        r.proof = r.detail
+    r.duration_s = round(time.time() - t0, 2)
+    rec.add(r)
+
+
+def b_abas_montam(rec: Recorder) -> None:
+    """Todas as abas abrem sem erro e trazem conteudo do servico."""
+    r = Result("T-09.2", "As onze abas do console abrem e renderizam", "B-usuario")
+    t0, passos = time.time(), []
+    abas = ["painel", "incidentes", "revisao", "quarentena", "politica",
+            "indices", "dicionarios", "descoberta", "notificacoes", "agentes",
+            "auditoria"]
+    try:
+        from playwright.sync_api import sync_playwright
+        falhas = []
+        with sync_playwright() as p:
+            nav = p.chromium.launch(args=["--ignore-certificate-errors"])
+            ctx = nav.new_context(ignore_https_errors=True)
+            pagina = ctx.new_page()
+            _entrar(pagina)
+            pagina.goto(CONSOLE, wait_until="domcontentloaded", timeout=60000)
+            pagina.wait_for_selector(".pmo-dlp", timeout=30000)
+            for aba in abas:
+                _abrir_console(pagina, aba)
+                texto = pagina.inner_text(".pmo-dlp")
+                atual = pagina.locator(".pmo-aba-atual").inner_text()
+                if "nao respondeu" in texto:
+                    falhas.append(f"{aba}: servico nao respondeu")
+                passos.append(f"{aba} -> aba ativa {atual!r}, "
+                              f"{len(texto)} caracteres")
+            arquivo = _captura(pagina, "02-politica")
+            passos.append(f"captura da ultima aba: {arquivo}")
+            nav.close()
+        r.passed = not falhas
+        if falhas:
+            passos.append("FALHAS: " + "; ".join(falhas))
+        r.steps = list(passos)
+        r.detail = passos[-1] if passos else ""
+        r.proof = " | ".join(passos)
+    except Exception as e:                                  # noqa: BLE001
+        r.passed = False
+        r.detail = f"{type(e).__name__}: {e}"
+        r.steps = list(passos) + [r.detail]
+        r.proof = r.detail
+    r.duration_s = round(time.time() - t0, 2)
+    rec.add(r)
+
+
+def b_dicionario_pela_tela(rec: Recorder) -> None:
+    """Cadastro pela TELA muda o comportamento do motor na hora."""
+    r = Result("T-09.3", "Dicionario cadastrado na tela passa a ser detectado",
+               "B-usuario")
+    t0, passos = time.time(), []
+    nome = f"OPERACAO_{RUN_ID.replace('-', '')}"
+    termo = f"operacao andorinha {RUN_ID}"
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            nav = p.chromium.launch(args=["--ignore-certificate-errors"])
+            ctx = nav.new_context(ignore_https_errors=True)
+            pagina = ctx.new_page()
+            _entrar(pagina)
+            _abrir_console(pagina, "dicionarios")
+            pagina.fill("input[name='pmoNome']", nome)
+            pagina.fill("textarea[name='pmoTermos']", termo)
+            pagina.select_option("select[name='pmoSeveridade']", "ALTA")
+            passos.append(f"formulario preenchido com {nome!r}")
+            pagina.click("form:has(textarea[name='pmoTermos']) button[type='submit']")
+            pagina.wait_for_selector(".pmo-ok, .pmo-erro", timeout=30000)
+            retorno = pagina.inner_text(".pmo-ok, .pmo-erro")
+            passos.append(f"retorno na tela: {retorno.strip()[:120]}")
+            arquivo = _captura(pagina, "03-dicionario")
+            passos.append(f"captura: {arquivo}")
+            visivel = nome in pagina.inner_text(".pmo-dlp")
+            nav.close()
+
+        # O motor tem de reconhecer o termo AGORA, sem reinicio.
+        analise = dlp("/analisar", "POST", json.dumps({
+            "canal": "EMAIL", "usuario": "teste", "simular": True,
+            "texto": f"Segue o cronograma da {termo.title()}."}))
+        rotulos = [e["rotulo"] for e in analise.get("evidencia", [])]
+        passos.append(f"rotulos detectados na simulacao: {rotulos}")
+        r.passed = visivel and nome in rotulos
+        r.steps = list(passos)
+        r.detail = passos[-1] if passos else ""
+        r.proof = " | ".join(passos)
+    except Exception as e:                                  # noqa: BLE001
+        r.passed = False
+        r.detail = f"{type(e).__name__}: {e}"
+        r.steps = list(passos) + [r.detail]
+        r.proof = r.detail
+    r.duration_s = round(time.time() - t0, 2)
+    rec.add(r)
+
+
+def b_quarentena_pela_tela(rec: Recorder) -> None:
+    """O ciclo inteiro: retido no cofre, visto na tela, liberado, e volta a sair.
+
+    E' o que separa quarentena de verdade do BLOQUEAR com outro nome que o
+    proprio projeto tinha entregado antes.
+    """
+    r = Result("T-09.4", "Quarentena: retem, mostra na tela, restaura e libera",
+               "B-usuario")
+    t0, passos = time.time(), []
+    nome = f"ficha-quarentena-{RUN_ID}.txt"
+    corpo = ("Memorando 51/2026 - Divisao de Pessoal\n"
+             f"O servidor de matricula 8812 informou o numero {CPF_EXEMPLO} "
+             "para deposito da folha.\n")
+    try:
+        from playwright.sync_api import sync_playwright
+        politica_antes = dlp("/politica")
+        regras = politica_antes["regras"]
+        # Regra de teste: retem no canal DOWNLOAD o que tiver CPF. Entra com
+        # prioridade 1 para vencer as demais, e sai ao fim do caso.
+        teste = {
+            "identificador": f"TESTE-{RUN_ID}",
+            "nome": "Teste T-09: retem CPF em download",
+            "condicao": {"rotulos": ["CPF"], "canais": ["DOWNLOAD"]},
+            "acoes": ["QUARENTENAR", "NOTIFICAR_ADMIN"],
+            "severidade": "CRITICA", "prioridade": 1, "ativa": True,
+            "mensagem_usuario": "Documento retido para analise pela politica de "
+                                "protecao de dados.",
+            "conformidade": ["LGPD"]}
+        dlp("/politica", "PUT", json.dumps(
+            {"autor": "teste-t09", "regras": [teste] + regras}))
+        passos.append("politica de teste instalada (prioridade 1)")
+
+        retidos_antes = dlp("/quarentena")["resumo"].get("RETIDO", 0)
+        with sync_playwright() as p:
+            nav = p.chromium.launch(args=["--ignore-certificate-errors"])
+            ctx = nav.new_context(ignore_https_errors=True, accept_downloads=True)
+            pagina = ctx.new_page()
+            _entrar(pagina)
+            caminho = ("/rest/private/jcr/repository/collaboration/Users/"
+                       "r___/ro___/roo___/root/Private/")
+            criado = pagina.evaluate(
+                """async ({c, nome, corpo}) => {
+                    const r = await fetch(c + nome, {method:'PUT',
+                        headers:{'Content-Type':'text/plain'}, body: corpo});
+                    return r.status;
+                }""", {"c": caminho, "nome": nome, "corpo": corpo})
+            passos.append(f"documento gravado no portal: HTTP {criado}")
+
+            baixa = pagina.evaluate(
+                """async ({c, nome}) => {
+                    const r = await fetch(c + nome);
+                    return {status: r.status,
+                            texto: (await r.text()).slice(0, 200)};
+                }""", {"c": caminho, "nome": nome})
+            passos.append(f"download pela tela: HTTP {baixa['status']}")
+            vazou = CPF_EXEMPLO in baixa["texto"]
+            passos.append(f"CPF no corpo entregue ao navegador: "
+                          f"{'SIM' if vazou else 'nao'}")
+
+            # A tela de quarentena tem de mostrar o item retido.
+            _abrir_console(pagina, "quarentena")
+            texto_quarentena = pagina.inner_text(".pmo-dlp")
+            arquivo = _captura(pagina, "04-quarentena")
+            passos.append(f"captura: {arquivo}")
+            apareceu = nome in texto_quarentena
+            passos.append(f"item visivel na tela de quarentena: "
+                          f"{'sim' if apareceu else 'NAO'}")
+
+            liberou = False
+            if apareceu:
+                bloco = pagina.locator(".pmo-cartao-item").filter(has_text=nome).first
+                bloco.locator("input[name='pmoJustificativa']").first.fill(
+                    "documento conferido pelo teste automatizado T-09")
+                bloco.locator("form").filter(
+                    has_text="Liberar").locator("button").first.click()
+                pagina.wait_for_selector(".pmo-ok, .pmo-erro", timeout=30000)
+                retorno = pagina.inner_text(".pmo-ok, .pmo-erro")
+                passos.append(f"retorno da liberacao: {retorno.strip()[:120]}")
+                liberou = "liberado" in retorno.lower()
+                _captura(pagina, "05-liberado")
+
+            # Depois de liberado, a MESMA saida tem de passar.
+            depois = pagina.evaluate(
+                """async ({c, nome}) => {
+                    const r = await fetch(c + nome);
+                    return {status: r.status,
+                            texto: (await r.text()).slice(0, 200)};
+                }""", {"c": caminho, "nome": nome})
+            passou_depois = CPF_EXEMPLO in depois["texto"]
+            passos.append(f"apos a liberacao, o conteudo saiu: "
+                          f"{'sim' if passou_depois else 'NAO'}")
+            nav.close()
+
+        retidos_depois = dlp("/quarentena")["resumo"].get("RETIDO", 0)
+        passos.append(f"retidos: {retidos_antes} -> {retidos_depois}")
+        r.passed = apareceu and liberou and passou_depois and not vazou
+        r.steps = list(passos)
+        r.detail = passos[-1] if passos else ""
+        r.proof = " | ".join(passos)
+    except Exception as e:                                  # noqa: BLE001
+        r.passed = False
+        r.detail = f"{type(e).__name__}: {e}"
+        r.steps = list(passos) + [r.detail]
+        r.proof = r.detail
+    finally:
+        try:
+            dlp("/politica", "PUT", json.dumps(
+                {"autor": "teste-t09", "regras": politica_antes["regras"]}))
+            passos.append("politica original restaurada")
+            r.steps = list(passos)
+            r.proof = " | ".join(passos)
+        except Exception as e:                              # noqa: BLE001
+            # A politica de teste tem prioridade 1: deixa-la para tras mudaria
+            # o comportamento do portal depois do teste. Se a restauracao
+            # falhar, o caso REPROVA, ainda que a asseveracao tenha passado.
+            passos.append(f"FALHA ao restaurar a politica original: {e}")
+            r.passed = False
+            r.steps = list(passos)
+            r.proof = " | ".join(passos)
+    r.duration_s = round(time.time() - t0, 2)
+    rec.add(r)
+
+
+def a_notificacao_sai(rec: Recorder) -> None:
+    """NOTIFICAR_ADMIN deixa de ser nome numa lista: o e-mail chega ao relay."""
+    r = Result("T-09.5", "Aviso de DLP e' entregue de verdade no servidor de mail",
+               "A-maquina")
+    t0, passos = time.time(), []
+    try:
+        fila = dlp("/notificacoes?limite=20")
+        passos.append(f"fila: {fila['resumo']}")
+        enviadas = fila["resumo"].get("ENVIADA", 0)
+        assunto = ""
+        for item in fila["itens"]:
+            if item["estado"] == "ENVIADA":
+                assunto = item["assunto"]
+                break
+        passos.append(f"assunto do ultimo aviso enviado: {assunto!r}")
+
+        caixa = mailpit("/api/v1/messages?limit=50")
+        recebidos = [m for m in caixa.get("messages", [])
+                     if m.get("Subject", "").startswith("[DLP]")]
+        passos.append(f"mensagens [DLP] no Mailpit: {len(recebidos)}")
+        if recebidos:
+            passos.append(f"ultima: {recebidos[0].get('Subject')!r} para "
+                          f"{[t.get('Address') for t in recebidos[0].get('To', [])]}")
+            # O aviso NAO pode carregar o valor sensivel.
+            corpo = mailpit(f"/api/v1/message/{recebidos[0]['ID']}")
+            texto = corpo.get("Text", "")
+            vazou = CPF_EXEMPLO in texto
+            passos.append(f"CPF dentro do aviso: {'SIM (defeito)' if vazou else 'nao'}")
+        else:
+            vazou = False
+        r.passed = enviadas > 0 and len(recebidos) > 0 and not vazou
+        r.steps = list(passos)
+        r.detail = passos[-1] if passos else ""
+        r.proof = " | ".join(passos)
+    except Exception as e:                                  # noqa: BLE001
+        r.passed = False
+        r.detail = f"{type(e).__name__}: {e}"
+        r.steps = list(passos) + [r.detail]
+        r.proof = r.detail
+    r.duration_s = round(time.time() - t0, 2)
+    rec.add(r)
+
+
+def main() -> int:
+    rec = Recorder("test_09_dlp_console")
+    b_console_abre(rec)
+    b_abas_montam(rec)
+    b_dicionario_pela_tela(rec)
+    b_quarentena_pela_tela(rec)
+    a_notificacao_sai(rec)
+    rec.dump()
+    return 0 if rec.failed == 0 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -147,6 +147,42 @@ services:
 
       # --- Banco de dados ---
       EXO_DB_TYPE: mysql
+      # ACRESCENTADO 2026-08-31 — faz o TTL do cache 'ide.widget' valer.
+      # conf/exo.properties ja' trazia exo.cache.ide.widget.TimeToLive=3600
+      # desde 2026-08-18, mas a propriedade nunca teve efeito: a declaracao do
+      # cache mora em commons-exo-extension.war dentro de
+      #   <object-param profiles="ide">
+      # e o padrao do setenv.sh e' EXO_PROFILES="all" — que NAO inclui 'ide'.
+      # Sem o perfil, o object-param inteiro e' ignorado, o cache nasce com o
+      # padrao do kernel (maxSize 2000, liveTime -1 = nunca expira) e ficava
+      # permanentemente cheio, emitindo
+      #   WARN Cache 'ide.widget' Max items '2000' reached
+      # a cada minuto (o proprio kernel limita a taxa). Eram 564 ocorrencias
+      # so' no periodo medido — o maior volume de WARN do exo-app.
+      # RAIO DE ACAO CONFERIDO: profiles="ide" aparece UMA unica vez em toda a
+      # imagem (commons-exo-extension.war, 1 ocorrencia). Ligar o perfil nao
+      # habilita mais nada — nao ha webapp, servico ou rota condicionados a
+      # ele. 'all' e' preservado; o perfil novo e' acrescentado, nao trocado.
+      EXO_PROFILES: "all,ide"
+      # Endereco e token do servico de DLP. O token vem do .env e e' o MESMO
+      # que o container exo-dlp recebe -- e' assim que o portal se autentica na
+      # API. Nunca chega ao navegador: quem fala com o servico e' o ConsoleDlpRest,
+      # do lado do servidor.
+      EXO_DLP_URL: http://dlp:8480
+      EXO_DLP_TOKEN: ${DLP_TOKEN}
+      # APLICAR = o DLP de saida deixa de apenas observar e passa a AGIR:
+      # bloquear, reter em quarentena, entregar mascarado ou cifrado.
+      #
+      # Em `false` (observacao) o incidente e' registrado e NADA muda para o
+      # usuario -- inclusive as transformacoes: entregar um arquivo cifrado
+      # durante a observacao seria mudar tudo. Ligar no primeiro dia trava
+      # trabalho legitimo e a politica acaba desligada inteira; a ordem certa
+      # e' observar, ler os incidentes, ajustar regra e excecao no console, e
+      # so' entao aplicar.
+      EXO_DLP_SAIDA_APLICAR: ${EXO_DLP_SAIDA_APLICAR:-false}
+      # Falha FECHADA: servico de DLP fora do ar NEGA a transferencia. Um DLP
+      # que libera tudo quando cai e' um DLP que basta derrubar.
+      EXO_DLP_FALHAABERTA: ${EXO_DLP_FALHAABERTA:-false}
       EXO_DB_HOST: mysql
       EXO_DB_PORT: 3306
       EXO_DB_NAME: ${EXO_DB_NAME}
@@ -318,6 +354,30 @@ services:
       # Extensao CONECTORES DE GAMIFICACAO (ACRESCENTADA em 2026-08-28).
       # Gatilhos para gamificacao (GitHub, Twitter, Discord, LinkedIn, etc).
       - ./extensao/gamificacao/target/gamificacao.jar:/opt/exo/lib/zz-gamificacao.jar:ro
+      # ----------------------------------------------------------------
+      # DLP de SAIDA — integracao do portal com o servico exo-dlp.
+      # Registra o filtro que inspeciona o conteudo SAINDO e o REST do console,
+      # que faz a gestao acontecer DENTRO do portal (nao ha painel externo).
+      # Construido por extensao/dlp-saida/construir.sh, que compila o adaptador
+      # DENTRO desta imagem, contra o /opt/exo/lib real.
+      # Prefixo zzz- para carregar depois das demais: o filtro de saida deve
+      # ver a resposta ja' montada pelos filtros anteriores da cadeia.
+      # ----------------------------------------------------------------
+      - ./extensao/dlp-saida/target/dlp-saida.jar:/opt/exo/lib/zzz-dlp-saida.jar:ro
+      # ----------------------------------------------------------------
+      # CONSOLE DE DLP — a TELA da administracao do DLP, dentro do portal.
+      #
+      # Ate' 2026-08-31 a API estava completa e provada e a TELA nao existia:
+      # politica, incidentes, quarentena e fila de revisao so' eram
+      # alcancaveis por chamada REST na mao. Este WAR e' o portlet que fecha
+      # esse buraco, publicado em Administracao > Seguranca > Protecao de
+      # dados (DLP).
+      #
+      # Ele NAO fala com o servico pelo navegador: quem chama a API e' o
+      # portlet, no servidor, com o token que nunca chega ao cliente.
+      # Construido por extensao/dlp-console/construir.sh.
+      # ----------------------------------------------------------------
+      - ./extensao/dlp-console/target/pmo-dlp-console.war:/opt/exo/webapps/pmo-dlp-console.war:ro
       # Relatorio do ClamAV. FICA FORA de ./data/exo de proposito: o alvo da
       # varredura (./data/exo/files) e' montado SOMENTE-LEITURA no container
       # do scanner, e o relatorio precisa de escrita dos dois lados — o
@@ -397,6 +457,119 @@ services:
     logging: *default-logging
 
   # ----------------------------------------------------------------
+  # DLP — protecao contra vazamento de dados  (AUDIT [FISCAL-006])
+  # ----------------------------------------------------------------
+  # POR QUE ESTE CONTAINER EXISTE
+  # O add-on de DLP da propria eXo so' faz casamento LITERAL de palavra-chave:
+  # medido em 2026-08-31, documento com CPF valido e SEM a palavra "CPF" passava
+  # livre, e documento com a palavra e sem numero nenhum era posto em
+  # quarentena. Invertido em relacao ao que importa -- o dado sensivel e' o
+  # NUMERO, nao a sigla.
+  #
+  # Este servico traz o motor de verdade: forma -> validacao por digito
+  # verificador -> contexto, mais EDM, IDM, classificador estatistico, tipo real
+  # por assinatura, OCR e extracao recursiva de compactado.
+  #
+  # NAO TEM PAINEL PROPRIO, de proposito. Politica, incidentes, indices e
+  # relatorios sao geridos DENTRO do portal, pelo portlet de administracao, que
+  # consome esta API -- o mesmo desenho das demais integracoes do projeto.
+  #
+  # DIRECAO DO FLUXO: protege dado SAINDO. Nao existe para impedir upload para
+  # dentro do portal; o portal e' o lugar autorizado do dado.
+  dlp:
+    build:
+      context: ./dlp
+      dockerfile: Dockerfile
+    image: ${DLP_IMAGE:-exo-dlp:1.0}
+    container_name: exo-dlp
+    environment:
+      TZ: ${TZ}
+      # Token compartilhado com o eXo. Sem ele a API recusa 401 -- so' /saude
+      # responde sem token, para o healthcheck.
+      DLP_TOKEN: ${DLP_TOKEN}
+      DLP_PORTA_API: "8480"
+      # ICAP: apontar o proxy da prefeitura para ca' faz todo upload de
+      # navegador (Gmail, Drive, WeTransfer) passar pela mesma politica.
+      DLP_ICAP: "sim"
+      DLP_PORTA_ICAP: "1344"
+      # SMTP: fica ENTRE o portal e o Mailpit. Recusar no SMTP e' o ultimo
+      # ponto em que a mensagem ainda nao saiu.
+      DLP_SMTP: "sim"
+      DLP_PORTA_SMTP: "10025"
+      DLP_SMTP_DESTINO_HOST: mailpit
+      DLP_SMTP_DESTINO_PORTA: "1025"
+      DLP_DOMINIOS_INTERNOS: ${DLP_DOMINIOS_INTERNOS:-pmeto.local}
+      # STARTTLS na entrega ao relay. Um DLP que inspeciona o anexo e entao
+      # entrega em texto claro na rede protege contra o usuario e nao contra a
+      # rede. Fica desligado enquanto o relay for o Mailpit de captura, que
+      # nao apresenta certificado.
+      DLP_SMTP_STARTTLS_SAIDA: ${DLP_SMTP_STARTTLS_SAIDA:-nao}
+      # ---------------- CORREIO DOS AVISOS (acoes NOTIFICAR_* e ORIENTAR) ---
+      # ATENCAO AO LACO: este destino aponta para o relay FINAL, e NUNCA para
+      # a porta 10025 do proprio DLP. Se apontasse para o proxio, um aviso
+      # sobre e-mail bloqueado seria inspecionado, poderia ser bloqueado, e
+      # geraria outro aviso -- indefinidamente.
+      DLP_NOTIFICA_SMTP_HOST: ${DLP_NOTIFICA_SMTP_HOST:-mailpit}
+      DLP_NOTIFICA_SMTP_PORTA: ${DLP_NOTIFICA_SMTP_PORTA:-1025}
+      DLP_NOTIFICA_REMETENTE: ${DLP_NOTIFICA_REMETENTE:-dlp@pmeto.local}
+      DLP_NOTIFICA_STARTTLS: ${DLP_NOTIFICA_STARTTLS:-nao}
+      # Sem administrador cadastrado, NOTIFICAR_ADMIN nao tem para quem enviar
+      # e os avisos ficam em FALHA na fila, visiveis no console.
+      DLP_EMAIL_ADMINISTRADORES: ${DLP_EMAIL_ADMINISTRADORES:-}
+      # O DLP nao tem cadastro de pessoas. O portal informa o e-mail real do
+      # usuario em cada analise; este dominio e' a RESERVA para quando o
+      # cadastro do portal nao tiver e-mail.
+      DLP_DOMINIO_EMAIL: ${DLP_DOMINIO_EMAIL:-}
+      DLP_URL_CONSOLE: ${DLP_URL_CONSOLE:-http://${EXO_PROXY_VHOST}/portal/administration/home/security/console-dlp}
+      # Acao que a regra pediu e o motor NAO consegue cumprir para aquele tipo
+      # de conteudo (mascarar dentro de um PDF, por exemplo). BLOQUEAR e' falha
+      # fechada: nada sai em claro so' porque a acao pedida era impossivel.
+      DLP_ACAO_NAO_APLICAVEL: ${DLP_ACAO_NAO_APLICAVEL:-BLOQUEAR}
+      # ---------------- DESCOBERTA DE DADOS EM REPOUSO ----------------------
+      # Varredura do acervo do portal pelo WebDAV/JCR. Vazio desliga.
+      # Compartilhamento CIFS/SMB e NFS entram por DLP_DESCOBERTA_CAMINHOS,
+      # apontando para o ponto de montagem: montar e' tarefa do sistema
+      # operacional, e e' assim que qualquer DLP serio faz.
+      DLP_DESCOBERTA_URL: ${DLP_DESCOBERTA_URL:-}
+      DLP_DESCOBERTA_USUARIO: ${DLP_DESCOBERTA_USUARIO:-}
+      DLP_DESCOBERTA_SENHA: ${DLP_DESCOBERTA_SENHA:-}
+      DLP_DESCOBERTA_CAMINHOS: ${DLP_DESCOBERTA_CAMINHOS:-}
+      # 0 desliga o agendamento; a varredura continua disponivel sob demanda
+      # pelo console.
+      DLP_DESCOBERTA_INTERVALO: ${DLP_DESCOBERTA_INTERVALO:-0}
+      DLP_DESCOBERTA_ORIGEM: ${DLP_DESCOBERTA_ORIGEM:-portal}
+      DLP_DESCOBERTA_ALVO: ${DLP_DESCOBERTA_ALVO:-}
+      # SIEM: vazio desliga. Nenhum valor sensivel trafega -- so' rotulo,
+      # quantidade e severidade.
+      DLP_SIEM_HOST: ${DLP_SIEM_HOST:-}
+      DLP_SIEM_PORTA: ${DLP_SIEM_PORTA:-514}
+      DLP_SIEM_PROTOCOLO: ${DLP_SIEM_PROTOCOLO:-udp}
+      DLP_SIEM_FORMATO: ${DLP_SIEM_FORMATO:-cef}
+    volumes:
+      # Banco de incidentes, sal do EDM/IDM e token. O sal PRECISA persistir:
+      # troca-lo invalidaria todo indice ja' construido.
+      #
+      # DONO NO HOST: 1000:1000 (`chown -R 1000:1000 data/dlp`), que e' o
+      # usuario `dlp` da imagem. E' a TERCEIRA vez que este projeto tropeca no
+      # mesmo ponto -- ClamAV e Synapse tiveram o identico: o bind mount
+      # SOBREPOE o dono que a imagem preparou, e um servico que corretamente
+      # nao roda como root perde a escrita no proprio volume. Aqui falhava com
+      #   PermissionError: [Errno 13] Permission denied: '/dados/sal.bin'
+      # e o container nem subia. Sempre que um servico nao-root ganhar bind
+      # mount gravavel, conferir o dono no host ANTES de subir.
+      - ./data/dlp:/dados
+    # Sem `ports`: nada do DLP e' exposto ao mundo. Quem fala com ele e' o
+    # exo-app, o nginx (ICAP) e o proprio portal, todos na rede interna.
+    mem_limit: ${MEM_LIMIT_DLP:-1g}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8480/saude || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  # ----------------------------------------------------------------
   # Elasticsearch 8.18 — busca unificada (documentos, pessoas, atividades)
   # ----------------------------------------------------------------
   es:
@@ -471,6 +644,8 @@ services:
   onlyoffice:
     image: ${ONLYOFFICE_IMAGE}
     container_name: onlyoffice
+    entrypoint:
+      - /entrypoint-wrapper.sh
     environment:
       TZ: ${TZ}
       JWT_ENABLED: "true"
@@ -483,13 +658,37 @@ services:
       # do portal com SELF_SIGNED_CERT_IN_CHAIN ao baixar/enviar documentos.
       NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
     volumes:
+      - ./conf/onlyoffice-entrypoint-wrapper.sh:/entrypoint-wrapper.sh:ro
       - ./data/onlyoffice/data:/var/www/onlyoffice/Data
       - ./data/onlyoffice/log:/var/log/onlyoffice
       - ./data/onlyoffice/cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
-      # CA interna PMO eXo Root CA — sem isso o ONLYOFFICE rejeita
-      # certificado auto-assinado do portal com SELF_SIGNED_CERT_IN_CHAIN
-      # ao baixar/conteudo dos documentos via HTTPS.
-      - ./conf/truststore/pmo-root-ca.pem:/usr/local/share/ca-certificates/pmo-root-ca.crt:ro
+      # CA interna PMO eXo — cadeia completa (Root + Intermediate).
+      # O certificado do portal é emitido pela Intermediate CA, não pela Root.
+      # Sem a Intermediate no bundle o ONLYOFFICE rejeita o handshake TLS com
+      # SELF_SIGNED_CERT_IN_CHAIN ao baixar/enviar documentos via HTTPS.
+      #
+      # CORRIGIDO 2026-08-31 — ERA A PKI ERRADA. Existem DUAS PKIs neste
+      # projeto, e as duas se chamam "PMO eXo Root CA": a do MySQL
+      # (conf/mysql-certs, raiz 51:05:0A:D4...) e a da web, que o nginx serve
+      # em 443 (dentro de conf/portal-certs/portal-fullchain.pem, raiz
+      # 27:17:9F:9F...). O nome igual escondia a troca: o bundle era montado
+      # com a raiz do MySQL, entao o ONLYOFFICE nao fechava a cadeia do portal
+      # e todo HTTPS dele para 192.168.1.59 morria com
+      #   curl: (60) SSL certificate problem: self-signed certificate in chain
+      # com `rejectUnauthorized: true` no default.json (que esta' certo e
+      # continua ligado — a correcao e' confiar na CA certa, nao desligar a
+      # verificacao). Conferido: `openssl verify` da folha em uso fecha contra
+      # estes dois arquivos, e nao fechava contra os do MySQL.
+      #
+      # Sao arquivos de UM certificado cada porque update-ca-certificates
+      # ignora arquivo com mais de um ("does not contain exactly one
+      # certificate"), que e' por que montar o portal-fullchain.pem direto nao
+      # resolveria. O do MySQL segue montado: quem fala com o banco por TLS
+      # precisa dele, e as duas CAs convivem no mesmo bundle.
+      - ./conf/portal-certs/portal-ca-root.pem:/usr/local/share/ca-certificates/pmo-web-root-ca.crt:ro
+      - ./conf/portal-certs/portal-ca-int.pem:/usr/local/share/ca-certificates/pmo-web-int-ca.crt:ro
+      - ./conf/mysql-certs/ca-root.pem:/usr/local/share/ca-certificates/pmo-root-ca.crt:ro
+      - ./conf/mysql-certs/ca-int.pem:/usr/local/share/ca-certificates/pmo-int-ca.crt:ro
     mem_limit: ${MEM_LIMIT_ONLYOFFICE}
     healthcheck:
       # O teste passa PRIMEIRO direto no DocService (porta 8000) e só depois
@@ -610,6 +809,21 @@ services:
       SYNAPSE_CONFIG_DIR: /data
       SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
       TZ: ${TZ}
+      # ACRESCENTADO 2026-08-31 — o repositorio de midia do Matrix so' grava
+      # com isto. A imagem matrixdotorg/synapse larga privilegio para 991:991
+      # (padrao do /start.py, que le UID/GID do ambiente), mas ./data/synapse
+      # e' do operador (1002) em modo 755. Synapse conseguia LER a
+      # configuracao e a chave de assinatura, entao subia saudavel e o chat
+      # funcionava ; mas todo upload de anexo morria em
+      #   PermissionError: [Errno 13] Permission denied:
+      #   '/data/media_store/local_content/aY'
+      # devolvendo HTTP 500 M_UNKNOWN ao cliente. Era a unica coisa que
+      # reprovava o T-08: as mensagens iam e voltavam, o anexo nao subia.
+      # Rodar como 1002 alinha o processo ao dono do volume — e mantem o
+      # diretorio legivel/gravavel pelo operador para backup, que e' a razao
+      # de ele ser do 1002 em primeiro lugar.
+      UID: "1002"
+      GID: "1002"
     volumes:
       - ./data/synapse:/data
     depends_on:
@@ -959,6 +1173,20 @@ services:
       - ./data/antimalware:/srv/antimalware:rw
       # Base de assinaturas persistida: sao ~300 MiB por download. Sem isto
       # cada restart do container baixa tudo de novo do mirror.
+      #
+      # DONO DO DIRETORIO NO HOST: 1000:1000, e nao 1002 como o resto de
+      # ./data. Corrigido em 2026-08-31 com `chown -R 1000:1000 data/clamav`.
+      # O bind mount SOBREPOE o dono que a imagem tem em /var/lib/clamav, e o
+      # diretorio estava 1002:1002 modo 755 enquanto o processo roda como 1000
+      # (ver o `user:` acima, que continua valendo). O freshclam entao nao
+      # conseguia criar seu diretorio temporario e TODA atualizacao de
+      # assinatura falhava desde a instalacao:
+      #   ERROR: Can't create temporary directory /var/lib/clamav/tmp.XXXXXXXX
+      #   ERROR: Update failed.
+      # O script segue "com a base local existente", entao o container ficava
+      # saudavel e varrendo — com assinaturas congeladas na data da imagem.
+      # Antivirus com base velha e' pior do que antivirus nenhum, porque
+      # ninguem desconfia dele.
       - ./data/clamav:/var/lib/clamav:rw
       - ./scripts/clamav-varredura.sh:/opt/clamav-varredura.sh:ro
     # 1,3 GiB e' o pico real do clamscan carregando a base. O teto fica acima

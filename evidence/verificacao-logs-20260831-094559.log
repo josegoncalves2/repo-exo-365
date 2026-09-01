@@ -1,0 +1,83 @@
+# Verificacao de erros e warnings — 2026-08-31 09:45:59 -03
+# Janela: desde 20m
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        0
+dmesg err,warn         1
+            1 [707170.474257] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 64 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                0
+exo-web                2144
+          344 2026/08/31 12:40:17 [error] 23#23: *49086 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          315 2026/08/31 12:40:15 [error] 23#23: *49086 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          300 2026/08/31 12:40:13 [error] 23#23: *48611 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          254 2026/08/31 12:40:12 [error] 26#26: *48293 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          209 2026/08/31 12:40:14 [error] 23#23: *48611 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          175 2026/08/31 12:40:16 [error] 23#23: *48611 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          142 2026/08/31 12:40:10 [error] 26#26: *48112 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+          127 2026/08/31 12:40:14 [error] 23#23: *49086 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /_matrix/client/v3/sync?filter=0&since=
+exo-mysql              0
+exo-es                 0
+exo-synapse            49
+            5 2026-08-31 09:38:29,842 - synapse.logging.context - 104 - WARNING - POST-8 - Re-starting finished log context POST-8
+            4 2026-08-31 09:38:29,500 - synapse.logging.context - 104 - WARNING - POST-7 - Re-starting finished log context POST-7
+            4 2026-08-31 09:38:29,116 - synapse.logging.context - 104 - WARNING - POST-7 - Re-starting finished log context POST-7
+            4 2026-08-31 09:38:28,748 - synapse.logging.context - 104 - WARNING - POST-7 - Re-starting finished log context POST-7
+            4 2026-08-31 09:38:28,514 - synapse.logging.context - 104 - WARNING - POST-7 - Re-starting finished log context POST-7
+            3 2026-08-31 09:38:29,841 - synapse.logging.context - 104 - WARNING - POST-8 - Re-starting finished log context POST-8
+            3 2026-08-31 09:38:29,502 - synapse.logging.context - 104 - WARNING - POST-7 - Re-starting finished log context POST-7
+            3 2026-08-31 09:38:29,499 - synapse.logging.context - 104 - WARNING - POST-7 - Re-starting finished log context POST-7
+exo-synapse-db         0
+onlyoffice             0
+exo-mailpit            0
+exo-jitsi-call         0
+exo-jitsi-jicofo       0
+exo-jitsi-jvb          0
+exo-jitsi-prosody      0
+exo-jitsi-web          0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  16
+            2 [2026-08-31T12:44:44.749] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 (Use `docservice --trace-warnings ...` to show where the warning was created)
+            1 [2026-08-31T12:44:45.515] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
+            1 [2026-08-31T12:44:44.857] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-31T12:44:44.853] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-31T12:44:44.722] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+            1 [2026-08-31T12:44:11.219] [WARN] [localhost] [docId] [userId] nodeJS - end shutdown
+            1 [2026-08-31T12:44:11.200] [WARN] [localhost] [docId] [userId] nodeJS - active connections: 0
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) 625
+            2 2026-08-31 09:05:16,966 | WARN  | Error when parsing Web Socket message: SpaceWebNotificationItem.spaceId is mandatory [o.e.s.w.l.SpaceWebNotificationWebSocketServerListener<http-nio-0.0.0.0-8080-exec
+            2 2026-08-31 09:05:16,965 | WARN  | Error when parsing Web Socket message: SpaceWebNotificationItem.spaceId is mandatory [o.e.s.w.l.SpaceWebNotificationWebSocketServerListener<http-nio-0.0.0.0-8080-exec
+            1 2026-08-31 09:24:22,546 | WARN  | Cache 'ide.widget' Max items '2000' reached, please consider reviewing Max Size and TTL configurations. [o.e.s.c.c.ConcurrentFIFOExoCache<http-nio-0.0.0.0-8080-exec-8
+            1 2026-08-31 09:23:22,417 | WARN  | Cache 'ide.widget' Max items '2000' reached, please consider reviewing Max Size and TTL configurations. [o.e.s.c.c.ConcurrentFIFOExoCache<http-nio-0.0.0.0-8080-exec-8
+            1 2026-08-31 09:22:22,288 | WARN  | Cache 'ide.widget' Max items '2000' reached, please consider reviewing Max Size and TTL configurations. [o.e.s.c.c.ConcurrentFIFOExoCache<http-nio-0.0.0.0-8080-exec-4
+            1 2026-08-31 09:21:22,154 | WARN  | Cache 'ide.widget' Max items '2000' reached, please consider reviewing Max Size and TTL configurations. [o.e.s.c.c.ConcurrentFIFOExoCache<http-nio-0.0.0.0-8080-exec-4
+            1 2026-08-31 09:20:22,020 | WARN  | Cache 'ide.widget' Max items '2000' reached, please consider reviewing Max Size and TTL configurations. [o.e.s.c.c.ConcurrentFIFOExoCache<http-nio-0.0.0.0-8080-exec-1
+            1 2026-08-31 09:19:21,881 | WARN  | Cache 'ide.widget' Max items '2000' reached, please consider reviewing Max Size and TTL configurations. [o.e.s.c.c.ConcurrentFIFOExoCache<http-nio-0.0.0.0-8080-exec-1
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up 2 days (healthy)
+exo-clamav          Up 2 days (healthy)
+exo-es              Up 2 days (healthy)
+exo-jitsi-call      Up 2 days (healthy)
+exo-jitsi-jicofo    Up 2 days (healthy)
+exo-jitsi-jvb       Up 2 days (healthy)
+exo-jitsi-prosody   Up 2 days (healthy)
+exo-jitsi-web       Up 2 days (healthy)
+exo-mailpit         Up 2 days (healthy)
+exo-mysql           Up 2 days (healthy)
+exo-synapse         Up 6 minutes (healthy)
+exo-synapse-db      Up 2 days (healthy)
+exo-web             Up 2 days (healthy)
+onlyoffice          Up About a minute (healthy)
+
+===== RESULTADO =====
+REPROVADO — 2835 ocorrencias somadas.

@@ -49,7 +49,7 @@ import br.pmo.dlp.Varredura;
  * <ol>
  *   <li><b>Conector de tipo novo nunca receberia item algum.</b>
  *       {@code FileDLPAction} enfileira com o tipo FIXO {@code "file"}
- *       ({@code queueDlpService.addToQueue(entityId, "file")}), e o processador
+ *       ({@code queueDlpService.addToQueue("file", entityId)}), e o processador
  *       despacha por esse tipo. Um conector registrado como "regex" seria
  *       codigo morto -- compilado, implantado e jamais chamado.</li>
  *   <li><b>A mecanica de quarentena e' delicada e ja' esta' validada.</b> Mover

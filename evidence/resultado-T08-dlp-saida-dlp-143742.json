@@ -1,0 +1,45 @@
+{
+  "label": "T08-dlp-saida",
+  "run_id": "dlp-143742",
+  "base": "http://192.168.1.59",
+  "started": 1788197862.3049078,
+  "duration_s": 14.8,
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-08D.1",
+      "name": "Download de documento com CPF gera incidente de SAIDA",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "o DLP viu o documento SAINDO, classificou por padrao (sem depender da palavra 'CPF') e guardou evidencia mascarada",
+      "proof": "incidente=036e7c74-e572-424c-9ece-aec9d6538d97 canal=DOWNLOAD rotulos=['CPF'] vazou=False",
+      "duration_s": 8.29,
+      "steps": [
+        "incidentes antes: 1",
+        "autenticado na tela de login",
+        "documento gravado no portal: HTTP 201",
+        "download pela tela: HTTP 200",
+        "incidentes depois: 2",
+        "canal=DOWNLOAD severidade=ALTA classificadores=['CPF']",
+        "evidencia mascarada: ... O servidor de matricula 8812 informou o numero [***.***.***-25] para deposito da folha",
+        "valor bruto vazou na evidencia: nao"
+      ]
+    },
+    {
+      "tid": "T-08D.2",
+      "name": "Console de DLP responde DENTRO do portal",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "o console responde pelo proprio portal, sem painel externo e sem expor o token",
+      "proof": "status=200 canais=[{'chave': 'DOWNLOAD', 'total': 2}]",
+      "duration_s": 6.51,
+      "steps": [
+        "GET /portal/rest/dlp-pmo/painel -> 200",
+        "painel devolveu 511 bytes de JSON",
+        "token exposto ao navegador: nao"
+      ]
+    }
+  ]
+}

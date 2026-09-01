@@ -1,0 +1,35 @@
+{
+  "label": "T08-dlp-saida",
+  "run_id": "dlp-143210",
+  "base": "http://192.168.1.59",
+  "started": 1788197530.2971692,
+  "duration_s": 17.5,
+  "total": 2,
+  "passed": 0,
+  "failed": 2,
+  "results": [
+    {
+      "tid": "T-08D.1",
+      "name": "Download de documento com CPF gera incidente de SAIDA",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "erro: python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 401: Unauthorized\n",
+      "proof": "",
+      "duration_s": 0.54,
+      "steps": []
+    },
+    {
+      "tid": "T-08D.2",
+      "name": "Console de DLP responde DENTRO do portal",
+      "approach": "B-usuario",
+      "passed": false,
+      "detail": "console nao respondeu (HTTP 503)",
+      "proof": "status=503 canais=None",
+      "duration_s": 17.0,
+      "steps": [
+        "GET /portal/rest/dlp-pmo/painel -> 503",
+        "token exposto ao navegador: nao"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portlet no PADRAO da plataforma.
+
+  O QUE MUDOU E POR QUE. Ate' 2026-09-01 este portlet era uma subclasse de
+  javax.portlet.GenericPortlet que escrevia o proprio documento HTML, com a
+  propria folha de estilo embutida. Contagem feita no container: dos 175
+  portlets instalados, 142 usam GenericDispatchedViewPortlet e ESTE era o
+  UNICO que desenhava a propria pagina. Era, literalmente, uma webpagina
+  dentro de uma janela de portlet.
+
+  Duas consequencias praticas, nao esteticas:
+
+  1. Sem `portlet-skin` registrada, a tela nao herdava a folha `Enterprise` e
+     destoava de tudo ao redor, inclusive do add-on de DLP da propria eXo.
+
+  2. A navegacao entre secoes era feita por parametro de render. Medido no log
+     do servidor em 2026-09-01, a CADA clique do operador:
+         Console de DLP: render aba=painel parametros=[]
+     Zero parametros chegavam ao portlet. A pagina fica no contentor
+     `singlePageApplicationContainer`, que a plataforma usa para aplicacoes de
+     PAGINA UNICA (Vue) que navegam no cliente, sem ida ao servidor. Navegacao
+     server-side ali nao funciona, e por isso as abas nunca trocavam.
+
+  A forma abaixo e' a que o add-on nativo usa em
+  /opt/exo/webapps/dlp/WEB-INF/portlet.xml, conferida no container.
+
+  NAO HA' MAIS CLASSE JAVA NESTE WAR. A classe do portlet vem da plataforma; a
+  tela e' Vue; o acesso ao servico de DLP passa por ConsoleDlpRest, que vive no
+  WAR dlp-saida e ja' guarda o token no servidor.
+-->
+<portlet-app xmlns="http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd" version="2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd
+   http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd">
+
+  <portlet>
+    <description>Console de prevencao a perda de dados</description>
+    <portlet-name>consoleDlp</portlet-name>
+    <display-name>DLP Console</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/consoleDlp.html</value>
+    </init-param>
+    <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>pt_BR</supported-locale>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.dlpconsole.Console</resource-bundle>
+    <portlet-info>
+      <title>Console de DLP</title>
+      <short-title>DLP</short-title>
+      <keywords>dlp,vazamento,lgpd,incidente,quarentena,seguranca</keywords>
+    </portlet-info>
+    <security-role-ref>
+      <role-name>admin</role-name>
+      <role-link>admin</role-link>
+    </security-role-ref>
+  </portlet>
+
+</portlet-app>

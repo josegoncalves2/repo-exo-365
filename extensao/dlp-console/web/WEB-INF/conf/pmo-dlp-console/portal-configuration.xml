@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Registra no site `administration` a pagina desta extensao.
+
+  MUDANCA DE 2026-09-01: `importMode` passou de `insert` para `merge`.
+
+  A razao nao e' preferencia. Os tres campos de ImportConfig foram lidos no
+  bytecode de portal.component.api.jar, dentro do container:
+
+      ImportConfig(destroyOrphan, updatedSame, createMissing)
+      CONSERVE  = (false, false, true)
+      INSERT    = (false, false, true)
+      MERGE     = (false, true,  true)
+      OVERWRITE = (true,  true,  true)
+
+  `updatedSame` e' o campo que decide se um objeto JA' EXISTENTE e' atualizado.
+  Em `insert` ele e' FALSO: a pagina `dlp-quarantine`, que a plataforma cria,
+  jamais receberia o console. Em `merge` ele e' verdadeiro, e a pagina passa a
+  refletir esta declaracao.
+
+  `destroyOrphan` e' o campo perigoso, e em `merge` ele e' FALSO: nada que nao
+  esteja declarado aqui e' removido. Era esse o risco que o comentario anterior
+  atribuia a `overwrite` — corretamente: la' ele e' verdadeiro, e as demais
+  paginas de administracao da eXo seriam destruidas.
+
+  Este pacote declara UMA pagina, e nenhuma navegacao. O no' de menu proprio
+  foi retirado: nunca foi pedido nem autorizado.
+-->
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_3.xsd http://www.exoplatform.org/xml/ns/kernel_1_3.xsd"
+  xmlns="http://www.exoplatform.org/xml/ns/kernel_1_3.xsd">
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.portal.config.UserPortalConfigService</target-component>
+    <component-plugin>
+      <name>new.portal.config.user.listener</name>
+      <set-method>initListener</set-method>
+      <type>org.exoplatform.portal.config.NewPortalConfigListener</type>
+      <init-params>
+        <object-param>
+          <name>portal.configuration</name>
+          <object type="org.exoplatform.portal.config.NewPortalConfig">
+            <field name="ownerType">
+              <string>portal</string>
+            </field>
+            <field name="predefinedOwner">
+              <collection type="java.util.HashSet">
+                <value>
+                  <string>administration</string>
+                </value>
+              </collection>
+            </field>
+            <field name="location">
+              <string>war:/conf/pmo-dlp-console/sites</string>
+            </field>
+            <field name="override">
+              <boolean>${pmo-dlp-console.portalConfig.metadata.override:true}</boolean>
+            </field>
+            <field name="importMode">
+              <string>${pmo-dlp-console.portalConfig.metadata.importmode:merge}</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+</configuration>

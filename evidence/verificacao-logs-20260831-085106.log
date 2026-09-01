@@ -1,0 +1,125 @@
+# Verificacao de erros e warnings — 2026-08-31 08:51:06 -03
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        1
+            1 Aug 26 13:24:26 pmoexo sudo[585737]:    saexo : unknown user ds ; TTY=pts/2 ; PWD=/opt/projetos/exo ; USER=ds ;
+dmesg err,warn         1
+            1 [707170.474257] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 64 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                4173
+            2 2026-08-28 10:35:02,400 | WARN  | Cannot find servlet context module [o.e.portal.resource.MainResourceResolver<Catalina-utility-2>] 
+            1 java.lang.IllegalStateException: Error While finishing Beans Initialization in context 'ai-agent'
+            1 Caused by: org.springframework.web.client.ResourceAccessException: I/O error on GET request for "https://192.168.1.59/auth-server/.well-known/openid-configuration": Connection refused
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'oAuth2AuthorizedClientManager' defined in class path resource [io/meeds/ai/mcp/client/config
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'mcpSyncClientExchangeFilterFunction' defined in URL [jar:file:/opt/exo/lib/ai-mcp-client.jar
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'mcpHttpClientFilter' defined in class path resource [io/meeds/ai/mcp/client/configuration/Mc
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'delegatingChatModel': Unsatisfied dependency expressed through field 'aiAgentService': Error
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'anthropicPlugin' defined in class path resource [io/meeds/ai/configuration/AnthropicModelAut
+exo-web                658
+            1 2026/08/28 17:51:14 [error] 30#30: *15725 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/28 17:50:55 [error] 30#30: *15722 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/28 17:49:57 [error] 30#30: *15717 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/28 17:49:49 [error] 30#30: *15715 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/28 17:49:47 [error] 33#33: *14904 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/dw/oeditor?docId=48e84f8dac140
+            1 2026/08/28 17:49:47 [error] 31#31: *15453 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /favicon.ico HTTP/1.1", upstream: "htt
+            1 2026/08/28 17:49:43 [error] 30#30: *15711 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+            1 2026/08/28 17:49:39 [error] 30#30: *15708 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /cometd/cometd HTTP/1.1", upstream: "h
+exo-mysql              7
+            1 2026-08-28T13:20:51.478271Z 0 [Warning] [MY-011302] [Server] Plugin mysqlx reported: 'Failed at SSL configuration: "SSL context is not usable without certificate and private key"'
+            1 2026-08-28T13:20:51.060003Z 0 [Warning] [MY-010069] [Server] Failed to set up SSL because of the following SSL library error: SSL_CTX_set_default_verify_paths failed
+            1 2026-08-28T13:20:51.059984Z 0 [Warning] [MY-013595] [Server] Failed to initialize TLS for channel: mysql_main. See below for the description of exact issue.
+            1 2026-08-28T13:20:51.059393Z 0 [Warning] [MY-015007] [Server] CA certificate/certficates is invalid. Please check logs for more details.
+            1 2026-08-28T13:20:51.059376Z 0 [ERROR] [MY-015005] [Server] Cannot open certificate /etc/mysql/certs/ca-chain.pem. Please check the cerificate
+            1 2026-08-28T13:20:51.059175Z 0 [Warning] [MY-015010] [Server] Server certificate /etc/mysql/certs/server-cert.pem verification has failed. Check logs for more details
+            1 2026-08-28T13:20:51.059080Z 0 [ERROR] [MY-015005] [Server] Cannot open certificate /etc/mysql/certs/server-cert.pem. Please check the cerificate
+exo-es                 4
+            1 {"@timestamp":"2026-08-28T21:32:14.105Z", "log.level": "WARN", "message":"[gc][29429] overhead, spent [5s] collecting in the last [5.7s]", "ecs.version": "1.2.0","service.name":"ES_ECS","event.dataset
+            1 {"@timestamp":"2026-08-28T21:32:14.095Z", "log.level": "WARN", "message":"timer thread slept for [5.1s/5111725156ns] on relative clock which is above the warn threshold of [5000ms]", "ecs.version": "1
+            1 {"@timestamp":"2026-08-28T21:32:14.069Z", "log.level": "WARN", "message":"timer thread slept for [5.1s/5111ms] on absolute clock which is above the warn threshold of [5000ms]", "ecs.version": "1.2.0",
+            1 {"@timestamp":"2026-08-28T13:21:32.322Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            13077
+            1 Error in configuration at 'signing_key':
+            1   Error accessing file '/data/192.168.1.59.signing.key':
+            1 2026-08-31 08:50:59,222 - synapse.logging.context - 104 - WARNING - task-update_join_states-15-vXZjQApvaEozHjWx - Re-starting finished log context task-update_join_states-15-vXZjQApvaEozHjWx
+            1 2026-08-31 08:50:50,236 - synapse.logging.context - 104 - WARNING - task-update_join_states-79-WEKLbPBxEBORJqrV - Re-starting finished log context task-update_join_states-79-WEKLbPBxEBORJqrV
+            1 2026-08-31 08:50:44,600 - synapse.logging.context - 104 - WARNING - task-update_join_states-13-cXwaSUFLdtiyWjcK - Re-starting finished log context task-update_join_states-13-cXwaSUFLdtiyWjcK
+            1 2026-08-31 08:50:40,293 - synapse.logging.context - 104 - WARNING - task-update_join_states-47-YeCrRwcDHfXRIJSM - Re-starting finished log context task-update_join_states-47-YeCrRwcDHfXRIJSM
+            1 2026-08-31 08:50:29,696 - synapse.logging.context - 104 - WARNING - task-update_join_states-11-AcxnJKNkyokKDhfI - Re-starting finished log context task-update_join_states-11-AcxnJKNkyokKDhfI
+            1 2026-08-31 08:50:20,744 - synapse.logging.context - 104 - WARNING - task-update_join_states-76-MAGACNUhQSXyRaUi - Re-starting finished log context task-update_join_states-76-MAGACNUhQSXyRaUi
+exo-synapse-db         60
+            1 2026-08-31 08:49:02.581 UTC [68549] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 08:49:02.573 UTC [68549] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 06:48:33.049 UTC [67636] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 06:48:33.041 UTC [67636] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 06:48:32.759 UTC [67679] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 06:48:32.714 UTC [67380] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 02:47:33.974 UTC [67636] ERROR:  could not serialize access due to concurrent update
+            1 2026-08-31 02:47:33.965 UTC [67636] ERROR:  could not serialize access due to concurrent update
+onlyoffice             333
+            7 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            4 2026/08/28 17:44:57 [error] 13849#13849: *1636 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-b0b713c813171700e71afa48a781
+            4 2026/08/28 17:31:59 [error] 1535#1535: *684 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-cde61a1cc9a078d53129d05639129e2
+            4 2026/08/28 14:14:49 [error] 506#506: *756 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-0e974b559eee6f217665d8067a061253/
+            4 2026/08/28 14:06:50 [error] 11135#11135: *844 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-8a7d08f0bb6f882f8fc914adcefe2
+            3 2026/08/28 14:06:39 [error] 11135#11135: *841 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-8a7d08f0bb6f882f8fc914adcefe2
+            2 [2026-08-28T18:12:53.449] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            2 [2026-08-28T17:31:59.515] [WARN] [localhost] [docId] [userId] nodeJS - convertermaster: memory runtime detected - embedded converter runs inside DocService; no workers will be forked
+exo-mailpit            0
+exo-jitsi-call         1
+            1 2026-08-28 13:21:07,743 | WARN  | spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to dis
+exo-jitsi-jicofo       0
+exo-jitsi-jvb          7
+            1 JVB 2026-08-28 10:21:11.276 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.videobridge.rest.prometheus.Prometheus registered in SERVER runtime d
+            1 JVB 2026-08-28 10:21:11.275 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.rest.Version registered in SERVER runtime does not implement any prov
+            1 JVB 2026-08-28 10:21:11.266 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.rest.Health registered in SERVER runtime does not implement any provi
+            1 JVB 2026-08-28 10:21:10.529 WARNING: [1] org.glassfish.jersey.server.wadl.WadlFeature.configure: JAXBContext implementation could not be found. WADL feature is disabled.
+            1 JVB 2026-08-28 10:21:07.062 WARNING: [25] [hostname=xmpp.meet.jitsi id=shard0] MucClient.setPresenceExtensions#519: Cannot set presence extension: not connected.
+            1 JVB 2026-08-28 10:21:06.530 WARNING: [24] MucClient.createXMPPTCPConnectionConfiguration#119: Disabling certificate verification!
+            1 JVB 2026-08-28 10:20:59.576 INFO: [1] ReadOnlyConfigurationService.reloadConfiguration#56: Error loading config file: java.io.FileNotFoundException: /config/sip-communicator.properties (No such file o
+exo-jitsi-prosody      1
+            1 2026-08-28 10:20:49 mod_http                                                     error	Not listening on any ports, 'health' will be unreachable
+exo-jitsi-web          0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  6
+            1 (Use `docservice --trace-warnings ...` to show where the warning was created)
+            1 [2026-08-31T11:50:07.776] [ERROR] [localhost] [10ba933f-c1c3-39b0-984d-3b3e274d2734] [root] nodeJS - error downloadFile:url=https://192.168.1.59/rest/onlyoffice/editor/content/root/10ba933f-c1c3-39b0-
+            1 [2026-08-31T11:50:06.769] [ERROR] [localhost] [10ba933f-c1c3-39b0-984d-3b3e274d2734] [root] nodeJS - error downloadFile:url=https://192.168.1.59/rest/onlyoffice/editor/content/root/10ba933f-c1c3-39b0-
+            1 [2026-08-31T11:50:05.761] [ERROR] [localhost] [10ba933f-c1c3-39b0-984d-3b3e274d2734] [root] nodeJS - error downloadFile:url=https://192.168.1.59/rest/onlyoffice/editor/content/root/10ba933f-c1c3-39b0-
+            1 [2026-08-31T11:50:05.756] [ERROR] [localhost] [10ba933f-c1c3-39b0-984d-3b3e274d2734] [root] nodeJS - postData error: url = https://192.168.1.59/rest/onlyoffice/editor/status/root/10ba933f-c1c3-39b0-98
+            1 [2026-08-31T11:50:05.745] [ERROR] [null] [null] [null] nodeJS - (node:14313) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests inse
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) 566
+            1 2026-08-31 08:52:08,115 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-2>] 
+            1 2026-08-31 08:52:08,109 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-4>] 
+            1 2026-08-31 08:52:08,099 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-4>] 
+            1 2026-08-31 08:52:08,092 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-10>] 
+            1 2026-08-31 08:52:08,088 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-8>] 
+            1 2026-08-31 08:52:08,078 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-5>] 
+            1 2026-08-31 08:52:08,072 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-6>] 
+            1 2026-08-31 08:52:08,063 | ERROR | Servlet.service() for servlet [RestServer] in context with path [/rest] threw exception [o.a.c.c.C.[.[.[/rest].[RestServer]<http-nio-0.0.0.0-8080-exec-1>] 
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up 2 days (healthy)
+exo-clamav          Up 2 days (healthy)
+exo-es              Up 2 days (healthy)
+exo-jitsi-call      Up 2 days (healthy)
+exo-jitsi-jicofo    Up 2 days (healthy)
+exo-jitsi-jvb       Up 2 days (healthy)
+exo-jitsi-prosody   Up 2 days (healthy)
+exo-jitsi-web       Up 2 days (healthy)
+exo-mailpit         Up 2 days (healthy)
+exo-mysql           Up 2 days (healthy)
+exo-synapse         Up 2 days (healthy)
+exo-synapse-db      Up 2 days (healthy)
+exo-web             Up 2 days (healthy)
+onlyoffice          Up 2 days (healthy)
+
+===== RESULTADO =====
+REPROVADO — 18895 ocorrencias somadas.

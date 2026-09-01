@@ -11,7 +11,10 @@ from pathlib import Path
 lib, padrao = Path(sys.argv[1]), json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
 falhas, conferidos = [], 0
 
-for nome, cfg in padrao["sistema"].items():
+# sistema_runtime entra no mesmo portao: o atalho da IA e' seedado num jar
+# como qualquer outro, entao tem de ser conferido como qualquer outro.
+alvos = {**padrao["sistema"], **padrao.get("sistema_runtime", {})}
+for nome, cfg in alvos.items():
     caminho = lib / cfg["jar"]
     if not caminho.exists():
         falhas.append(f"{cfg['jar']}: nao existe")

@@ -1,0 +1,98 @@
+{
+  "label": "test_09_dlp_console",
+  "run_id": "20260901-101003",
+  "base": "http://192.168.1.59",
+  "started": 1788268204.3243983,
+  "duration_s": 71.1,
+  "total": 5,
+  "passed": 5,
+  "failed": 0,
+  "results": [
+    {
+      "tid": "T-09.1",
+      "name": "Console abre pelo menu Seguranca, renomeado e sem no' duplicado",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "URL e' a pagina NATIVA security/quarantine: True",
+      "proof": "evidence/capturas/T-09-01-menu-20260901-101003.png",
+      "duration_s": 25.78,
+      "steps": [
+        "clique no menu levou a: http://192.168.1.59/portal/administration/home/security/quarantine",
+        "itens de menu 'Proteção de dados (DLP)': 0 (esperado 0)",
+        "itens de menu 'Quarentena' isolados: 0",
+        "abas .v-tab renderizadas: 11 (esperado 11)",
+        "URL e' a pagina NATIVA security/quarantine: True"
+      ]
+    },
+    {
+      "tid": "T-09.2",
+      "name": "As onze abas trocam o conteudo, e nao so' o destaque",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "paineis identicos entre si: nenhum",
+      "proof": "evidence/capturas/T-09-02-abas-20260901-101003.png",
+      "duration_s": 23.51,
+      "steps": [
+        "abas visitadas: 11/11",
+        "paineis identicos entre si: nenhum",
+        "Painel: 4 Incidentes no total 0 Esperando revisão decisão humana pendente 2 Em quarentena retidos ",
+        "Incidentes: ​ Estado ​ Severidade ​ Canal CSV Recarregar Quando Severidade Canal Regra Usuário Estado ",
+        "Revisão: Aprovar cria uma liberação com prazo, escopo nominal e contagem de usos. A justificativa é",
+        "Quarentena: ​ Justificativa ​ Horas Retidos por este motor Quando Arquivo Usuário Regra 9/1/2026, 9:04",
+        "Política: Editar Regra Severidade Ação Prioridade Ativa Cartao de pagamento nao sai da plataforma CR",
+        "Índices: Desativar um índice preserva o registro e a trilha. Esta tela não apaga índice. Nome Tipo ",
+        "Dicionários: Novo dicionário ​ Nome ​ Termos, um por linha ou separados por vírgula Gravar Nome Termos ",
+        "Descoberta: Nenhuma origem de descoberta configurada. Defina DLP_DESCOBERTA_URL para habilitar a varre",
+        "Avisos: Quando Destinatário Tipo Estado Tentativas 9/1/2026, 9:04:32 AM seguranca@pmeto.local ADMI",
+        "Agentes: ​ Buscar Nome Máquina Versão Último contato Identificador Nada a mostrar Rows per page: 10",
+        "Auditoria: ​ Buscar Quando Autor Ação Alvo Detalhe 2026-09-01T12:07:21+00:00 console QUARENTENA_LIDO "
+      ]
+    },
+    {
+      "tid": "T-09.3",
+      "name": "A tela usa os componentes da plataforma, sem CSS propria",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "<style> dentro do portlet: 0 (esperado 0)",
+      "proof": "evidence/capturas/T-09-03-padrao-20260901-101003.png",
+      "duration_s": 8.36,
+      "steps": [
+        "<style> dentro do portlet: 0 (esperado 0)",
+        "elementos com classe do console antigo: 0 (esperado 0)",
+        "componentes Vuetify: {'tabs': 1, 'app': 2}",
+        "folhas de skin da plataforma carregadas: 15"
+      ]
+    },
+    {
+      "tid": "T-09.4",
+      "name": "Dicionario cadastrado na tela chega ao servico",
+      "approach": "B-usuario",
+      "passed": true,
+      "detail": "autor registrado na trilha: 'root' (esperado 'root')",
+      "proof": "evidence/capturas/T-09-04-dicionario-20260901-101003.png",
+      "duration_s": 12.94,
+      "steps": [
+        "dicionario 'teste-console-20260901-101003' submetido pela tela",
+        "o servico tem 1 dicionario(s); 'teste-console-20260901-101003' presente: True",
+        "termos gravados: ['palavra-secreta-a', 'palavra-secreta-b']",
+        "autor registrado na trilha: 'root' (esperado 'root')"
+      ]
+    },
+    {
+      "tid": "T-09.5",
+      "name": "Aviso de DLP e' entregue de verdade no servidor de mail",
+      "approach": "A-maquina",
+      "passed": true,
+      "detail": "CPF dentro do aviso: nao",
+      "proof": "fila: {'PENDENTE': 0, 'ENVIADA': 2, 'FALHA': 0} | assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' | mensagens [DLP] no Mailpit: 2 | ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local'] | CPF dentro do aviso: nao",
+      "duration_s": 0.54,
+      "steps": [
+        "fila: {'PENDENTE': 0, 'ENVIADA': 2, 'FALHA': 0}",
+        "assunto do ultimo aviso enviado: '[DLP] ALTA — Teste T-09: retem CPF em download (root)'",
+        "mensagens [DLP] no Mailpit: 2",
+        "ultima: '[DLP] ALTA — Teste T-09: retem CPF em download (root)' para ['seguranca@pmeto.local']",
+        "CPF dentro do aviso: nao"
+      ]
+    }
+  ]
+}

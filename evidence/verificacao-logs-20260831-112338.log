@@ -1,0 +1,75 @@
+# Verificacao de erros e warnings — 2026-08-31 11:23:38 -03
+# Janela: desde 10m
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        0
+dmesg err,warn         1
+            1 [707170.474257] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 64 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                10
+            1 2026-08-31 11:17:44,728 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,637 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,544 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,450 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,369 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,333 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,299 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,226 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+exo-web                0
+exo-mysql              0
+exo-es                 0
+exo-synapse            0
+exo-synapse-db         0
+onlyoffice             0
+exo-mailpit            0
+exo-jitsi-call         0
+exo-jitsi-jicofo       0
+exo-jitsi-jvb          0
+exo-jitsi-prosody      0
+exo-jitsi-web          0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  39
+            2 [2026-08-31T13:08:06.851] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            2 [2026-08-31T12:44:44.749] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            2 2026/08/31 12:48:57 [error] 1701#1701: *352 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-608edbbc00be6be2f6522656bf576b9
+            1 (Use `docservice --trace-warnings ...` to show where the warning was created)
+            1 [2026-08-31T13:12:25.386] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-31T13:12:25.385] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-31T13:12:25.267] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-31T13:12:25.266] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) 877
+            2 2026-08-31 10:26:32,536 | ERROR | Forwarding to error page from request [/rest/ux-bindings] due to exception [ACL Plugin of type 'aiUxBinding' doesn't exist] [o.s.b.w.servlet.support.ErrorPageFilter<h
+            2 2026-08-31 10:16:50,165 | ERROR | Forwarding to error page from request [/rest/ux-bindings] due to exception [ACL Plugin of type 'aiUxBinding' doesn't exist] [o.s.b.w.servlet.support.ErrorPageFilter<h
+            2 2026-08-31 09:05:16,966 | WARN  | Error when parsing Web Socket message: SpaceWebNotificationItem.spaceId is mandatory [o.e.s.w.l.SpaceWebNotificationWebSocketServerListener<http-nio-0.0.0.0-8080-exec
+            2 2026-08-31 09:05:16,965 | WARN  | Error when parsing Web Socket message: SpaceWebNotificationItem.spaceId is mandatory [o.e.s.w.l.SpaceWebNotificationWebSocketServerListener<http-nio-0.0.0.0-8080-exec
+            1 java.lang.IllegalStateException: Error While finishing Beans Initialization in context 'ai-agent'
+            1 Caused by: org.springframework.web.client.ResourceAccessException: I/O error on GET request for "https://192.168.1.59/auth-server/.well-known/openid-configuration": Connection refused
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'oAuth2AuthorizedClientManager' defined in class path resource [io/meeds/ai/mcp/client/config
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'mcpSyncClientExchangeFilterFunction' defined in URL [jar:file:/opt/exo/lib/ai-mcp-client.jar
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up 32 minutes (healthy)
+exo-clamav          Up 26 minutes (healthy)
+exo-es              Up About an hour (healthy)
+exo-jitsi-call      Up About an hour (healthy)
+exo-jitsi-jicofo    Up About an hour (healthy)
+exo-jitsi-jvb       Up About an hour (healthy)
+exo-jitsi-prosody   Up About an hour (healthy)
+exo-jitsi-web       Up About an hour (healthy)
+exo-mailpit         Up About an hour (healthy)
+exo-mysql           Up About an hour (healthy)
+exo-synapse         Up About an hour (healthy)
+exo-synapse-db      Up About an hour (healthy)
+exo-web             Up About an hour (healthy)
+onlyoffice          Up About an hour (healthy)
+
+===== RESULTADO =====
+REPROVADO — 927 ocorrencias somadas.

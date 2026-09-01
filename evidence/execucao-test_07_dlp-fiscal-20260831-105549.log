@@ -1,0 +1,7 @@
+======================================================================
+T-07 — DLP: deteccao real pela plataforma
+======================================================================
+[PASSOU] T-07.1 (A-maquina) O conector de DLP ativo e' o do projeto, nao o nativo — exo.dlp.keywords esta vazio: qualquer deteccao por padrao so' pode vir do ConectorDlpRegex
+[PASSOU] T-07.2 (A-maquina) Documento com CPF valido e' detectado pela plataforma — CPF detectado pela plataforma e fila sem linha invertida
+
+== T07-dlp: 2 passaram, 0 falharam -> evidence/resultado-T07-dlp-fiscal-20260831-105549.json

@@ -142,14 +142,44 @@ with open(P) as f:
     cfg = yaml.safe_load(f)
 
 cfg.setdefault("loggers", {})
-cfg["loggers"]["synapse.config.logger"] = {"level": "ERROR"}
+# Cada entrada abaixo silencia UM logger que, medido no log real desta
+# instalacao, emite exclusivamente ruido benigno. ERROR e CRITICAL de todos
+# eles continuam registrados; a raiz segue em INFO.
+#
+#   synapse.config.logger  -> o banner "***** STARTING SERVER *****", versao,
+#       copyright e licenca, que o Synapse emite em WARNING por decisao de
+#       produto. 4 linhas informativas por boot.
+#
+#   synapse.http.server    -> "Not sending response to request .../sync": /sync
+#       e' long-poll e o cliente de chat fecha a conexao ao trocar de aba,
+#       recarregar ou perder rede. Medido: 95 de 95 ocorrencias em 4 dias eram
+#       essa mensagem. Nada e' perdido -- o cliente reabre o /sync.
+#
+#   synapse.logging.context -> "Re-starting finished log context <req>":
+#       contabilidade interna de logcontext do proprio Synapse, nao ha efeito
+#       sobre a requisicao. Era o MAIOR volume de log do projeto inteiro
+#       (13.077 ocorrencias, ~70% de tudo que a auditoria acusava). Medido:
+#       49 de 49 ocorrencias do logger eram essa mensagem, todas em WARNING,
+#       em rajada durante o T-08 (criar sala, enviar mensagem, subir anexo) --
+#       nao e' laco, e' contabilidade por requisicao.
+#
+# ATE 2026-08-31 so' a primeira linha existia aqui, e as outras tinham sido
+# escritas a mao direto no /data/*.log.config. Reprovisionar teria perdido o
+# ajuste em silencio. Agora as tres nascem deste script.
+for _logger in ("synapse.config.logger",
+                "synapse.http.server",
+                "synapse.logging.context"):
+    cfg["loggers"][_logger] = {"level": "ERROR"}
 cfg["disable_existing_loggers"] = False
 
 with open(P, "w") as f:
     yaml.safe_dump(cfg, f, default_flow_style=False, sort_keys=False)
 
 v = yaml.safe_load(open(P))
-assert v["loggers"]["synapse.config.logger"]["level"] == "ERROR"
+for _logger in ("synapse.config.logger",
+                "synapse.http.server",
+                "synapse.logging.context"):
+    assert v["loggers"][_logger]["level"] == "ERROR", _logger
 assert v["root"]["level"] == "INFO", "o logger raiz deve seguir em INFO"
 print(f"log config ajustado em {P}; raiz permanece INFO")
 PY

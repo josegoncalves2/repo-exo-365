@@ -155,7 +155,24 @@ public class AcaoEnfileirarDlp implements AdvancedAction {
       }
 
       String idEntidade = no.getInternalIdentifier();
-      fila.addToQueue(idEntidade, TIPO_ARQUIVO);
+      // ORDEM DOS ARGUMENTOS -- CORRIGIDA 2026-08-31. Era
+      //   fila.addToQueue(idEntidade, TIPO_ARQUIVO)
+      // e estava invertida. A assinatura e' addToQueue(entityType, entityId):
+      // QueueDlpServiceImpl.getDlpOperation(a, b) faz setEntityType(a) e
+      // setEntityId(b) (lido no bytecode), e o FileDLPAction nativo chama
+      // addToQueue("file", uuid).
+      //
+      // O estrago nao era so' "este item nao e' varrido". Cada gravacao
+      // inseria em DLP_QUEUE uma linha com ENTITY_TYPE = <uuid do no>, e
+      // DlpOperationProcessorImpl.processBulk agrupa a fila por ENTITY_TYPE e
+      // faz getConnectors().get(tipo). Para um uuid nao ha conector, entao:
+      //   NullPointerException: Cannot invoke
+      //     "DlpServiceConnector.processItem(String)" because "connector" is null
+      // A excecao aborta o BULK INTEIRO, e junto com ele as linhas corretas
+      // que o FileDLPAction havia enfileirado. Resultado medido: DLP_QUEUE
+      // com 10 itens parados, DLP_POSITIVE_ITEMS vazia e nenhum documento
+      // varrido -- uma linha invertida desligava o DLP inteiro em silencio.
+      fila.addToQueue(TIPO_ARQUIVO, idEntidade);
       LOG.debug("DLP por padrao: item {} enfileirado para varredura", idEntidade);
 
     } catch (Exception e) {

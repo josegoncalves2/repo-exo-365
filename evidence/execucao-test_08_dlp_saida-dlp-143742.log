@@ -1,0 +1,7 @@
+======================================================================
+T-08-DLP — protecao de dado SAINDO, em navegador real
+======================================================================
+[PASSOU] T-08D.1 (B-usuario) Download de documento com CPF gera incidente de SAIDA — o DLP viu o documento SAINDO, classificou por padrao (sem depender da palavra 'CPF') e guardou evidencia mascarada
+[PASSOU] T-08D.2 (B-usuario) Console de DLP responde DENTRO do portal — o console responde pelo proprio portal, sem painel externo e sem expor o token
+
+== T08-dlp-saida: 2 passaram, 0 falharam -> evidence/resultado-T08-dlp-saida-dlp-143742.json

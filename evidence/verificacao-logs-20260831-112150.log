@@ -1,0 +1,104 @@
+# Verificacao de erros e warnings — 2026-08-31 11:21:50 -03
+# Janela: desde 75m
+
+===== 1. LINUX BASE =====
+unidades com falha     0
+0
+      0 loaded units listed.
+journalctl p0-4        0
+dmesg err,warn         1
+            1 [707170.474257] workqueue: wait_rcu_exp_gp hogged CPU for >10000us 64 times, consider switching to WQ_UNBOUND
+
+===== 2. CONTAINERS DO PROJETO =====
+exo-app                92
+            1 2026-08-31 11:17:44,728 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,637 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,544 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,450 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,369 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,333 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,299 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+            1 2026-08-31 11:17:44,226 | WARN  | The restored Dlp Item's 582b7f43ac14000e3c113b66a1214ce3 not found. [o.e.d.service.RestoredDlpItemServiceImpl<ExoScheduler_Worker-23>] 
+exo-web                95
+            3 2026/08/31 13:33:43 [error] 30#30: *1309 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /rest/v1/social/users/root HTTP/1.1", up
+            3 2026/08/31 13:33:43 [error] 30#30: *1309 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /rest/v1/social/users/me HTTP/1.1", upst
+            3 2026/08/31 13:33:43 [error] 30#30: *1309 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.59, server: , request: "GET /portal/rest/v1/social/users/root HTTP/1
+            2 2026/08/31 13:51:26 [error] 30#30: *1502 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/rest/state/status/root HTTP/1.1
+            1 2026/08/31 14:04:57 [warn] 30#30: *1809 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000001, client: 192.168.1.254, server: , request: "POST /9.4.0-0c2c4fb68a
+            1 2026/08/31 13:52:53 [error] 30#30: *246 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/rest/state/status/jose.goncalves
+            1 2026/08/31 13:52:21 [error] 30#30: *246 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/rest/state/status/jose.goncalves
+            1 2026/08/31 13:51:50 [error] 30#30: *246 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.254, server: , request: "GET /portal/rest/state/status/jose.goncalves
+exo-mysql              0
+exo-es                 1
+            1 {"@timestamp":"2026-08-31T13:10:41.805Z", "log.level": "WARN",  "data_stream.dataset":"deprecation.elasticsearch","data_stream.namespace":"default","data_stream.type":"logs","elasticsearch.event.categ
+exo-synapse            0
+exo-synapse-db         1
+            1 2026-08-31 13:08:07.235 UTC [52] FATAL:  the database system is starting up
+onlyoffice             17
+            2 [2026-08-31T13:08:06.851] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            2 2026/08/31 12:48:57 [error] 1701#1701: *352 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-608edbbc00be6be2f6522656bf576b9
+            1 ==> /var/log/onlyoffice/documentserver/nginx.error.log <==
+            1 [2026-08-31T13:12:25.386] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-31T13:12:25.385] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-31T13:12:25.267] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-31T13:12:25.266] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-31T13:12:25.260] [WARN] [localhost] [docId] [userId] nodeJS - Express server starting...
+exo-mailpit            0
+exo-jitsi-call         1
+            1 2026-08-31 13:09:26,505 | WARN  | spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to dis
+exo-jitsi-jicofo       2
+            1 Jicofo 2026-08-31 10:10:02.915 WARNING: [26] [xmpp_connection=client] XmppProvider.setComponents#80: Discovered components: [Component(type=lobbyrooms, address=lobby.meet.jitsi), Component(type=room_m
+            1 Jicofo 2026-08-31 10:10:00.325 WARNING: [1] [xmpp_connection=client] XmppProviderKt.createXmppConnection#343: Disabling TLS certificate verification!
+exo-jitsi-jvb          7
+            1 JVB 2026-08-31 10:10:06.945 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.videobridge.rest.prometheus.Prometheus registered in SERVER runtime d
+            1 JVB 2026-08-31 10:10:06.945 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.rest.Version registered in SERVER runtime does not implement any prov
+            1 JVB 2026-08-31 10:10:06.944 WARNING: [1] org.glassfish.jersey.internal.inject.Providers.checkProviderRuntime: A provider org.jitsi.rest.Health registered in SERVER runtime does not implement any provi
+            1 JVB 2026-08-31 10:10:06.565 WARNING: [1] org.glassfish.jersey.server.wadl.WadlFeature.configure: JAXBContext implementation could not be found. WADL feature is disabled.
+            1 JVB 2026-08-31 10:10:02.117 WARNING: [21] [hostname=xmpp.meet.jitsi id=shard0] MucClient.setPresenceExtensions#519: Cannot set presence extension: not connected.
+            1 JVB 2026-08-31 10:10:01.880 WARNING: [20] MucClient.createXMPPTCPConnectionConfiguration#119: Disabling certificate verification!
+            1 JVB 2026-08-31 10:09:56.444 INFO: [1] ReadOnlyConfigurationService.reloadConfiguration#56: Error loading config file: java.io.FileNotFoundException: /config/sip-communicator.properties (No such file o
+exo-jitsi-prosody      1
+            1 2026-08-31 10:09:32 mod_http                                                     error	Not listening on any ports, 'health' will be unreachable
+exo-jitsi-web          0
+
+===== 2b. LOGS EM DISCO DO ONLYOFFICE =====
+onlyoffice (arquivos)  39
+            2 [2026-08-31T13:08:06.851] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            2 [2026-08-31T12:44:44.749] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            2 2026/08/31 12:48:57 [error] 1701#1701: *352 connect() failed (111: Connection refused) while connecting to upstream, client: 172.20.0.15, server: , request: "GET /9.4.0-608edbbc00be6be2f6522656bf576b9
+            1 (Use `docservice --trace-warnings ...` to show where the warning was created)
+            1 [2026-08-31T13:12:25.386] [WARN] [localhost] [docId] [userId] nodeJS - embedded converter started
+            1 [2026-08-31T13:12:25.385] [WARN] [localhost] [docId] [userId] nodeJS - Express server listening on port 8000 in production-linux mode. Version: 9.4.0. Build: 129
+            1 [2026-08-31T13:12:25.267] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+            1 [2026-08-31T13:12:25.266] [WARN] [localhost] [docId] [userId] nodeJS - notifyLicenseExpiration(): expiration date is not defined
+
+===== 2c. LOG EM DISCO DO EXO-APP =====
+exo-app (platform.log) 877
+            2 2026-08-31 10:26:32,536 | ERROR | Forwarding to error page from request [/rest/ux-bindings] due to exception [ACL Plugin of type 'aiUxBinding' doesn't exist] [o.s.b.w.servlet.support.ErrorPageFilter<h
+            2 2026-08-31 10:16:50,165 | ERROR | Forwarding to error page from request [/rest/ux-bindings] due to exception [ACL Plugin of type 'aiUxBinding' doesn't exist] [o.s.b.w.servlet.support.ErrorPageFilter<h
+            2 2026-08-31 09:05:16,966 | WARN  | Error when parsing Web Socket message: SpaceWebNotificationItem.spaceId is mandatory [o.e.s.w.l.SpaceWebNotificationWebSocketServerListener<http-nio-0.0.0.0-8080-exec
+            2 2026-08-31 09:05:16,965 | WARN  | Error when parsing Web Socket message: SpaceWebNotificationItem.spaceId is mandatory [o.e.s.w.l.SpaceWebNotificationWebSocketServerListener<http-nio-0.0.0.0-8080-exec
+            1 java.lang.IllegalStateException: Error While finishing Beans Initialization in context 'ai-agent'
+            1 Caused by: org.springframework.web.client.ResourceAccessException: I/O error on GET request for "https://192.168.1.59/auth-server/.well-known/openid-configuration": Connection refused
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'oAuth2AuthorizedClientManager' defined in class path resource [io/meeds/ai/mcp/client/config
+            1 Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'mcpSyncClientExchangeFilterFunction' defined in URL [jar:file:/opt/exo/lib/ai-mcp-client.jar
+
+===== 3. ESTADO DE SAUDE =====
+NAME                STATUS
+exo-app             Up 31 minutes (healthy)
+exo-clamav          Up 25 minutes (healthy)
+exo-es              Up About an hour (healthy)
+exo-jitsi-call      Up About an hour (healthy)
+exo-jitsi-jicofo    Up About an hour (healthy)
+exo-jitsi-jvb       Up About an hour (healthy)
+exo-jitsi-prosody   Up About an hour (healthy)
+exo-jitsi-web       Up About an hour (healthy)
+exo-mailpit         Up About an hour (healthy)
+exo-mysql           Up About an hour (healthy)
+exo-synapse         Up About an hour (healthy)
+exo-synapse-db      Up About an hour (healthy)
+exo-web             Up About an hour (healthy)
+onlyoffice          Up About an hour (healthy)
+
+===== RESULTADO =====
+REPROVADO — 1134 ocorrencias somadas.

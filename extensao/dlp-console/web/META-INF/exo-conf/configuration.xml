@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  REGISTRA ESTE WAR COMO DEPENDENCIA DO PORTAL CONTAINER.
+
+  E' O ARQUIVO QUE FALTAVA, e a falta era silenciosa. Sem ele, o kernel da eXo
+  NUNCA le o WEB-INF/conf/configuration.xml deste WAR: o portlet carrega
+  normalmente (quem o carrega e' o contentor de portlets), mas a pagina e o no'
+  de menu nunca sao criados, e NAO ha' uma linha de erro no log dizendo isso.
+  Medido em 2026-09-01: a tabela PORTAL_PAGES seguia sem a pagina depois de
+  dois arranques limpos, e o log so' mostrava o deploy do WAR.
+
+  O `PortalContainerConfigOwner` do web.xml sozinho nao basta nesta versao. O
+  mecanismo que a propria imagem usa esta' no ai-agent.war
+  (META-INF/exo-conf/configuration.xml, conferido no container): o WAR se
+  declara dependencia do portal container, e so' entao o kernel varre a sua
+  configuracao. A linha que prova que funcionou aparece no log como
+  "Including addon configuration file ar:/opt/exo/webapps/<war>!/META-INF/..."
+-->
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
+               xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.container.definition.PortalContainerConfig</target-component>
+    <component-plugin>
+      <name>Change PortalContainer Definitions</name>
+      <set-method>registerChangePlugin</set-method>
+      <type>org.exoplatform.container.definition.PortalContainerDefinitionChangePlugin</type>
+      <!-- Prioridade 1100: DEPOIS dos add-ons da plataforma (que usam 1000).
+           A pagina deste WAR e' acrescentada a um site que a eXo tambem povoa;
+           entrar depois evita disputar a ordem de importacao com ela. -->
+      <priority>1100</priority>
+      <init-params>
+        <value-param>
+          <name>apply.default</name>
+          <value>true</value>
+        </value-param>
+        <values-param>
+          <name>add.profiles</name>
+          <value>pmo-dlp-console</value>
+        </values-param>
+        <object-param>
+          <name>change</name>
+          <object type="org.exoplatform.container.definition.PortalContainerDefinitionChange$AddDependencies">
+            <field name="dependencies">
+              <collection type="java.util.ArrayList">
+                <value>
+                  <string>pmo-dlp-console</string>
+                </value>
+              </collection>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+</configuration>

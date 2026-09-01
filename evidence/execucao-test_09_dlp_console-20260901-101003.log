@@ -1,0 +1,7 @@
+[PASSOU] T-09.1 (B-usuario) Console abre pelo menu Seguranca, renomeado e sem no' duplicado — URL e' a pagina NATIVA security/quarantine: True
+[PASSOU] T-09.2 (B-usuario) As onze abas trocam o conteudo, e nao so' o destaque — paineis identicos entre si: nenhum
+[PASSOU] T-09.3 (B-usuario) A tela usa os componentes da plataforma, sem CSS propria — <style> dentro do portlet: 0 (esperado 0)
+[PASSOU] T-09.4 (B-usuario) Dicionario cadastrado na tela chega ao servico — autor registrado na trilha: 'root' (esperado 'root')
+[PASSOU] T-09.5 (A-maquina) Aviso de DLP e' entregue de verdade no servidor de mail — CPF dentro do aviso: nao
+
+== test_09_dlp_console: 5 passaram, 0 falharam -> evidence/resultado-test_09_dlp_console-20260901-101003.json
